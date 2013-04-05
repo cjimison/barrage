@@ -34,6 +34,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
+    inets:start(),
     case loadConfigTable() of
         ok ->
             case barrage_sup:start_link() of
@@ -66,13 +67,60 @@ stop(_State) ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
+%%  Process all the behaviors and load them into an ets table.
+%%  int he future I would like to make this modifiable
+%%  but then I will need to make it work in a cluster....
+%%
+%% @spec process_plans(Plans) -> ok
+%%      Plans = Array
+%% @end
+%%--------------------------------------------------------------------
+process_plans([]) ->
+    ok;
+process_plans(Plans) ->
+    [{Plan} | OtherPlans]   = Plans,
+    Name                    = proplists:get_value(name, Plan),
+    Tree                    = proplists:get_value(tree, Plan),
+    ets:insert(plans, {Name, Tree}),
+    process_plans(OtherPlans).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%  Process the Actions defined by the user
+%%
+%% @spec process_actions(Actions) -> ok
+%%      Plans = Array
+%% @end
+%%--------------------------------------------------------------------
+process_actions([]) ->
+    ok;
+process_actions(Actions) ->
+    [{Action} | OtherActions]   = Actions,
+    Name                        = proplists:get_value(name, Action),
+    ets:insert(actions, {Name, Action}),
+    process_actions(OtherActions).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
 %%  Loads all the config files that currently exist for the system
 %%
 %% @spec stop(State) -> void()
 %% @end
 %%--------------------------------------------------------------------
 loadConfigTable()->
-    io:format("loadConfig Table~n~p~n", [file:get_cwd()]),
+    
+    {ok, Plans}     = file:consult("priv/behaviors.config"),
+    {ok, Actions}   = file:consult("priv/actions.config"),
+    
+    % Now lets set parse the plans in order to build out an ets table
+    ets:new(plans, [set, named_table]), 
+    process_plans(Plans),
+
+    ets:new(actions, [set, named_table]),
+    process_actions(Actions),
+
     try
         %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
         %io:format("file read, now parse ~n"),

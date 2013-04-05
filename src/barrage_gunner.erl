@@ -113,8 +113,13 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({follow_order, _Order}, State) ->
+handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
+    {Data}      = Order,
+    Action      = proplists:get_value(action, Data),
+    Children    = proplists:get_value(children, Data),
+    Args        = proplists:get_value(args, Data),
+    do_action(Action, Args, Children),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -132,7 +137,7 @@ handle_cast(_Msg, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_info(_Info, State) ->
-        {noreply, State}.
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -146,7 +151,7 @@ handle_info(_Info, State) ->
 %% @end
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
-        ok.
+    ok.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -157,11 +162,27 @@ terminate(_Reason, _State) ->
 %% @end
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
-        {ok, State}.
+    {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+do_action(<<"random">>, undefined, _Children) ->
+    error;
+do_action(<<"random">>, _Args, _Children) ->
+    ok;
+do_action(ActionName, _Args, _Children) ->
+    % Pull out the from the ets table
+    TableData = ets:lookup(actions, ActionName),
+    case TableData of
+        [] ->
+            not_found;
+        _ ->
+            [{_, Action}]   = TableData,
+            execute_action(Action)
+    end,
+    ok.
 
 prepare_get_args(Head, []) ->
     Head;
@@ -201,23 +222,21 @@ create_get_string(Head, Args, Token) ->
 %% @end
 %%--------------------------------------------------------------------
 execute_action(Action) ->
-    {Props} = Action,
-    BaseURL = proplists:get_value(url, Props),
-    Method  = proplists:get_value(type, Props),
+    BaseURL = proplists:get_value(url, Action),
+    Method  = proplists:get_value(type,Action),
     Header  = [],
     HTTPOps = [],
     Ops     = [],
-    Args    = proplists:get_value(args, Props),
+    Args    = proplists:get_value(args, Action),
     
-    case proplists:get_value(args_type, Props) of
+    case proplists:get_value(type, Action) of
         get ->
-            URL = prepare_get_args(BaseURL, Args),
-            _Rez= timer:tc(httpc, request,
-                                  [Method, URL, Header, HTTPOps, Ops]),
+            URL         = prepare_get_args(BaseURL, Args),
+            {_Time, _Res} = timer:tc(httpc, request,
+                                  [Method, {URL, Header}, HTTPOps, Ops]),
             ok;
         post ->
             not_implemented;
-
         _ ->
             not_supported
     end.

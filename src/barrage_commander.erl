@@ -73,7 +73,7 @@ execute(Pid, Orders) ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    GunnerCount = 100,
+    GunnerCount = 1,
     State = #state{general=null, gunners = create_gunner([], GunnerCount)},
     {ok, State}.
 

@@ -69,17 +69,6 @@ start_link() ->
 %%% gen_server callbacks
 %%%===================================================================
 
-process_plans([]) ->
-    ok;
-
-process_plans(Plans) ->
-    [{Plan} | OtherPlans]   = Plans,
-    Name                    = proplists:get_value(name, Plan),
-    Tree                    = proplists:get_value(tree, Plan),
-    
-    ets:insert(plans, {Name, Tree}),
-    process_plans(OtherPlans).
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -92,12 +81,6 @@ process_plans(Plans) ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, Plans} = file:consult("priv/behaviors.config"),
-    
-    % Now lets set parse the plans in order to build out an ets table
-    ets:new(plans, [set, named_table]), 
-    process_plans(Plans),
-
     {ok, #state{}}.
 
 enlist(CommanderPid) ->
