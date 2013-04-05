@@ -1,0 +1,12 @@
+{application, barrage,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { barrage_app, []}},
+  {env, []}
+ ]}.

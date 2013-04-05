@@ -1,0 +1,102 @@
+%%%-------------------------------------------------------------------
+%%% @author Chris Jimison
+%%% @copyright (C) 2013, Not Rigged Games LLC
+%%% @doc
+%%%
+%%% @end
+%%% Created : 2013-04-02 11:31:39.401954
+%%%-------------------------------------------------------------------
+-module(barrage_app).
+
+-behaviour(application).
+
+%% Application callbacks
+-export([start/2, stop/1]).
+
+%%%===================================================================
+%%% Application callbacks
+%%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% This function is called whenever an application is started using
+%% application:start/[1,2], and should start the processes of the
+%% application. If the application is structured according to the OTP
+%% design principles as a supervision tree, this means starting the
+%% top supervisor of the tree.
+%%
+%% @spec start(StartType, StartArgs) -> {ok, Pid} |
+%%                                      {ok, Pid, State} |
+%%                                      {error, Reason}
+%%      StartType = normal | {takeover, Node} | {failover, Node}
+%%      StartArgs = term()
+%% @end
+%%--------------------------------------------------------------------
+start(_StartType, _StartArgs) ->
+    case loadConfigTable() of
+        ok ->
+            case barrage_sup:start_link() of
+                {ok, Pid} ->
+                    {ok, Pid};
+                Error ->
+                    Error
+            end;
+        Error ->
+            Error
+    end.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% This function is called whenever an application has stopped. It
+%% is intended to be the opposite of Module:start/2 and should do
+%% any necessary cleaning up. The return value is ignored.
+%%
+%% @spec stop(State) -> void()
+%% @end
+%%--------------------------------------------------------------------
+stop(_State) ->
+    ok.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%  Loads all the config files that currently exist for the system
+%%
+%% @spec stop(State) -> void()
+%% @end
+%%--------------------------------------------------------------------
+loadConfigTable()->
+    io:format("loadConfig Table~n~p~n", [file:get_cwd()]),
+    try
+        %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
+        %io:format("file read, now parse ~n"),
+        %{BarrageConfig}     = jiffy:decode(BarrageStr),
+        %parseBarrageConfig(BarrageConfig),
+
+        %{ok, ActionsStr}    = file:read_file("config/actions.json"),
+        %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
+        %ActionsData         = jiffy:decode(ActionsStr),
+        %BehaviorsData       = jiffy:decode(BehaviorsStr),
+        ok
+    catch
+        Exception:Reason -> {error, Exception, Reason}
+    end.
+
+%parseBarrageConfig(BarrageConfig) ->
+%    
+%    Server  = proplists:get_value(<<"server">>, BarrageConfig),
+%    Clients = proplists:get_value(<<"clients">>, BarrageConfig),
+%    
+%    %Store the values in the global ets tables
+%    ets:new(globals, [set, named_table]),
+%    ets:insert(globals, {server, Server}),
+%    ets:insert(globals, {clients, Clients}),
+%    io:format("Locked and loaded ~p:~p~n", [Server, Clients]),
+%    ok.
+
