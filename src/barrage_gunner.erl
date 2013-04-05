@@ -114,11 +114,7 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    {Data}      = Order,
-    Action      = proplists:get_value(action, Data),
-    Children    = proplists:get_value(children, Data),
-    Args        = proplists:get_value(args, Data),
-    do_action(Action, Args, Children),
+    process_set([Order]),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -167,11 +163,23 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+process_set([]) ->
+    ok;
+process_set(Set) ->
+    [Order| Orders] = Set,
+    Action      = proplists:get_value(action, Order),
+    Children    = proplists:get_value(children, Order),
+    Args        = proplists:get_value(args, Order),
+    do_action(Action, Args, Children),
+    process_set(Orders),
+    ok.
+
+
 do_action(<<"random">>, undefined, _Children) ->
     error;
 do_action(<<"random">>, _Args, _Children) ->
     ok;
-do_action(ActionName, _Args, _Children) ->
+do_action(ActionName, _Args, Children) ->
     % Pull out the from the ets table
     TableData = ets:lookup(actions, ActionName),
     case TableData of
@@ -179,7 +187,8 @@ do_action(ActionName, _Args, _Children) ->
             not_found;
         _ ->
             [{_, Action}]   = TableData,
-            execute_action(Action)
+            execute_action(Action),
+            process_set(Children)
     end,
     ok.
 
@@ -233,6 +242,7 @@ execute_action(Action) ->
             URL         = prepare_get_args(BaseURL, Args),
             {_Time, _Res} = timer:tc(httpc, request,
                                   [Method, {URL, Header}, HTTPOps, Ops]),
+            io:format("Results = ~p~n", [_Res]),
             ok;
         post ->
             not_implemented;
