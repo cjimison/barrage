@@ -52,7 +52,7 @@ test_run()->
     barrage_general:enlist(Commander5),
 
     % Now issue an order out to the commanders for execution
-    barrage_general:issue_order(<<"Simple Test">>).
+    barrage_general:issue_order(<<"Random Commands">>).
 
 %%--------------------------------------------------------------------
 %% @doc

@@ -82,6 +82,10 @@ follow_order(GunnerPid, Order) ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
+    A = crypto:rand_uniform(1, 9999999999999),
+    B = crypto:rand_uniform(1, 9999999999999),
+    C = crypto:rand_uniform(1, 9999999999999),
+    random:seed(A, B, C),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -163,6 +167,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Unpack the data and send the action off for processing
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+process_set(undefined) ->
+    ok;
 process_set([]) ->
     ok;
 process_set(Set) ->
@@ -175,10 +189,103 @@ process_set(Set) ->
     ok.
 
 
-do_action(<<"random">>, undefined, _Children) ->
-    error;
-do_action(<<"random">>, _Args, _Children) ->
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Do the action described by the system
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+now_micro() -> 
+    {MegaSecs,Secs,MicroSecs} = now(),
+    (MegaSecs*1000000 + Secs)*1000000 + MicroSecs. 
+
+%%%%------------------------------------------------------------------
+%%%% do_random_count
+%%%%------------------------------------------------------------------
+do_random_count(_Children, 0) ->
     ok;
+do_random_count(Children, Count) ->
+    Idx = random:uniform(length(Children)),
+    Child = lists:nth(Idx, Children),
+    process_set([Child]),
+    do_random_count(Children, Count -1).
+
+%%%%------------------------------------------------------------------
+%%%% do_random_timed
+%%%%------------------------------------------------------------------
+do_random_timed(Children, TimeEnd) ->
+    Idx = random:uniform(length(Children)),
+    Child = lists:nth(Idx, Children),
+    process_set([Child]),
+    Rez = TimeEnd - now_micro(),
+    case Rez > 0 of
+        true ->
+            do_random_timed(Children, TimeEnd);
+        _ ->
+            ok
+    end.
+
+%%%%------------------------------------------------------------------
+%%%% do_wait and do_random_wait
+%%%%------------------------------------------------------------------
+do_wait(Children, Time) ->
+    timer:sleep(Time),
+    process_set(Children).
+
+do_random_wait(Children, undefined) ->
+    do_random_wait(Children, 100);
+
+do_random_wait(Children, Time) ->
+    Sleep_time = random:uniform(Time),
+    do_wait(Children, Sleep_time).
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"random">>
+%%%%------------------------------------------------------------------
+do_action(<<"random">>, undefined, Children) ->
+    do_random_count(Children, 1);
+
+do_action(<<"random">>, Args, Children) ->
+    Count = proplists:get_value(count, Args),
+    case Count of
+        undefined ->
+            Time = proplists:get_value(min_time, Args),
+            TimeEnd = now_micro() + (Time * 1000),
+            do_random_timed(Children, TimeEnd);
+        _ ->
+            do_random_count(Children, Count)
+    end;
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"wait">>
+%%%%------------------------------------------------------------------
+
+do_action(<<"wait">>, undefined, Children) ->
+    do_wait(Children, 100);
+
+do_action(<<"wait">>, Args, Children) ->
+    Count = proplists:get_value(time, Args),
+    do_wait(Children, Count);
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"random_wait">>
+%%%%------------------------------------------------------------------
+
+do_action(<<"random_wait">>, undefined, Children) ->
+    do_random_wait(Children, 100);
+
+do_action(<<"random_wait">>, Args, Children) ->
+    Count = proplists:get_value(time, Args),
+    do_random_wait(Children, Count);
+
+%%%%------------------------------------------------------------------
+%%%% Action: User Defined
+%%%%------------------------------------------------------------------
+do_action(ActionName, Args, undefined) ->
+    do_action(ActionName, Args, []);
+
 do_action(ActionName, _Args, Children) ->
     % Pull out the from the ets table
     TableData = ets:lookup(actions, ActionName),
@@ -192,6 +299,14 @@ do_action(ActionName, _Args, Children) ->
     end,
     ok.
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Prepare the "get" based arguments for processing
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
 prepare_get_args(Head, []) ->
     Head;
 prepare_get_args(Head, Args) ->
@@ -212,6 +327,8 @@ create_get_string(Head, Args, Token) ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
+%% 
+%% Do the actual http request sendoff
 %%  {[
 %%    {name, "<Name of Action>"},
 %%    {url, "<URL to hit>"},
@@ -239,10 +356,11 @@ execute_action(Action) ->
     
     case proplists:get_value(type, Action) of
         get ->
-            URL         = prepare_get_args(BaseURL, Args),
-            {_Time, _Res} = timer:tc(httpc, request,
+            URL             = prepare_get_args(BaseURL, Args),
+            {_Time, _Res}   = timer:tc(httpc, request,
                                   [Method, {URL, Header}, HTTPOps, Ops]),
-            io:format("Results = ~p~n", [_Res]),
+
+            % What am I doing with the results of the test?
             ok;
         post ->
             not_implemented;
