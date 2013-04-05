@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
 %%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%     This module is created just to launch the to call
 %%%     my application start

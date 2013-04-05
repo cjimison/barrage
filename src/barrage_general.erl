@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
 %%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%
 %%% @end

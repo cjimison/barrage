@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
 %%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%     This is a client instance.  It should be unnamed
 %%%     and allow to run many worker versions of it.
