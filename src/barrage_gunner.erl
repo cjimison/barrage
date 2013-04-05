@@ -119,6 +119,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
     process_set([Order]),
+    io:format("And I am done!!! ~p~n", [self()]),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -202,6 +203,39 @@ now_micro() ->
     (MegaSecs*1000000 + Secs)*1000000 + MicroSecs. 
 
 %%%%------------------------------------------------------------------
+%%%% do_ordered_count
+%%%%------------------------------------------------------------------
+do_ordered_count(_Children, _Idx, 0) ->
+    ok;
+do_ordered_count(Children, Idx, Count) ->
+    process_set([lists:nth(Idx, Children)]),
+    NewIdx = Idx + 1,
+    case NewIdx > length(Children) of
+        true ->
+            do_ordered_count(Children, 1, Count - 1);
+        _ ->
+            do_ordered_count(Children, NewIdx, Count - 1)
+    end.
+
+%%%%------------------------------------------------------------------
+%%%% do_ordered_timed
+%%%%------------------------------------------------------------------
+do_ordered_timed(Children, Idx, TimeEnd) ->
+    process_set([lists:nth(Idx, Children)]),
+    case (TimeEnd - now_micro()) > 0 of
+        true ->
+            NewIdx = Idx + 1,
+            case NewIdx > length(Children) of
+                true ->
+                    do_ordered_timed(Children, 1, TimeEnd);
+                _ ->
+                    do_ordered_timed(Children, NewIdx, TimeEnd)
+            end;
+        _ ->
+            ok
+    end.
+
+%%%%------------------------------------------------------------------
 %%%% do_random_count
 %%%%------------------------------------------------------------------
 do_random_count(_Children, 0) ->
@@ -259,6 +293,23 @@ do_action(<<"random">>, Args, Children) ->
     end;
 
 %%%%------------------------------------------------------------------
+%%%% Action: <<"random">>
+%%%%------------------------------------------------------------------
+do_action(<<"ordered">>, undefined, Children) ->
+    do_ordered_count(Children, 1, 1);
+
+do_action(<<"ordered">>, Args, Children) ->
+    Count = proplists:get_value(count, Args),
+    case Count of
+        undefined ->
+            Time = proplists:get_value(min_time, Args),
+            TimeEnd = now_micro() + (Time * 1000),
+            do_ordered_timed(Children, 1, TimeEnd);
+        _ ->
+            do_ordered_count(Children, 1, Count)
+    end;
+
+%%%%------------------------------------------------------------------
 %%%% Action: <<"wait">>
 %%%%------------------------------------------------------------------
 
@@ -295,9 +346,9 @@ do_action(ActionName, _Args, Children) ->
         _ ->
             [{_, Action}]   = TableData,
             execute_action(Action),
-            process_set(Children)
-    end,
-    ok.
+            process_set(Children),
+            ok
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
