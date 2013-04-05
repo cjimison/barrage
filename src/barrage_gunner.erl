@@ -82,9 +82,12 @@ follow_order(GunnerPid, Order) ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    A = crypto:rand_uniform(1, 9999999999999),
-    B = crypto:rand_uniform(1, 9999999999999),
-    C = crypto:rand_uniform(1, 9999999999999),
+    % This feels so hacky to me.  There has got to be a better way
+    % So the 2147483646 is 1 less then the max value for a int32_t.  
+    % My hope is to keep this within a reg value but we shall see.
+    A = crypto:rand_uniform(1, 2147483646),
+    B = crypto:rand_uniform(1, 2147483646),
+    C = crypto:rand_uniform(1, 2147483646),
     random:seed(A, B, C),
     {ok, #state{}}.
 
@@ -119,7 +122,6 @@ handle_call(_Request, _From, State) ->
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
     process_set([Order]),
-    io:format("And I am done!!! ~p~n", [self()]),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
