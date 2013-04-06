@@ -38,18 +38,18 @@
 
 test_run()->
     % Create a list of commanders
-    {ok, Commander1} = barrage_commander:start(),
-    {ok, Commander2} = barrage_commander:start(),
-    {ok, Commander3} = barrage_commander:start(),
-    {ok, Commander4} = barrage_commander:start(),
-    {ok, Commander5} = barrage_commander:start(),
+    %{ok, Commander1} = barrage_commander:start(),
+    %{ok, Commander2} = barrage_commander:start(),
+    %{ok, Commander3} = barrage_commander:start(),
+    %{ok, Commander4} = barrage_commander:start(),
+    %{ok, Commander5} = barrage_commander:start(),
    
-    % Enlist them under this general
-    barrage_general:enlist(Commander1),
-    barrage_general:enlist(Commander2),
-    barrage_general:enlist(Commander3),
-    barrage_general:enlist(Commander4),
-    barrage_general:enlist(Commander5),
+    %% Enlist them under this general
+    %barrage_general:enlist(Commander1),
+    %barrage_general:enlist(Commander2),
+    %barrage_general:enlist(Commander3),
+    %barrage_general:enlist(Commander4),
+    %barrage_general:enlist(Commander5),
 
     % Now issue an order out to the commanders for execution
     barrage_general:issue_order(<<"Random Commands">>).
@@ -107,7 +107,10 @@ issue_order(Order) ->
 %%--------------------------------------------------------------------
 handle_call({issue_order, OrderName}, _From, State) ->
     [{_, Order}] = ets:lookup(plans, OrderName), 
-    Fun = fun(Pid) -> barrage_commander:execute(Pid, Order) end,
+    [{_, TargetIP}] = ets:lookup(barrage, url),
+    Fun = fun(Pid) ->
+            io:format("Issuing order to ~p~n", [Pid]),
+            barrage_commander:execute(Pid, Order, TargetIP) end,
     lists:foreach(Fun, State#state.commanders),
     {reply, ok, State};
 

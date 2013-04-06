@@ -12,7 +12,7 @@
 %% API
 -export([start/0, 
          start_link/0,
-         execute/2]).
+         execute/3]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -57,8 +57,8 @@ create_gunner(GunnerList, Count) ->
     NewList = [GunnerPID | GunnerList],
     create_gunner(NewList, Count - 1). 
 
-execute(Pid, Orders) ->
-    gen_server:cast(Pid, {execute, Orders}).
+execute(Pid, Orders, TargetIP) ->
+    gen_server:cast(Pid, {execute, {Orders, TargetIP}}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -104,9 +104,25 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({execute, Order}, State) ->
-    Fun = fun(Pid) -> barrage_gunner:follow_order(Pid, Order) end,
-    lists:foreach(Fun, State#state.gunners),
+handle_cast({execute, {Order, TargetURL}}, State) ->
+    %NOTE: I am currently doing this in two phases
+    %      so the timing syncs up a little better.
+    %      I may move this to a single phase step.
+    %      REFACTOR: Have the follow_order take a
+    %      target URL as well.
+    FunTarget = fun(Pid) -> 
+            barrage_gunner:set_url(Pid, TargetURL)
+    end,
+
+    FunFire = fun(Pid) ->
+            barrage_gunner:follow_order(Pid, Order) 
+    end,
+
+    %Have all the gunners sight in the target
+    lists:foreach(FunTarget, State#state.gunners),
+
+    %The open fire!!!
+    lists:foreach(FunFire, State#state.gunners),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -153,7 +169,4 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-
-
 

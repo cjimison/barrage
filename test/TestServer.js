@@ -8,6 +8,7 @@ http.createServer(function (req, res)
     var obj = {};
     if('/login' === url_parts.pathname)
     {
+        console.log("I got a login request");
         if(query.username === 'foo' && query.password === 'bar')
         {
             res.end('8379283747838');
@@ -19,17 +20,20 @@ http.createServer(function (req, res)
     }
     else if('/listcards')
     {
+        console.log("I got a listcards request");
         obj.cards = [ { ID: 0, name : 'cardA'}, {ID:1, name: 'cardB'}];
         obj.deckType = 'generic';
         res.end(JSON.stringify(obj));
     }
     else if('/get_card_details')
     {
+        console.log("I got a get_card_details request");
         obj.card = { ID : 2, name : 'cardC'};
         res.end(JSON.stringify(obj));
     }
     else if('/add_card')
     {
+        console.log("I got a add_card request");
         obj.card = { ID : 3, name : 'cardD'};
         res.end(JSON.stringify(obj));
     }

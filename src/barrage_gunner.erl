@@ -14,6 +14,7 @@
 -export([start/0]).
 -export([start_link/0]).
 -export([follow_order/2]).
+-export([set_url/2]).
 
 
 %% gen_server callbacks
@@ -26,7 +27,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {url}).
 
 %%%===================================================================
 %%% API
@@ -65,6 +66,8 @@ start_link() ->
 follow_order(GunnerPid, Order) ->
     gen_server:cast(GunnerPid, {follow_order, Order}).
 
+set_url(GunnerPid, URL) ->
+    gen_server:call(GunnerPid, {set_url, URL}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -105,6 +108,11 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_call({set_url, URL}, _From, State) ->
+    NewState = State#state{url=URL},
+    Reply = ok,
+    {reply, Reply, NewState};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -121,7 +129,7 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    process_set([Order]),
+    process_set([Order], State),
     {noreply, State};
 
 handle_cast(_Msg, State) ->
@@ -178,17 +186,17 @@ code_change(_OldVsn, State, _Extra) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-process_set(undefined) ->
+process_set(undefined, _State) ->
     ok;
-process_set([]) ->
+process_set([], _State) ->
     ok;
-process_set(Set) ->
+process_set(Set, State) ->
     [Order| Orders] = Set,
     Action      = proplists:get_value(action, Order),
     Children    = proplists:get_value(children, Order),
     Args        = proplists:get_value(args, Order),
-    do_action(Action, Args, Children),
-    process_set(Orders),
+    do_action(Action, Args, Children, State),
+    process_set(Orders, State),
     ok.
 
 
@@ -207,31 +215,31 @@ now_micro() ->
 %%%%------------------------------------------------------------------
 %%%% do_ordered_count
 %%%%------------------------------------------------------------------
-do_ordered_count(_Children, _Idx, 0) ->
+do_ordered_count(_Children, _Idx, 0, _State) ->
     ok;
-do_ordered_count(Children, Idx, Count) ->
-    process_set([lists:nth(Idx, Children)]),
+do_ordered_count(Children, Idx, Count, State) ->
+    process_set([lists:nth(Idx, Children)], State),
     NewIdx = Idx + 1,
     case NewIdx > length(Children) of
         true ->
-            do_ordered_count(Children, 1, Count - 1);
+            do_ordered_count(Children, 1, Count - 1, State);
         _ ->
-            do_ordered_count(Children, NewIdx, Count - 1)
+            do_ordered_count(Children, NewIdx, Count - 1, State)
     end.
 
 %%%%------------------------------------------------------------------
 %%%% do_ordered_timed
 %%%%------------------------------------------------------------------
-do_ordered_timed(Children, Idx, TimeEnd) ->
-    process_set([lists:nth(Idx, Children)]),
+do_ordered_timed(Children, Idx, TimeEnd, State) ->
+    process_set([lists:nth(Idx, Children)], State),
     case (TimeEnd - now_micro()) > 0 of
         true ->
             NewIdx = Idx + 1,
             case NewIdx > length(Children) of
                 true ->
-                    do_ordered_timed(Children, 1, TimeEnd);
+                    do_ordered_timed(Children, 1, TimeEnd, State);
                 _ ->
-                    do_ordered_timed(Children, NewIdx, TimeEnd)
+                    do_ordered_timed(Children, NewIdx, TimeEnd, State)
             end;
         _ ->
             ok
@@ -240,25 +248,25 @@ do_ordered_timed(Children, Idx, TimeEnd) ->
 %%%%------------------------------------------------------------------
 %%%% do_random_count
 %%%%------------------------------------------------------------------
-do_random_count(_Children, 0) ->
+do_random_count(_Children, 0, _State) ->
     ok;
-do_random_count(Children, Count) ->
+do_random_count(Children, Count, State) ->
     Idx = random:uniform(length(Children)),
     Child = lists:nth(Idx, Children),
-    process_set([Child]),
-    do_random_count(Children, Count -1).
+    process_set([Child], State),
+    do_random_count(Children, Count -1, State).
 
 %%%%------------------------------------------------------------------
 %%%% do_random_timed
 %%%%------------------------------------------------------------------
-do_random_timed(Children, TimeEnd) ->
+do_random_timed(Children, TimeEnd, State) ->
     Idx = random:uniform(length(Children)),
     Child = lists:nth(Idx, Children),
-    process_set([Child]),
+    process_set([Child], State),
     Rez = TimeEnd - now_micro(),
     case Rez > 0 of
         true ->
-            do_random_timed(Children, TimeEnd);
+            do_random_timed(Children, TimeEnd, State);
         _ ->
             ok
     end.
@@ -266,80 +274,80 @@ do_random_timed(Children, TimeEnd) ->
 %%%%------------------------------------------------------------------
 %%%% do_wait and do_random_wait
 %%%%------------------------------------------------------------------
-do_wait(Children, Time) ->
+do_wait(Children, Time, State) ->
     timer:sleep(Time),
-    process_set(Children).
+    process_set(Children, State).
 
-do_random_wait(Children, undefined) ->
-    do_random_wait(Children, 100);
+do_random_wait(Children, undefined, State) ->
+    do_random_wait(Children, 100, State);
 
-do_random_wait(Children, Time) ->
+do_random_wait(Children, Time, State) ->
     Sleep_time = random:uniform(Time),
-    do_wait(Children, Sleep_time).
+    do_wait(Children, Sleep_time, State).
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"random">>
 %%%%------------------------------------------------------------------
-do_action(<<"random">>, undefined, Children) ->
-    do_random_count(Children, 1);
+do_action(<<"random">>, undefined, Children, State) ->
+    do_random_count(Children, 1, State);
 
-do_action(<<"random">>, Args, Children) ->
+do_action(<<"random">>, Args, Children, State) ->
     Count = proplists:get_value(count, Args),
     case Count of
         undefined ->
             Time = proplists:get_value(min_time, Args),
             TimeEnd = now_micro() + (Time * 1000),
-            do_random_timed(Children, TimeEnd);
+            do_random_timed(Children, TimeEnd, State);
         _ ->
-            do_random_count(Children, Count)
+            do_random_count(Children, Count, State)
     end;
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"random">>
 %%%%------------------------------------------------------------------
-do_action(<<"ordered">>, undefined, Children) ->
-    do_ordered_count(Children, 1, 1);
+do_action(<<"ordered">>, undefined, Children, State) ->
+    do_ordered_count(Children, 1, 1, State);
 
-do_action(<<"ordered">>, Args, Children) ->
+do_action(<<"ordered">>, Args, Children, State) ->
     Count = proplists:get_value(count, Args),
     case Count of
         undefined ->
             Time = proplists:get_value(min_time, Args),
             TimeEnd = now_micro() + (Time * 1000),
-            do_ordered_timed(Children, 1, TimeEnd);
+            do_ordered_timed(Children, 1, TimeEnd, State);
         _ ->
-            do_ordered_count(Children, 1, Count)
+            do_ordered_count(Children, 1, Count, State)
     end;
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"wait">>
 %%%%------------------------------------------------------------------
 
-do_action(<<"wait">>, undefined, Children) ->
-    do_wait(Children, 100);
+do_action(<<"wait">>, undefined, Children, State) ->
+    do_wait(Children, 100, State);
 
-do_action(<<"wait">>, Args, Children) ->
+do_action(<<"wait">>, Args, Children, State) ->
     Count = proplists:get_value(time, Args),
-    do_wait(Children, Count);
+    do_wait(Children, Count, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"random_wait">>
 %%%%------------------------------------------------------------------
 
-do_action(<<"random_wait">>, undefined, Children) ->
-    do_random_wait(Children, 100);
+do_action(<<"random_wait">>, undefined, Children, State) ->
+    do_random_wait(Children, 100, State);
 
-do_action(<<"random_wait">>, Args, Children) ->
+do_action(<<"random_wait">>, Args, Children, State) ->
     Count = proplists:get_value(time, Args),
-    do_random_wait(Children, Count);
+    do_random_wait(Children, Count, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined
 %%%%------------------------------------------------------------------
-do_action(ActionName, Args, undefined) ->
-    do_action(ActionName, Args, []);
+do_action(ActionName, Args, undefined, State) ->
+    do_action(ActionName, Args, [], State);
 
-do_action(ActionName, _Args, Children) ->
+do_action(ActionName, _Args, Children, State) ->
     % Pull out the from the ets table
     TableData = ets:lookup(actions, ActionName),
     case TableData of
@@ -347,8 +355,8 @@ do_action(ActionName, _Args, Children) ->
             not_found;
         _ ->
             [{_, Action}]   = TableData,
-            execute_action(Action),
-            process_set(Children),
+            execute_action(Action, State),
+            process_set(Children, State),
             ok
     end.
 
@@ -363,17 +371,25 @@ do_action(ActionName, _Args, Children) ->
 prepare_get_args(Head, []) ->
     Head;
 prepare_get_args(Head, Args) ->
-    create_get_string(Head, Args, "?"). 
+    create_get_string(Head, Args, <<"?">>). 
 
 create_get_string(Head, Args, Token) ->
     [{ArgName, ArgValue} | TArgs] = Args,
     case TArgs of
         [] ->
             % That is all folks, lets boggie out
-            string:join([Head, Token, ArgName, "=", ArgValue], "");
+            <<  Head/binary, 
+                Token/binary, 
+                ArgName/binary, 
+                <<"=">>/binary, 
+                ArgValue/binary>>;
         _ ->
-            H1 = string:join([Head, Token, ArgName, "=", ArgValue], ""),
-            create_get_string(H1, TArgs, "&")
+            H1 = << Head/binary, 
+                    Token/binary, 
+                    ArgName/binary, 
+                    <<"=">>/binary, 
+                    ArgValue/binary>>,
+            create_get_string(H1, TArgs, <<"&">>)
     end.
     
 
@@ -399,8 +415,11 @@ create_get_string(Head, Args, Token) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-execute_action(Action) ->
-    BaseURL = proplists:get_value(url, Action),
+execute_action(Action, State) ->
+    
+    HeadURL = State#state.url,
+    TailURL = proplists:get_value(url, Action), 
+    BaseURL = <<HeadURL/binary, TailURL/binary>>,
     Method  = proplists:get_value(type,Action),
     Header  = [],
     HTTPOps = [],
@@ -411,7 +430,7 @@ execute_action(Action) ->
         get ->
             URL             = prepare_get_args(BaseURL, Args),
             {_Time, _Res}   = timer:tc(httpc, request,
-                                  [Method, {URL, Header}, HTTPOps, Ops]),
+                                  [Method, {binary_to_list(URL), Header}, HTTPOps, Ops]),
 
             % What am I doing with the results of the test?
             ok;

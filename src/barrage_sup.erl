@@ -24,10 +24,16 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, 
-            [
-                {tag0, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]},
-                {tag1, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
-            ] } }.
+    [{_, Type}] = ets:lookup(barrage, type),
+    case Type of
+        general ->
+            {ok, { {one_for_one, 5, 10}, [
+                {0, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]}
+            ] } };
+        commander ->
+            {ok, { {one_for_one, 5, 10}, [
+                {0, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
+            ] } }
+    end. 
 
 

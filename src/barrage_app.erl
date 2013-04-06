@@ -104,47 +104,66 @@ process_actions(Actions) ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
+%%  Process the Config data
+%%
+%% @spec process_actions(Actions) -> ok
+%%      Plans = Array
+%% @end
+%%--------------------------------------------------------------------
+process_config([]) ->
+    ok;
+process_config(Configs) ->
+    [{Config} | OtherConfigs]   = Configs,
+    Type                        = proplists:get_value(type, Config),
+    Args                        = proplists:get_value(args, Config),
+    ets:insert(barrage, {type, Type}),
+    case Type of
+        general ->
+            URL = proplists:get_value(url, Args),
+            ets:insert(barrage, {url, URL});
+        commander ->
+            Gunners = proplist:get_value(gunners, Args),
+            General = proplist:get_value(general, Args),
+            ets:insert(barrage, {general, General}),
+            ets:insert(barrage, {gunners, Gunners})
+    end,
+    process_config(OtherConfigs).
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
 %%  Loads all the config files that currently exist for the system
 %%
 %% @spec stop(State) -> void()
 %% @end
 %%--------------------------------------------------------------------
 loadConfigTable()->
-    
+    {ok, Configs}   = file:consult("priv/barrage.config"), 
     {ok, Plans}     = file:consult("priv/behaviors.config"),
     {ok, Actions}   = file:consult("priv/actions.config"),
     
     % Now lets set parse the plans in order to build out an ets table
+    ets:new(barrage, [set, named_table]),
+    process_config(Configs),
+
     ets:new(plans, [set, named_table]), 
     process_plans(Plans),
 
     ets:new(actions, [set, named_table]),
-    process_actions(Actions),
+    process_actions(Actions).
 
-    try
-        %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
-        %io:format("file read, now parse ~n"),
-        %{BarrageConfig}     = jiffy:decode(BarrageStr),
-        %parseBarrageConfig(BarrageConfig),
+    %try
+    %    %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
+    %    %io:format("file read, now parse ~n"),
+    %    %{BarrageConfig}     = jiffy:decode(BarrageStr),
+    %    %parseBarrageConfig(BarrageConfig),
 
-        %{ok, ActionsStr}    = file:read_file("config/actions.json"),
-        %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
-        %ActionsData         = jiffy:decode(ActionsStr),
-        %BehaviorsData       = jiffy:decode(BehaviorsStr),
-        ok
-    catch
-        Exception:Reason -> {error, Exception, Reason}
-    end.
-
-%parseBarrageConfig(BarrageConfig) ->
-%    
-%    Server  = proplists:get_value(<<"server">>, BarrageConfig),
-%    Clients = proplists:get_value(<<"clients">>, BarrageConfig),
-%    
-%    %Store the values in the global ets tables
-%    ets:new(globals, [set, named_table]),
-%    ets:insert(globals, {server, Server}),
-%    ets:insert(globals, {clients, Clients}),
-%    io:format("Locked and loaded ~p:~p~n", [Server, Clients]),
-%    ok.
-
+    %    %{ok, ActionsStr}    = file:read_file("config/actions.json"),
+    %    %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
+    %    %ActionsData         = jiffy:decode(ActionsStr),
+    %    %BehaviorsData       = jiffy:decode(BehaviorsStr),
+    %    ok
+    %catch
+    %    Exception:Reason -> {error, Exception, Reason}
+    %end.
