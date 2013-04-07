@@ -14,7 +14,7 @@
 
 -export([test_run/0,
          issue_order/1,
-         enlist/1,
+         enlist/2,
          retire/1]).
 
 %% gen_server callbacks
@@ -82,8 +82,8 @@ start_link() ->
 init([]) ->
     {ok, #state{}}.
 
-enlist(CommanderPid) ->
-    gen_server:call(?MODULE, {enlist, CommanderPid}).
+enlist(HostPid, CommanderPid) ->
+    gen_server:call(HostPid, {enlist, CommanderPid}).
 
 retire(CommanderPid) ->
     gen_server:call(?MODULE, {retire, CommanderPid}).
@@ -109,7 +109,6 @@ handle_call({issue_order, OrderName}, _From, State) ->
     [{_, Order}] = ets:lookup(plans, OrderName), 
     [{_, TargetIP}] = ets:lookup(barrage, url),
     Fun = fun(Pid) ->
-            io:format("Issuing order to ~p~n", [Pid]),
             barrage_commander:execute(Pid, Order, TargetIP) end,
     lists:foreach(Fun, State#state.commanders),
     {reply, ok, State};

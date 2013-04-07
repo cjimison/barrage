@@ -72,7 +72,9 @@ execute(Pid, Orders, TargetIP) ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    GunnerCount = 1,
+    [{_, General}] = ets:lookup(barrage, general),
+    barrage_general:enlist(General, self()), 
+    [{_, GunnerCount}] = ets:lookup(barrage, gunners),
     State = #state{general=null, gunners = create_gunner([], GunnerCount)},
     {ok, State}.
 
