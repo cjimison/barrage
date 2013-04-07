@@ -14,7 +14,7 @@
 
 -export([test_run/0,
          issue_order/1,
-         enlist/2,
+         enlist/1,
          retire/1]).
 
 %% gen_server callbacks
@@ -82,8 +82,8 @@ start_link() ->
 init([]) ->
     {ok, #state{}}.
 
-enlist(HostPid, CommanderPid) ->
-    gen_server:call(HostPid, {enlist, CommanderPid}).
+enlist(CommanderPid) ->
+    gen_server:call(?MODULE, {enlist, CommanderPid}).
 
 retire(CommanderPid) ->
     gen_server:call(?MODULE, {retire, CommanderPid}).

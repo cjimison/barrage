@@ -122,8 +122,8 @@ process_config(Configs) ->
             URL = proplists:get_value(url, Args),
             ets:insert(barrage, {url, URL});
         commander ->
-            Gunners = proplist:get_value(gunners, Args),
-            General = proplist:get_value(general, Args),
+            Gunners = proplists:get_value(gunners, Args),
+            General = proplists:get_value(general, Args),
             ets:insert(barrage, {general, General}),
             ets:insert(barrage, {gunners, Gunners})
     end,

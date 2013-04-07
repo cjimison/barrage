@@ -37,6 +37,6 @@ http.createServer(function (req, res)
         obj.card = { ID : 3, name : 'cardD'};
         res.end(JSON.stringify(obj));
     }
-}).listen(1337, '127.0.0.1');
+}).listen(1337, '0.0.0.0');
 
 console.log('Server running at http://127.0.0.1:1337/');
