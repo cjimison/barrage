@@ -129,7 +129,6 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    io:format("Running~n"),
     process_set([Order], State),
     {noreply, State};
 

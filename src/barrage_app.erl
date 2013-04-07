@@ -119,9 +119,11 @@ process_config(Configs) ->
     ets:insert(barrage, {type, Type}),
     case Type of
         general ->
+            ets:insert(barrage, {enable_general, true}),
             URL = proplists:get_value(url, Args),
             ets:insert(barrage, {url, URL});
         commander ->
+            ets:insert(barrage, {enable_commander, true}),
             Gunners = proplists:get_value(gunners, Args),
             General = proplists:get_value(general, Args),
             ets:insert(barrage, {general, General}),

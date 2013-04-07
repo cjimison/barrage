@@ -22,18 +22,29 @@ start_link() ->
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
+get_props(true, true) ->
+    [
+        {tag0, {barrage_general, start_link, []}, 
+            permanent, 10000, worker, [barrage_general]},
+        {tag1, {barrage_commander, start_link, []}, 
+            permanent, 10000, worker, [barrage_commander]}
+    ]; 
+get_props(true, false) ->
+    [
+        {tag0, {barrage_general, start_link, []}, 
+            permanent, 10000, worker, [barrage_general]}
+    ]; 
+get_props(false, true) ->
+    [
+        {tag1, {barrage_commander, start_link, []}, 
+            permanent, 10000, worker, [barrage_commander]}
+    ]; 
+get_props(_Gen, _Com) ->
+    [].
 
 init([]) ->
-    [{_, Type}] = ets:lookup(barrage, type),
-    case Type of
-        general ->
-            {ok, { {one_for_one, 5, 10}, [
-                {0, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]}
-            ] } };
-        commander ->
-            {ok, { {one_for_one, 5, 10}, [
-                {0, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
-            ] } }
-    end. 
-
+    [{_, General}]      = ets:lookup(barrage, enable_general),
+    [{_, Commander}]    = ets:lookup(barrage, enable_general),
+    Props               = get_props(General, Commander),
+    {ok, { {one_for_one, 5, 10}, Props }}.
 
