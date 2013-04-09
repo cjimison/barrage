@@ -14,6 +14,7 @@
 
 -export([test_run/0,
          issue_order/1,
+         report_results/2,
          enlist/1,
          retire/1]).
 
@@ -37,20 +38,6 @@
 %%%===================================================================
 
 test_run()->
-    % Create a list of commanders
-    %{ok, Commander1} = barrage_commander:start(),
-    %{ok, Commander2} = barrage_commander:start(),
-    %{ok, Commander3} = barrage_commander:start(),
-    %{ok, Commander4} = barrage_commander:start(),
-    %{ok, Commander5} = barrage_commander:start(),
-   
-    %% Enlist them under this general
-    %barrage_general:enlist(Commander1),
-    %barrage_general:enlist(Commander2),
-    %barrage_general:enlist(Commander3),
-    %barrage_general:enlist(Commander4),
-    %barrage_general:enlist(Commander5),
-
     % Now issue an order out to the commanders for execution
     barrage_general:issue_order(<<"Random Commands">>).
 
@@ -91,6 +78,9 @@ retire(CommanderPid) ->
 issue_order(Order) ->
     gen_server:call(?MODULE, {issue_order, Order}).
 
+report_results(CommanderPid, Results)->
+    gen_server:call(?MODULE, {report_results, CommanderPid, Results}).
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -122,6 +112,32 @@ handle_call({retire, PID}, _From, State) ->
     Commanders = State#state.commanders -- [PID],
     NewState = State#state{commanders=Commanders}, 
     {reply, ok, NewState};
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Handling call messages for report_results
+%%
+%% @spec handle_call({report_results, CPID, Results}, From, State) ->
+%%                                   {reply, Reply, State} |
+%%                                   {reply, Reply, State, Timeout} |
+%%                                   {noreply, State} |
+%%                                   {noreply, State, Timeout} |
+%%                                   {stop, Reason, Reply, State} |
+%%                                   {stop, Reason, State}
+%%  CPID is the commander Pid
+%%  Results = Array of reports
+%%            Report = Dictionary of Key values.  Key is the action name.  Value is array of times 
+%% @end
+%%--------------------------------------------------------------------
+handle_call({report_results, _CPID, Results}, _From, State) ->
+    Result = process_results(Results, dict:new()),
+    Keys = dict:fetch_keys(Result),
+    display_result(Keys, Result),
+    %Keys = dict:fetch_keys(Results),
+    %process_results(Results, Keys),
+    {reply, ok, State};
+
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -181,7 +197,30 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+display_result([], _Result)->
+    ok;
+display_result(Keys, Result)->
+    [Key | OtherKeys]   = Keys,
+    {ok, Data}          = dict:find(Key, Result),
+    SortData            = lists:sort(Data),
+    Size                = length(Data),
+    Average             = lists:sum(Data) / Size,
+    High                = lists:last(SortData),
+    [Low | _]           = SortData,
+    io:format("~n~nAction: ~p --------~n", [Key]),
+    io:format("Number of requests =: ~p~n", [Size]),
+    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
+    io:format("High Time(ms)      =: ~p~n", [High/1000]),
+    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
 
+    display_result(OtherKeys, Result).
 
+process_results([], MergedDict) ->
+    MergedDict;
 
+process_results(Results, MergedDict) ->
+    [Result | OtherResults] = Results,
+    Fun = fun(_Key, Value1, Value2) -> Value1 ++ Value2 end,
+    NewDict = dict:merge(Fun, MergedDict, Result),
+    process_results(OtherResults, NewDict).
 

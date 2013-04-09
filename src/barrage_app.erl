@@ -141,9 +141,10 @@ process_config(Configs) ->
 %% @end
 %%--------------------------------------------------------------------
 loadConfigTable()->
-    {ok, Configs}   = file:consult("priv/barrage.config"), 
-    {ok, Plans}     = file:consult("priv/behaviors.config"),
-    {ok, Actions}   = file:consult("priv/actions.config"),
+    BasePath        = code:priv_dir(barrage),
+    {ok, Configs}   = file:consult(BasePath ++ "/barrage.config"), 
+    {ok, Plans}     = file:consult(BasePath ++ "/behaviors.config"),
+    {ok, Actions}   = file:consult(BasePath ++ "/actions.config"),
     
     % Now lets set parse the plans in order to build out an ets table
     ets:new(barrage, [set, named_table]),

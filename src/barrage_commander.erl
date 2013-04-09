@@ -12,7 +12,8 @@
 %% API
 -export([start/0, 
          start_link/0,
-         execute/3]).
+         execute/3,
+         order_complete/2]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -27,7 +28,10 @@
 -record(state,
     {
         general=null,
-        gunners=[]
+        gunners=[],
+        executing=false,
+        wait_count=0,
+        reports
     }).
 
 %%%===================================================================
@@ -60,6 +64,9 @@ create_gunner(GunnerList, Count) ->
 execute(Pid, Orders, TargetIP) ->
     gen_server:cast(Pid, {execute, {Orders, TargetIP}}).
 
+order_complete(GunnerPid, Results) ->
+    gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -75,7 +82,8 @@ init([]) ->
     [{_, General}] = ets:lookup(barrage, general),
     rpc:call(General, barrage_general, enlist, [self()]),
     [{_, GunnerCount}] = ets:lookup(barrage, gunners),
-    State = #state{general=null, gunners = create_gunner([], GunnerCount)},
+    State = #state{ general = General, 
+                    gunners = create_gunner([], GunnerCount)},
     {ok, State}.
 
 
@@ -107,7 +115,8 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({execute, {Order, TargetURL}}, State) ->
+handle_cast({execute, {Order, TargetURL}}, State) when 
+        State#state.executing == false ->
     %NOTE: I am currently doing this in two phases
     %      so the timing syncs up a little better.
     %      I may move this to a single phase step.
@@ -124,9 +133,33 @@ handle_cast({execute, {Order, TargetURL}}, State) ->
     %Have all the gunners sight in the target
     lists:foreach(FunTarget, State#state.gunners),
 
+    NewState = State#state{ executing   = true, 
+                            wait_count  = length(State#state.gunners),
+                            reports     = []
+                          }, 
     %The open fire!!!
     lists:foreach(FunFire, State#state.gunners),
+    {noreply, NewState};
+
+handle_cast({execute, {_Order, _TargetURL}}, State) when 
+        State#state.executing == true ->
     {noreply, State};
+
+handle_cast({orders_complete, _GunnerPid, Results}, State) when 
+        State#state.wait_count == 1 ->
+    rpc:call(   State#state.general, 
+                barrage_general, 
+                report_results, 
+                [self(), [Results | State#state.reports]]),
+    NewState    = State#state{ executing = false },
+    {noreply, NewState};
+
+handle_cast({orders_complete, _GunnerPid, Results}, State) ->
+    NewState = State#state{
+                            wait_count = State#state.wait_count -1,
+                            reports = [Results | State#state.reports]
+                          }, 
+    {noreply, NewState};
 
 handle_cast(_Msg, State) ->
         {noreply, State}.

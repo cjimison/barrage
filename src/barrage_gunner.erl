@@ -27,7 +27,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {url}).
+-record(state, {url, results}).
 
 %%%===================================================================
 %%% API
@@ -129,8 +129,10 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    process_set([Order], State),
-    {noreply, State};
+    State2 = State#state{results=dict:new()},
+    State3 = process_set([Order], State2),
+    barrage_commander:order_complete(self(), State3#state.results),
+    {noreply, State3};
 
 handle_cast(_Msg, State) ->
     io:format("Why did I hit?~n~p~n", [_Msg]),
@@ -186,19 +188,17 @@ code_change(_OldVsn, State, _Extra) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-process_set(undefined, _State) ->
-    ok;
-process_set([], _State) ->
-    ok;
+process_set(undefined, State) ->
+    State;
+process_set([], State) ->
+    State;
 process_set(Set, State) ->
     [Order| Orders] = Set,
     Action      = proplists:get_value(action, Order),
     Children    = proplists:get_value(children, Order),
     Args        = proplists:get_value(args, Order),
-    do_action(Action, Args, Children, State),
-    process_set(Orders, State),
-    ok.
-
+    NewState    = do_action(Action, Args, Children, State),
+    process_set(Orders, NewState).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -215,46 +215,46 @@ now_micro() ->
 %%%%------------------------------------------------------------------
 %%%% do_ordered_count
 %%%%------------------------------------------------------------------
-do_ordered_count(_Children, _Idx, 0, _State) ->
-    ok;
+do_ordered_count(_Children, _Idx, 0, State) ->
+    State;
 do_ordered_count(Children, Idx, Count, State) ->
-    process_set([lists:nth(Idx, Children)], State),
-    NewIdx = Idx + 1,
+    NewState    = process_set([lists:nth(Idx, Children)], State),
+    NewIdx      = Idx + 1,
     case NewIdx > length(Children) of
         true ->
-            do_ordered_count(Children, 1, Count - 1, State);
+            do_ordered_count(Children, 1, Count - 1, NewState);
         _ ->
-            do_ordered_count(Children, NewIdx, Count - 1, State)
+            do_ordered_count(Children, NewIdx, Count - 1, NewState)
     end.
 
 %%%%------------------------------------------------------------------
 %%%% do_ordered_timed
 %%%%------------------------------------------------------------------
 do_ordered_timed(Children, Idx, TimeEnd, State) ->
-    process_set([lists:nth(Idx, Children)], State),
+    NewState = process_set([lists:nth(Idx, Children)], State),
     case (TimeEnd - now_micro()) > 0 of
         true ->
             NewIdx = Idx + 1,
             case NewIdx > length(Children) of
                 true ->
-                    do_ordered_timed(Children, 1, TimeEnd, State);
+                    do_ordered_timed(Children, 1, TimeEnd, NewState);
                 _ ->
-                    do_ordered_timed(Children, NewIdx, TimeEnd, State)
+                    do_ordered_timed(Children, NewIdx, TimeEnd, NewState)
             end;
         _ ->
-            ok
+            NewState
     end.
 
 %%%%------------------------------------------------------------------
 %%%% do_random_count
 %%%%------------------------------------------------------------------
-do_random_count(_Children, 0, _State) ->
-    ok;
+do_random_count(_Children, 0, State) ->
+    State;
 do_random_count(Children, Count, State) ->
     Idx = random:uniform(length(Children)),
     Child = lists:nth(Idx, Children),
-    process_set([Child], State),
-    do_random_count(Children, Count -1, State).
+    NewState = process_set([Child], State),
+    do_random_count(Children, Count -1, NewState).
 
 %%%%------------------------------------------------------------------
 %%%% do_random_timed
@@ -262,13 +262,13 @@ do_random_count(Children, Count, State) ->
 do_random_timed(Children, TimeEnd, State) ->
     Idx = random:uniform(length(Children)),
     Child = lists:nth(Idx, Children),
-    process_set([Child], State),
+    NewState = process_set([Child], State),
     Rez = TimeEnd - now_micro(),
     case Rez > 0 of
         true ->
-            do_random_timed(Children, TimeEnd, State);
+            do_random_timed(Children, TimeEnd, NewState);
         _ ->
-            ok
+            NewState
     end.
 
 %%%%------------------------------------------------------------------
@@ -352,12 +352,11 @@ do_action(ActionName, _Args, Children, State) ->
     TableData = ets:lookup(actions, ActionName),
     case TableData of
         [] ->
-            not_found;
+            State;
         _ ->
             [{_, Action}]   = TableData,
-            execute_action(Action, State),
-            process_set(Children, State),
-            ok
+            NewState = execute_action(Action, State),
+            process_set(Children, NewState)
     end.
 
 %%--------------------------------------------------------------------
@@ -416,27 +415,37 @@ create_get_string(Head, Args, Token) ->
 %% @end
 %%--------------------------------------------------------------------
 execute_action(Action, State) ->
-    
-    HeadURL = State#state.url,
-    TailURL = proplists:get_value(url, Action), 
-    BaseURL = <<HeadURL/binary, TailURL/binary>>,
-    Method  = proplists:get_value(type,Action),
-    Header  = [],
-    HTTPOps = [],
-    Ops     = [],
-    Args    = proplists:get_value(args, Action),
+
+    ActionName  = proplists:get_value(name, Action),
+    HeadURL     = State#state.url,
+    TailURL     = proplists:get_value(url, Action), 
+    BaseURL     = <<HeadURL/binary, TailURL/binary>>,
+    Method      = proplists:get_value(type,Action),
+    Header      = [],
+    HTTPOps     = [],
+    Ops         = [],
+    Args        = proplists:get_value(args, Action),
     
     case proplists:get_value(type, Action) of
         get ->
             URL             = prepare_get_args(BaseURL, Args),
-            {_Time, _Res}   = timer:tc(httpc, request,
-                                  [Method, {binary_to_list(URL), Header}, HTTPOps, Ops]),
-
-            % What am I doing with the results of the test?
-            ok;
+            {Time, _Result} = timer:tc(httpc, request, [
+                                    Method, 
+                                    {binary_to_list(URL), Header}, 
+                                    HTTPOps, Ops]),
+            case dict:is_key(ActionName, State#state.results) of
+                true ->
+                    State#state{results=dict:append(ActionName, 
+                                                    Time,
+                                                    State#state.results)};
+                false ->
+                    State#state{results=dict:store( ActionName, 
+                                                    [Time],
+                                                    State#state.results)}
+            end;
         post ->
-            not_implemented;
+            State;
         _ ->
-            not_supported
+            State 
     end.
 
