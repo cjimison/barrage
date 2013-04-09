@@ -372,6 +372,9 @@ prepare_get_args(Head, []) ->
 prepare_get_args(Head, Args) ->
     create_get_string(Head, Args, <<"?">>). 
 
+prepare_post_args(Args) ->
+    create_get_string(<<"">>, Args, <<"">>). 
+
 create_get_string(Head, Args, Token) ->
     [{ArgName, ArgValue} | TArgs] = Args,
     case TArgs of
@@ -414,6 +417,18 @@ create_get_string(Head, Args, Token) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
+store_action_results(ActionName, Time, State) ->
+    case dict:is_key(ActionName, State#state.results) of
+        true ->
+            State#state{results=dict:append(ActionName, 
+                                            Time, 
+                                            State#state.results)};
+        _ -> 
+            State#state{results=dict:store( ActionName, 
+                                            [Time], 
+                                            State#state.results)}
+    end.
+
 execute_action(Action, State) ->
 
     ActionName  = proplists:get_value(name, Action),
@@ -427,25 +442,48 @@ execute_action(Action, State) ->
     Args        = proplists:get_value(args, Action),
     
     case proplists:get_value(type, Action) of
+
         get ->
             URL             = prepare_get_args(BaseURL, Args),
             {Time, _Result} = timer:tc(httpc, request, [
                                     Method, 
                                     {binary_to_list(URL), Header}, 
                                     HTTPOps, Ops]),
-            case dict:is_key(ActionName, State#state.results) of
-                true ->
-                    State#state{results=dict:append(ActionName, 
-                                                    Time,
-                                                    State#state.results)};
-                false ->
-                    State#state{results=dict:store( ActionName, 
-                                                    [Time],
-                                                    State#state.results)}
-            end;
+            store_action_results(ActionName, Time, State);
+
         post ->
+            Type = "application/x-www-form-urlencoded",
+            Body = prepare_post_args(Args),
+            {Time, _Result} = timer:tc(httpc, request, [
+                                    Method, 
+                                    {
+                                        binary_to_list(BaseURL), 
+                                        Header, 
+                                        Type, 
+                                        binary_to_list(Body)
+                                    }, 
+                                    HTTPOps, Ops]),
+            store_action_results(ActionName, Time, State);
+
+        post_json ->
+            Type = "application/json",
+            Body = binary_to_list(jiffy:encode({Args})),
+            {Time, _Result} = timer:tc(httpc, request, [
+                                    Method, 
+                                    {
+                                        binary_to_list(BaseURL), 
+                                        Header, 
+                                        Type, 
+                                        Body
+                                    }, 
+                                    HTTPOps, Ops]),
+            store_action_results(ActionName, Time, State);
+
+        post_multipart ->
             State;
+
         _ ->
-            State 
+            % Undefined type of post
+            State
     end.
 
