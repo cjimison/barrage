@@ -75,7 +75,10 @@ http.createServer(function (req, res)
         req.on('end', function () {
             var rez = querystring.parse(chunk);
             console.log("Username = " + rez.username + ", Password = " + rez.password);
-            res.end(util.inspect(querystring.parse(chunk)));
+            var sesObj = { session: 8379283747838 };
+
+            //res.end(util.inspect(querystring.parse(chunk)));
+            res.end(JSON.stringify(sesObj));
         });
     }
 }).listen(1337, '0.0.0.0');
