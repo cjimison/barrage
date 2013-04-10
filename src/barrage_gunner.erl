@@ -129,6 +129,9 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
+    httpc:set_options([{cookies, enabled}]),
+    httpc:reset_cookies(),    
+    httpc:set_options([{cookies, enabled}]),
     State2 = State#state{results=dict:new()},
     State3 = process_set([Order], State2),
     barrage_commander:order_complete(self(), State3#state.results),
@@ -367,11 +370,15 @@ do_action(ActionName, _Args, Children, State) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
+prepare_get_args(Head, undefined) ->
+    Head;
 prepare_get_args(Head, []) ->
     Head;
 prepare_get_args(Head, Args) ->
     create_get_string(Head, Args, <<"?">>). 
 
+prepare_post_args(undefined) ->
+    <<"">>;
 prepare_post_args(Args) ->
     create_get_string(<<"">>, Args, <<"">>). 
 
@@ -430,7 +437,6 @@ store_action_results(ActionName, Time, State) ->
     end.
 
 execute_action(Action, State) ->
-
     ActionName  = proplists:get_value(name, Action),
     HeadURL     = State#state.url,
     TailURL     = proplists:get_value(url, Action), 
@@ -445,16 +451,18 @@ execute_action(Action, State) ->
 
         get ->
             URL             = prepare_get_args(BaseURL, Args),
-            {Time, _Result} = timer:tc(httpc, request, [
+            {Time, Result}  = timer:tc(httpc, request, [
                                     Method, 
                                     {binary_to_list(URL), Header}, 
                                     HTTPOps, Ops]),
+            {_, {_,Info,_}} = Result,
+            httpc:store_cookies(Info, binary_to_list(BaseURL)),
             store_action_results(ActionName, Time, State);
 
         post ->
-            Type = "application/x-www-form-urlencoded",
-            Body = prepare_post_args(Args),
-            {Time, _Result} = timer:tc(httpc, request, [
+            Type            = "application/x-www-form-urlencoded",
+            Body            = prepare_post_args(Args),
+            {Time, Result}  = timer:tc(httpc, request, [
                                     Method, 
                                     {
                                         binary_to_list(BaseURL), 
@@ -463,12 +471,14 @@ execute_action(Action, State) ->
                                         binary_to_list(Body)
                                     }, 
                                     HTTPOps, Ops]),
+            {_, {_,Info,_}} = Result,
+            httpc:store_cookies(Info, binary_to_list(BaseURL)),
             store_action_results(ActionName, Time, State);
 
         post_json ->
-            Type = "application/json",
-            Body = binary_to_list(jiffy:encode({Args})),
-            {Time, _Result} = timer:tc(httpc, request, [
+            Type            = "application/json",
+            Body            = binary_to_list(jiffy:encode({Args})),
+            {Time, Result}  = timer:tc(httpc, request, [
                                     Method, 
                                     {
                                         binary_to_list(BaseURL), 
@@ -477,6 +487,8 @@ execute_action(Action, State) ->
                                         Body
                                     }, 
                                     HTTPOps, Ops]),
+            {_, {_,Info,_}} = Result,
+            httpc:store_cookies(Info, binary_to_list(BaseURL)),
             store_action_results(ActionName, Time, State);
 
         post_multipart ->
