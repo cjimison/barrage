@@ -377,11 +377,27 @@ prepare_get_args(Head, [], _Store) ->
 prepare_get_args(Head, Args, Store) ->
     create_get_string(Head, Args, <<"?">>, Store). 
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Prepare the "post" based arguments for processing
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
 prepare_post_args(undefined, _Store) ->
     <<"">>;
 prepare_post_args(Args, Store) ->
     create_get_string(<<"">>, Args, <<"">>, Store). 
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Builds the form encoded arguments string
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
 build_string(TArgs, Head, Token, ArgName, ArgValue, Store) ->
     case TArgs of
         [] ->
@@ -422,6 +438,78 @@ create_get_string(Head, Args, Token, Store) ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
+%%
+%%  Write the results to the process calls state ref
+%% 
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+store_action_results(ActionName, Time, State) ->
+    case dict:is_key(ActionName, State#state.results) of
+        true ->
+            State#state{results=dict:append(ActionName, 
+                                            Time, 
+                                            State#state.results)};
+        _ -> 
+            State#state{results=dict:store( ActionName, 
+                                            [Time], 
+                                            State#state.results)}
+    end.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% Builds the form encoded arguments string
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+process_keydata(_, _, [], Store) ->
+    Store;
+process_keydata(Results, Data, Keys, Store) ->
+    [Key | OtherKeys] = Keys,
+    KeyValue = proplists:get_value(Key, Data),
+    NewKeyName = proplists:get_value(Key, Results),
+    NewStore = dict:store(NewKeyName, KeyValue, Store),
+    process_keydata(Results, Data, OtherKeys, NewStore).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% Process the output from the game server
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+proces_action_results(_, undefined, _, State) ->
+    State;
+
+proces_action_results(_, _, undefined, State) ->
+    State;
+
+proces_action_results(Result, json, Results, State) ->
+    {_, {_,Info, JsonData}} = Result,
+    httpc:store_cookies(Info, binary_to_list(State#state.url)),
+
+    %% TODO  This is still a large point of failure
+    %% If the server returns invalid json then this whole client
+    %% is screwed up.  However for this demo pass I am cool
+    %% with things being a little less robust but I need to fix
+    %% it before I move into first production phase
+    {Data} = jiffy:decode(JsonData),
+    Keys    = proplists:get_keys(Results),
+    Store   = State#state.keystore,
+    NKS     = process_keydata(Results, Data, Keys, Store),
+    State#state{keystore=NKS};
+
+proces_action_results(_Result, _Type, _Results, State) ->
+    State.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
 %% 
 %% Do the actual http request sendoff
 %%  {[
@@ -441,35 +529,6 @@ create_get_string(Head, Args, Token, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-store_action_results(ActionName, Time, State) ->
-    case dict:is_key(ActionName, State#state.results) of
-        true ->
-            State#state{results=dict:append(ActionName, 
-                                            Time, 
-                                            State#state.results)};
-        _ -> 
-            State#state{results=dict:store( ActionName, 
-                                            [Time], 
-                                            State#state.results)}
-    end.
-
-process_keydata(_, _, [], Store) ->
-    Store;
-process_keydata(Results, Data, Keys, Store) ->
-    [Key | OtherKeys] = Keys,
-    KeyValue = proplists:get_value(Key, Data),
-    NewKeyName = proplists:get_value(Key, Results),
-    NewStore = dict:store(NewKeyName, KeyValue, Store),
-    process_keydata(Results, Data, OtherKeys, NewStore).
-
-process_results( undefined, _Data, State ) ->
-    State;
-process_results( Results, Data, State ) ->
-    Keys    = proplists:get_keys(Results),
-    Store   = State#state.keystore,
-    NKS     = process_keydata(Results, Data, Keys, Store),
-    State#state{keystore=NKS}.
-
 execute_action(Action, State) ->
     ActionName  = proplists:get_value(name, Action),
     HeadURL     = State#state.url,
@@ -479,8 +538,11 @@ execute_action(Action, State) ->
     Header      = [],
     HTTPOps     = [],
     Ops         = [],
+
+    %%% Optional Defined
     Args        = proplists:get_value(args, Action),
     Results     = proplists:get_value(results, Action),
+    ResultsType = proplists:get_value(results_type, Action),
     
     case proplists:get_value(type, Action) of
 
@@ -492,10 +554,7 @@ execute_action(Action, State) ->
                                     Method, 
                                     {binary_to_list(URL), Header}, 
                                     HTTPOps, Ops]),
-            {_, {_,Info, JsonData}} = Result,
-            {Data} = jiffy:decode(JsonData),
-            NewState = process_results( Results, Data, State ),
-            httpc:store_cookies(Info, binary_to_list(BaseURL)),
+            NewState = proces_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post ->
@@ -511,11 +570,7 @@ execute_action(Action, State) ->
                                         binary_to_list(Body)
                                     }, 
                                     HTTPOps, Ops]),
-            {_, {_,Info, JsonData}} = Result,
-            io:format("JSonData = ~p~n",[JsonData]),
-            {Data} = jiffy:decode(JsonData),
-            NewState = process_results( Results, Data, State ),
-            httpc:store_cookies(Info, binary_to_list(BaseURL)),
+            NewState = proces_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post_json ->
@@ -530,11 +585,7 @@ execute_action(Action, State) ->
                                         Body
                                     }, 
                                     HTTPOps, Ops]),
-            {_, {_,Info, JsonData}} = Result,
-            io:format("JSonData = ~p~n",[JsonData]),
-            {Data} = jiffy:decode(JsonData),
-            NewState = process_results( Results, Data, State ),
-            httpc:store_cookies(Info, binary_to_list(BaseURL)),
+            NewState = proces_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post_multipart ->
