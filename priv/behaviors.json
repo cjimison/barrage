@@ -1,0 +1,45 @@
+[
+    {
+        "name"  :   "Simple Test",
+        "tree"  :   { "action" : "login" }
+    },
+    {
+        "name"  :   "Cookie Test",
+        "tree"  :   { 
+                        "action"    : "ordered",
+                        "args"      : { "count" : 2 },
+                        "children"  : [ 
+                                        {"action" : "cookie"},
+                                        {"action" : "cookie2"}]
+                    }
+    },
+    {
+        "name"  :   "Random Commands",
+        "tree"  :   { 
+                        "action"    : "ordered",
+                        "args"      : { "count" : 2 },
+                        "children"  : [
+                                        {"action"   : "login"},
+                                        {
+                                            "action"    : "random",
+                                            "args"      : { "count" : 2 }, 
+                                            "children"  : [
+                                                {"action"   : "wait", "args" : { "time" : 100 } },
+                                                {"action"   : "random_wait", "args" : { "time" : 100 } },
+                                                {
+                                                    "action"    : "random", 
+                                                    "args"      : { "min_time" : 500 },
+                                                    "children"  : [
+                                                        {"action"   : "add_card"},
+                                                        {"action"   : "get_cards"}
+                                                    ]
+                                                },
+                                                {"action"   : "get_cards"},
+                                                {"action"   : "login"}
+                                            ]
+                                        }
+                        ]
+                    }
+
+    }
+]

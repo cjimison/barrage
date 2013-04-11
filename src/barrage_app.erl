@@ -35,6 +35,7 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
+-export([process_json_action/1]).
 
 %%%===================================================================
 %%% Application callbacks
@@ -90,43 +91,6 @@ stop(_State) ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%%  Process all the behaviors and load them into an ets table.
-%%  int he future I would like to make this modifiable
-%%  but then I will need to make it work in a cluster....
-%%
-%% @spec process_plans(Plans) -> ok
-%%      Plans = Array
-%% @end
-%%--------------------------------------------------------------------
-process_plans([]) ->
-    ok;
-process_plans(Plans) ->
-    [{Plan} | OtherPlans]   = Plans,
-    Name                    = proplists:get_value(name, Plan),
-    Tree                    = proplists:get_value(tree, Plan),
-    ets:insert(plans, {Name, Tree}),
-    process_plans(OtherPlans).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%%  Process the Actions defined by the user
-%%
-%% @spec process_actions(Actions) -> ok
-%%      Plans = Array
-%% @end
-%%--------------------------------------------------------------------
-process_actions([]) ->
-    ok;
-process_actions(Actions) ->
-    [{Action} | OtherActions]   = Actions,
-    Name                        = proplists:get_value(name, Action),
-    ets:insert(actions, {Name, Action}),
-    process_actions(OtherActions).
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
 %%  Process the Config data
 %%
 %% @spec process_actions(Actions) -> ok
@@ -154,6 +118,203 @@ process_config(Configs) ->
     end,
     process_config(OtherConfigs).
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%  Process all the behaviors and load them into an ets table.
+%%  int he future I would like to make this modifiable
+%%  but then I will need to make it work in a cluster....
+%%
+%% @spec process_plans(Plans) -> ok
+%%      Plans = Array
+%% @end
+%%--------------------------------------------------------------------
+process_plans([]) ->
+    ok;
+process_plans(Plans) ->
+    [{Plan} | OtherPlans]   = Plans,
+    Name                    = proplists:get_value(name, Plan),
+    Tree                    = proplists:get_value(tree, Plan),
+    ets:insert(plans, {Name, Tree}),
+    process_plans(OtherPlans).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%  Process the Actions defined by the user
+%%
+%% @spec process_actions(Actions) -> ok
+%%      Plans = Array
+%% @end
+%%--------------------------------------------------------------------
+process_actions_config([]) ->
+    ok;
+process_actions_config(Actions) ->
+    [{Action} | OtherActions]   = Actions,
+    Name                        = proplists:get_value(name, Action),
+    ets:insert(actions, {Name, Action}),
+    process_actions_config(OtherActions).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+process_actions_json([]) ->
+    ok;
+process_actions_json(Actions) ->
+    [{JSONAction}|OtherActions] = Actions,
+    Name                        = proplists:get_value(<<"name">>, JSONAction),
+    Action = process_json_action(JSONAction),
+    ets:insert(actions, {Name, Action}),
+    process_actions_config(OtherActions).
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+build_action_list(Name, URL, Type) when Name    /= undefined,
+                                        URL     /= undefined,
+                                        Type    /= undefined ->
+    [{name, Name}, {url, URL}, {type, binary_to_atom(Type, utf8)}];
+build_action_list(_, _, _) ->
+    error.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+build_args_list(<<"http">>, Args) when Args /= undefined ->
+    {PArgs} = Args,
+    [{args_type, http}, {args,PArgs}];
+build_args_list(<<"json">>, Args) when Args /= undefined ->
+    {PArgs} = Args,
+    [{args_type, json}, {args,PArgs}];
+build_args_list(_, _) ->
+    error.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+build_results_list(<<"json">>, Results) when Results /= undefined ->
+    {PRez} = Results,
+    [{results_type, json}, {args,PRez}];
+build_results_list(<<"http">>, Results) when Results /= undefined ->
+    {PRez} = Results,
+    [{results_type, http}, {args,PRez}];
+build_results_list(_, _) ->
+    error.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+build_action(error, _ArgsList, _ResultsList) ->
+    error;
+build_action(Action, error, error) ->
+    Action;
+build_action(Action, ArgsList, error) ->
+    Action ++ ArgsList;
+build_action(Action, error, ResultsList) ->
+    Action ++ ResultsList;
+build_action(Action, ArgsList, ResultsList) ->
+    Action ++ ArgsList ++ ResultsList.
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+process_json_action(JSONAction) ->
+    Name        = proplists:get_value(<<"name">>, JSONAction),
+    URL         = proplists:get_value(<<"url">>, JSONAction),
+    Type        = proplists:get_value(<<"type">>, JSONAction),
+    ActionList  = build_action_list(Name, URL, Type),
+    
+    case ActionList of
+        error ->
+            error;
+        _ ->
+            %% Optional params
+            Args        = proplists:get_value(<<"args">>, JSONAction),
+            ArgsType    = proplists:get_value(<<"args_type">>, JSONAction),
+            ArgsList    = build_args_list(ArgsType, Args), 
+            Results     = proplists:get_value(<<"results">>, JSONAction),
+            ResType     = proplists:get_value(<<"results_type">>, JSONAction),
+            ResList     = build_results_list(ResType, Results),
+            build_action(ActionList, ArgsList, ResList)
+    end. 
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+load_system_files() ->
+    BasePath        = code:priv_dir(barrage),
+    {Rez, Configs}  = file:consult(BasePath ++ "/barrage.config"), 
+    case Rez of 
+        ok ->
+            process_config(Configs);
+        _ ->
+            error
+    end.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+load_action_files() ->
+    BasePath        = code:priv_dir(barrage),
+    {ARez, Actions} = file:consult(BasePath ++ "/actions.config"),
+    case ARez of ok ->
+        process_actions_config(Actions)
+    end,
+
+    {ARez2, Actions2} = file:read_file(BasePath ++ "/actions.json"),
+    case ARez2 of ok ->
+            process_actions_json(jiffy:decode(Actions2))
+    end.
+
+process_behavior_json([]) ->
+    ok;
+process_behavior_json(Behaviors) ->
+    [{Behavior} | OtherBehaviors]   = Behaviors,
+    Name                            =  proplists:get_value(<<"name">>, Behavior),
+    Tree                            =  proplists:get_value(<<"tree">>, Behavior),
+
+    process_behavior_json(OtherBehaviors).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+load_behavior_files() ->
+
+    BasePath        = code:priv_dir(barrage),
+    {BRez, Behavior}= file:read_file(BasePath ++ "/behaviors.config"),
+    case BRez of ok ->
+            process_behavior_json(jiffy:decode(Behavior))
+    end.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -164,32 +325,11 @@ process_config(Configs) ->
 %% @end
 %%--------------------------------------------------------------------
 loadConfigTable()->
-    BasePath        = code:priv_dir(barrage),
-    {ok, Configs}   = file:consult(BasePath ++ "/barrage.config"), 
-    {ok, Plans}     = file:consult(BasePath ++ "/behaviors.config"),
-    {ok, Actions}   = file:consult(BasePath ++ "/actions.config"),
-    
-    % Now lets set parse the plans in order to build out an ets table
-    ets:new(barrage, [set, named_table]),
-    process_config(Configs),
+    ets:new(barrage,    [set, named_table]),
+    ets:new(actions,    [set, named_table]),
+    ets:new(plans,      [set, named_table]),
 
-    ets:new(plans, [set, named_table]), 
-    process_plans(Plans),
+    ok = load_system_files(),
+    ok = load_action_files(),
+    ok = load_behavior_files().
 
-    ets:new(actions, [set, named_table]),
-    process_actions(Actions).
-
-    %try
-    %    %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
-    %    %io:format("file read, now parse ~n"),
-    %    %{BarrageConfig}     = jiffy:decode(BarrageStr),
-    %    %parseBarrageConfig(BarrageConfig),
-
-    %    %{ok, ActionsStr}    = file:read_file("config/actions.json"),
-    %    %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
-    %    %ActionsData         = jiffy:decode(ActionsStr),
-    %    %BehaviorsData       = jiffy:decode(BehaviorsStr),
-    %    ok
-    %catch
-    %    Exception:Reason -> {error, Exception, Reason}
-    %end.
