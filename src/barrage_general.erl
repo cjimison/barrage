@@ -32,14 +32,14 @@
 
 -behaviour(gen_server).
 
-%% API
--export([start_link/0]).
-
--export([test_run/0,
-         issue_order/1,
-         report_results/2,
-         enlist/1,
-         retire/1]).
+%% App layer API
+-export([start_link/0]).            %<<- Starts up the server
+-export([test_run/0]).              %<<- Debugging run to lunch sample
+-export([issue_order/1]).           %<<- Tells the commanders to attack
+-export([report_results/2]).        %<<- callback made by commander when done
+-export([enlist/1]).                %<<-
+-export([retire/1]).
+-export([get_commanders_info/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -104,6 +104,10 @@ issue_order(Order) ->
 report_results(CommanderPid, Results)->
     gen_server:call(?MODULE, {report_results, CommanderPid, Results}).
 
+get_commanders_info() ->
+    gen_server:call(?MODULE, {get_commanders_info}).
+
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -119,12 +123,17 @@ report_results(CommanderPid, Results)->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({issue_order, OrderName}, _From, State) ->
-    [{_, Order}] = ets:lookup(plans, OrderName), 
-    [{_, TargetIP}] = ets:lookup(barrage, url),
-    Fun = fun(Pid) ->
-            barrage_commander:execute(Pid, Order, TargetIP) end,
-    lists:foreach(Fun, State#state.commanders),
-    {reply, ok, State};
+    [{_, Order}] = ets:lookup(plans, OrderName),
+    case Order of 
+        [] ->
+            {reply, error_no_match, State};
+        _ ->
+            [{_, TargetIP}] = ets:lookup(barrage, url),
+            Fun = fun(Pid) ->
+                    barrage_commander:execute(Pid, Order, TargetIP) end,
+            lists:foreach(Fun, State#state.commanders),
+            {reply, ok, State}
+    end;
 
 handle_call({enlist, PID}, _From, State) ->
     Commanders = [PID | State#state.commanders],
@@ -161,10 +170,21 @@ handle_call({report_results, _CPID, Results}, _From, State) ->
     %process_results(Results, Keys),
     {reply, ok, State};
 
+handle_call({get_commanders_info}, _From, State) ->
+    Commanders = State#state.commanders,
+    CommanderInfo = get_commanders_names(Commanders, []),
+    {reply, CommanderInfo, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+get_commanders_names([], CommanderData) ->
+    CommanderData;
+get_commanders_names(Commanders, CommanderData) ->
+    [CommanderPid | OtherCommanders] = Commanders,
+    CommanderName = atom_to_binary(node(CommanderPid), utf8),
+    get_commanders_names(OtherCommanders, [CommanderName | CommanderData]).
 
 %%--------------------------------------------------------------------
 %% @private

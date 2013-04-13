@@ -57,7 +57,23 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
-    inets:start(),
+    ok = inets:start(),
+    Dispatch = cowboy_router:compile([
+            {'_', [
+                    {"/status",     barrage_general_handler, []},
+                    {"/orders",     barrage_general_handler, []},
+                    {"/commanders", barrage_general_handler, []},
+                    {"/issue_order",barrage_general_handler, []},
+                    {"/[...]", cowboy_static, [
+                            {directory, {priv_dir, barrage, []}},
+                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+		    ]} 
+            ]}
+    ]),
+    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
+            {env, [{dispatch, Dispatch}]}
+    ]),
+
     case loadConfigTable() of
         ok ->
             case barrage_sup:start_link() of
@@ -104,6 +120,10 @@ process_plans(Plans) ->
     [{Plan} | OtherPlans]   = Plans,
     Name                    = proplists:get_value(name, Plan),
     Tree                    = proplists:get_value(tree, Plan),
+  
+    [{table_keys, OldKeys}] = ets:lookup(plans, table_keys),
+    NewKeys = [Name | OldKeys],
+    ets:insert(plans, {table_keys, NewKeys}),
     ets:insert(plans, {Name, Tree}),
     process_plans(OtherPlans).
 
@@ -173,7 +193,8 @@ loadConfigTable()->
     ets:new(barrage, [set, named_table]),
     process_config(Configs),
 
-    ets:new(plans, [set, named_table]), 
+    ets:new(plans, [set, named_table]),
+    ets:insert(plans, {table_keys, []}),
     process_plans(Plans),
 
     ets:new(actions, [set, named_table]),
