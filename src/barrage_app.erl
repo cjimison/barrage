@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,16 +20,12 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%%-------------------------------------------------------------------
-
-%%%-------------------------------------------------------------------
-%%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%
 %%% @end
 %%% Created : 2013-04-02 11:31:39.401954
 %%%-------------------------------------------------------------------
+
 -module(barrage_app).
 
 -behaviour(application).
@@ -200,17 +197,3 @@ loadConfigTable()->
     ets:new(actions, [set, named_table]),
     process_actions(Actions).
 
-    %try
-    %    %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
-    %    %io:format("file read, now parse ~n"),
-    %    %{BarrageConfig}     = jiffy:decode(BarrageStr),
-    %    %parseBarrageConfig(BarrageConfig),
-
-    %    %{ok, ActionsStr}    = file:read_file("config/actions.json"),
-    %    %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
-    %    %ActionsData         = jiffy:decode(ActionsStr),
-    %    %BehaviorsData       = jiffy:decode(BehaviorsStr),
-    %    ok
-    %catch
-    %    Exception:Reason -> {error, Exception, Reason}
-    %end.

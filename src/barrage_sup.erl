@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,6 +20,10 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+%%% @doc
+%%%
+%%% @end
+%%% Created : 2013-04-02 11:31:39.401954
 %%%-------------------------------------------------------------------
 
 -module(barrage_sup).
@@ -46,23 +51,24 @@ start_link() ->
 %% ===================================================================
 get_props(true, true) ->
     [
-        {tag0, {barrage_general, start_link, []}, 
-            permanent, 10000, worker, [barrage_general]},
-        {tag1, {barrage_commander, start_link, []}, 
-            permanent, 10000, worker, [barrage_commander]}
+        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
+        {tag1, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]},
+        {tag2, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
     ]; 
 get_props(true, false) ->
     [
-        {tag0, {barrage_general, start_link, []}, 
-            permanent, 10000, worker, [barrage_general]}
+        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
+        {tag1, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]}
     ]; 
 get_props(false, true) ->
     [
-        {tag1, {barrage_commander, start_link, []}, 
-            permanent, 10000, worker, [barrage_commander]}
+        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
+        {tag2, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
     ]; 
 get_props(_Gen, _Com) ->
-    [].
+    [
+        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]}
+    ].
 
 init([]) ->
     [{_, General}]      = ets:lookup(barrage, enable_general),

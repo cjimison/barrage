@@ -58,15 +58,25 @@ handle_named_request(<<"GET">>, <<"/commanders">>, Req) ->
 
 handle_named_request(<<"GET">>, <<"/issue_order">>, Req) ->
     {Order, Req2} = cowboy_req:qs_val(<<"order">>, Req), 
-    Results = barrage_general:issue_order(Order), 
-    case Results of
-        ok ->
-            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
-                <<"Order issued">>, Req2);
-        error_no_match ->
-            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
-                <<"Order does not exists">>, Req2)
+    Req3 = cowboy_req:compact(Req2),
+    barrage_general:issue_http_order(Order, self()),
+
+    %Lets block this guy until I get the response I want
+    receive
+        {done, _Data} ->
+            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], <<"Order issued">>, Req3);
+        _->
+            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], <<"Unkown message">>, Req3)
     end;
+    %Results = barrage_general:issue_http_order(Order, Req2), 
+    %case Results of
+    %    ok ->
+    %        cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
+    %            <<"Order issued">>, Req2);
+    %    error_no_match ->
+    %        cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
+    %            <<"Order does not exists">>, Req2)
+    %end;
     
 handle_named_request(_, _, Req) ->
     cowboy_req:reply(405, Req).
