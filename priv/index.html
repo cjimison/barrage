@@ -5,13 +5,30 @@
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 </head>
 
-<body>
-<script>
-$.get("orders",function(data, status)
-{
-    alert("Data: " + data + "\nStatus " + status);    
-}); 
-</script>
+<body id=main>
+    <script>
+        function IssueOrder(name)
+        {
+            $.get("orders",function(data, status)
+            {
+                var orders = JSON.parse(data);
+                var len = orders.length;
+                for(var i = 0; i < len; ++i)
+                {
+                    $("#main").append("<input type=\"button\" value=\""+ orders[i] +"\" onclick=\"IssueOrder('"+ orders[i] +"');\" >");
+                }
+            }); 
+        }
+        $.get("orders",function(data, status)
+        {
+            var orders = JSON.parse(data);
+            var len = orders.length;
+            for(var i = 0; i < len; ++i)
+            {
+                $("#main").append("<input type=\"button\" value=\""+ orders[i] +"\" onclick=\"IssueOrder('"+ orders[i] +"');\" >");
+            }
+        }); 
+    </script>
 </body>
 
 </html>
