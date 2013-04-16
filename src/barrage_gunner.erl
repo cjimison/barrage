@@ -149,13 +149,19 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    httpc:set_options([{cookies, enabled}]),
-    httpc:reset_cookies(),    
-    httpc:set_options([{cookies, enabled}]),
-    State2 = State#state{results=dict:new(), keystore=dict:new()},
-    State3 = process_set([Order], State2),
-    barrage_commander:order_complete(self(), State3#state.results),
-    {noreply, State3};
+    try 
+        httpc:set_options([{cookies, enabled}]),
+        httpc:reset_cookies(),    
+        httpc:set_options([{cookies, enabled}]),
+        State2 = State#state{results=dict:new(), keystore=dict:new()},
+        State3 = process_set([Order], State2),
+        barrage_commander:order_complete(self(), State3#state.results),
+        {noreply, State}
+    catch
+        _:_ -> 
+            barrage_commander:order_complete(self(), dict:new()),
+            {noreply, State}
+    end;
 
 handle_cast(_Msg, State) ->
     io:format("Why did I hit?~n~p~n", [_Msg]),
