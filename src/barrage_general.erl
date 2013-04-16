@@ -31,13 +31,12 @@
 
 %% App layer API
 -export([start_link/0]).            %<<- Starts up the server
--export([test_run/0]).              %<<- Debugging run to lunch sample
 -export([issue_order/1]).           %<<- Tells the commanders to attack
 -export([issue_http_order/2]).      %<<- Tells the commanders to attack
--export([report_results/2]).        %<<- callback made by commander when done
--export([enlist/1]).                %<<-
--export([retire/1]).
--export([get_commanders_info/0]).
+-export([report_results/2]).        %<<- callback by commander when done
+-export([enlist/1]).                %<<- Adds a commander to the pool 
+-export([retire/1]).                %<<- Removes a commander from the pool
+-export([get_commanders_info/0]).   %<<- Get info about all commanders
 
 %% gen_server callbacks
 -export([init/1,
@@ -52,16 +51,14 @@
 -record(state,
     {
         commanders=[],
-        waiting_pid = []
+        blocked = [],
+        waiting_pid = [],
+        results
     }).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-test_run()->
-    % Now issue an order out to the commanders for execution
-    barrage_general:issue_order(<<"Random Commands">>).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -124,74 +121,86 @@ get_commanders_info() ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+
+%%%%------------------------------------------------------------------
+%%%% issue_order
+%%%%------------------------------------------------------------------
 handle_call({issue_order, OrderName}, _From, State) ->
     [{_, Order}] = ets:lookup(plans, OrderName),
     case Order of 
         [] ->
             {reply, error_no_match, State};
         _ ->
-            [{_, TargetIP}] = ets:lookup(barrage, url),
-            Fun = fun(Pid) ->
-                    barrage_commander:execute(Pid, Order, TargetIP) end,
-            lists:foreach(Fun, State#state.commanders),
-            {reply, ok, State}
+            case State#state.blocked of
+                [] ->
+                    NewState = State#state{ results=dict:new(), 
+                                            blocked=State#state.commanders},
+                    [{_, TargetIP}] = ets:lookup(barrage, url),
+                    Fun = fun(Pid) ->
+                            barrage_commander:execute(Pid, Order, TargetIP) end,
+                    lists:foreach(Fun, State#state.commanders),
+                    {reply, ok, NewState};
+                _->
+                    %No test is going to be run.
+                    {reply, ok, State}
+            end
     end;
 
+%%%%------------------------------------------------------------------
+%%%% issue_http_order
+%%%%------------------------------------------------------------------
 handle_call({issue_http_order, OrderName, Pid}, _From, State) ->
     Pids = State#state.waiting_pid,
     NewState = State#state{waiting_pid = [Pid| Pids]},
     handle_call({issue_order, OrderName}, _From, NewState);
 
+%%%%------------------------------------------------------------------
+%%%% enlist
+%%%%------------------------------------------------------------------
 handle_call({enlist, PID}, _From, State) ->
     Commanders = [PID | State#state.commanders],
     NewState = State#state{commanders=Commanders}, 
     {reply, ok, NewState};
 
+%%%%------------------------------------------------------------------
+%%%% retire
+%%%%------------------------------------------------------------------
 handle_call({retire, PID}, _From, State) ->
     Commanders = State#state.commanders -- [PID],
     NewState = State#state{commanders=Commanders}, 
     {reply, ok, NewState};
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling call messages for report_results
-%%
-%% @spec handle_call({report_results, CPID, Results}, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
-%%  CPID is the commander Pid
-%%  Results = Array of reports
-%%            Report = Dictionary of Key values.  Key is the action name.  Value is array of times 
-%% @end
-%%--------------------------------------------------------------------
-handle_call({report_results, _CPID, Results}, _From, State) ->
-    Result = process_results(Results, dict:new()),
-    %Keys = dict:fetch_keys(Result),
-    Fun = fun(Pid) -> Pid ! {done, Result} end,
-    lists:foreach(Fun, State#state.waiting_pid),
-    %display_result(Keys, Result, State),
-    {reply, ok, State#state{waiting_pid = []}};
+%%%%------------------------------------------------------------------
+%%%% report_results
+%%%%------------------------------------------------------------------
+handle_call({report_results, CPID, Results}, _From, State) ->
+    Result              = process_results(  Results, 
+                                            State#state.results),
+    Commanders          = State#state.blocked,
+    ActiveCommanders    = lists:delete(CPID, Commanders),
+    case ActiveCommanders of 
+        [] ->
+            Fun = fun(Pid) -> Pid ! {done, Result} end,
+            lists:foreach(Fun, State#state.waiting_pid),
+            {reply, ok, State#state{waiting_pid = [], blocked=[]}};
+        _ ->
+            {reply, ok, State#state{blocked = ActiveCommanders}}
+    end;
 
+%%%%------------------------------------------------------------------
+%%%% get_commanders_info
+%%%%------------------------------------------------------------------
 handle_call({get_commanders_info}, _From, State) ->
     Commanders = State#state.commanders,
     CommanderInfo = get_commanders_names(Commanders, []),
     {reply, CommanderInfo, State};
 
+%%%%------------------------------------------------------------------
+%%%% UNKNOWN COMMAND
+%%%%------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
-
-get_commanders_names([], CommanderData) ->
-    CommanderData;
-get_commanders_names(Commanders, CommanderData) ->
-    [CommanderPid | OtherCommanders] = Commanders,
-    CommanderName = atom_to_binary(node(CommanderPid), utf8),
-    get_commanders_names(OtherCommanders, [CommanderName | CommanderData]).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -247,25 +256,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-%display_result([], Result, State)->
-%    Fun = fun(Pid) -> Pid ! {done, Result} end,
-%    lists:foreach(Fun, State#state.waiting_pid),
-%    ok;
-%display_result(Keys, Result, State)->
-%    [Key | OtherKeys]   = Keys,
-%    {ok, Data}          = dict:find(Key, Result),
-%    SortData            = lists:sort(Data),
-%    Size                = length(Data),
-%    Average             = lists:sum(Data) / Size,
-%    High                = lists:last(SortData),
-%    [Low | _]           = SortData,
-%    io:format("~n~nAction: ~p --------~n", [Key]),
-%    io:format("Number of requests =: ~p~n", [Size]),
-%    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
-%    io:format("High Time(ms)      =: ~p~n", [High/1000]),
-%    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
-%
-%    display_result(OtherKeys, Result, State).
+
+get_commanders_names([], CommanderData) ->
+    CommanderData;
+
+get_commanders_names(Commanders, CommanderData) ->
+    [CommanderPid | OtherCommanders] = Commanders,
+    CommanderName = atom_to_binary(node(CommanderPid), utf8),
+    get_commanders_names(OtherCommanders, [CommanderName | CommanderData]).
 
 process_results([], MergedDict) ->
     MergedDict;
