@@ -2,11 +2,16 @@
 <html>
 <head>
 <title>Barrage</title>
+
+<style type="text/css" title="currentStyle">
+	@import "dist/jquery.jqplot.min.css";
+</style>
 <script type="text/javascript" src="dist/jquery.min.js"></script>
 <script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
 <script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
-<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
 <script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+<script type="text/javascript" src="dist/plugins/jqplot.highlighter.min.js"></script>
 </head>
 
 <body id=main>
@@ -14,8 +19,10 @@
         var graphs = [];
         function IssueOrder(name)
         {
-            // Replace spaces with %20
-            var url = "issue_order?order=" + name.replace(/\ /g, '%20');
+        	//DISABLE ALL BUTTONS while this is creating the graph
+			$("input[type=button]").attr("disabled", true);
+			        	
+            var url = "issue_order?order=" + encodeURIComponent(name);
             $.get(url,function(data, status)
             {
                 // Clear the old graphs out
@@ -34,8 +41,29 @@
                     {
                         var chartName = 'IDX_'+idx;
                         graphs.push(chartName);
-                        $("#main").append('<div id="'+chartName+'" style="height:300px; width:500px;"><\/div>');
-                        var plot1 = $.jqplot (chartName, [ResultsObj[Key]]);
+                        $("#main").append('<div id="'+chartName+'"><\/div>');
+                        var plot1 = $.jqplot (chartName, [ResultsObj[Key]], {
+                        	title: Key,
+                        	axesDefaults: {
+                        		pad: 0,
+                        		labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+                        		tickRenderer:  $.jqplot.CanvasAxisTickRenderer,
+                        	},
+                        	axes: {
+                        		xaxis: {
+                        			label: 'Requests',
+                        			tickOptions: {
+                        				angle: -90,
+                        			},
+                        		},
+                        		yaxis: {
+                        			label: 'Time (µs)',
+                        		}
+                        	},
+                        	highlighter: {
+                        		show: true
+                        	},                        	
+                        });
                         ++idx;
                     }
                 }
@@ -44,8 +72,12 @@
                     console.log("Error " + ex);
                     console.log("Data = " + data);
                 }
-            }); 
+            });
+			
+            //RE-ENABLE ALL BUTTONS now that it is done
+            $("input[type=button]").attr("disabled", false);
         }
+        
         $.get("orders",function(data, status)
         {
             var orders = JSON.parse(data);
@@ -54,7 +86,17 @@
             {
                 $("#main").append("<input type=\"button\" value=\""+ orders[i] +"\" onclick=\"IssueOrder('"+ orders[i] +"');\" ><\/input>");
             }
-        }); 
+        });
+        
+        function test(name) {
+        	var url = "issue_order?order=" + encodeURIComponent(name);
+            $.get(url,function(data, status)
+            {
+                
+                    console.log(JSON.parse(data));
+
+            });
+        }
     </script>
 </body>
 
