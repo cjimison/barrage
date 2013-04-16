@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,11 +20,6 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%%-------------------------------------------------------------------
-
-%%%-------------------------------------------------------------------
-%%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%
 %%% @end
@@ -36,6 +32,17 @@
 -export([init/3]).
 -export([handle/2]).
 -export([terminate/3]).
+
+blocker_loop(Req) ->
+    receive
+        {done, Data} ->
+            % lets stringify this data
+            JSONData = jiffy:encode({dict:to_list(Data)}),
+            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], JSONData, Req);
+        _ ->
+            blocker_loop(Req) 
+    end.
+
 
 init(_Transport, Req, []) ->
     {ok, Req, undefined}.
@@ -60,23 +67,7 @@ handle_named_request(<<"GET">>, <<"/issue_order">>, Req) ->
     {Order, Req2} = cowboy_req:qs_val(<<"order">>, Req), 
     Req3 = cowboy_req:compact(Req2),
     barrage_general:issue_http_order(Order, self()),
-
-    %Lets block this guy until I get the response I want
-    receive
-        {done, _Data} ->
-            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], <<"Order issued">>, Req3);
-        _->
-            cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], <<"Unkown message">>, Req3)
-    end;
-    %Results = barrage_general:issue_http_order(Order, Req2), 
-    %case Results of
-    %    ok ->
-    %        cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
-    %            <<"Order issued">>, Req2);
-    %    error_no_match ->
-    %        cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], 
-    %            <<"Order does not exists">>, Req2)
-    %end;
+    blocker_loop(Req3);
     
 handle_named_request(_, _, Req) ->
     cowboy_req:reply(405, Req).

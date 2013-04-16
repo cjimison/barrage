@@ -171,8 +171,10 @@ handle_call({retire, PID}, _From, State) ->
 %%--------------------------------------------------------------------
 handle_call({report_results, _CPID, Results}, _From, State) ->
     Result = process_results(Results, dict:new()),
-    Keys = dict:fetch_keys(Result),
-    display_result(Keys, Result, State),
+    %Keys = dict:fetch_keys(Result),
+    Fun = fun(Pid) -> Pid ! {done, Result} end,
+    lists:foreach(Fun, State#state.waiting_pid),
+    %display_result(Keys, Result, State),
     {reply, ok, State#state{waiting_pid = []}};
 
 handle_call({get_commanders_info}, _From, State) ->
@@ -245,25 +247,25 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-display_result([], Result, State)->
-    Fun = fun(Pid) -> Pid ! {done, Result} end,
-    lists:foreach(Fun, State#state.waiting_pid),
-    ok;
-display_result(Keys, Result, State)->
-    [Key | OtherKeys]   = Keys,
-    {ok, Data}          = dict:find(Key, Result),
-    SortData            = lists:sort(Data),
-    Size                = length(Data),
-    Average             = lists:sum(Data) / Size,
-    High                = lists:last(SortData),
-    [Low | _]           = SortData,
-    io:format("~n~nAction: ~p --------~n", [Key]),
-    io:format("Number of requests =: ~p~n", [Size]),
-    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
-    io:format("High Time(ms)      =: ~p~n", [High/1000]),
-    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
-
-    display_result(OtherKeys, Result, State).
+%display_result([], Result, State)->
+%    Fun = fun(Pid) -> Pid ! {done, Result} end,
+%    lists:foreach(Fun, State#state.waiting_pid),
+%    ok;
+%display_result(Keys, Result, State)->
+%    [Key | OtherKeys]   = Keys,
+%    {ok, Data}          = dict:find(Key, Result),
+%    SortData            = lists:sort(Data),
+%    Size                = length(Data),
+%    Average             = lists:sum(Data) / Size,
+%    High                = lists:last(SortData),
+%    [Low | _]           = SortData,
+%    io:format("~n~nAction: ~p --------~n", [Key]),
+%    io:format("Number of requests =: ~p~n", [Size]),
+%    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
+%    io:format("High Time(ms)      =: ~p~n", [High/1000]),
+%    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
+%
+%    display_result(OtherKeys, Result, State).
 
 process_results([], MergedDict) ->
     MergedDict;

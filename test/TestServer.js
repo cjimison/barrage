@@ -87,6 +87,11 @@ http.createServer(function (req, res)
             obj.card = { ID : 5, name : 'cookie2'};
             res.end(JSON.stringify(obj));
         }
+        else
+        {
+            console.log("Parts unknown = " + url_parts.pathname);
+            res.end("{}");
+        }
     }
     else
     {
