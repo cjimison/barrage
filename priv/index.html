@@ -23,6 +23,13 @@
 			$("input[type=button]").attr("disabled", true);
 			        	
             var url = "issue_order?order=" + encodeURIComponent(name);
+            
+            // Override the jqplot default formatter to
+            // adjust the values from microseconds to milliseconds
+            var tickFormatter = function (format, val) { 
+				var number = val/1000;
+				return number;
+			}
             $.get(url,function(data, status)
             {
                 // Clear the old graphs out
@@ -52,17 +59,19 @@
                         	axes: {
                         		xaxis: {
                         			label: 'Requests',
-                        			tickOptions: {
-                        				angle: -90,
-                        			},
                         		},
                         		yaxis: {
-                        			label: 'Time (µs)',
+                        			label: 'Time (ms)',
+                        			tickOptions: {
+	                        			formatter: tickFormatter,
+	                        		},
                         		}
                         	},
                         	highlighter: {
-                        		show: true
-                        	},                        	
+                        		show: true,
+                        		tooltipAxes: "y",
+                        		formatString: "%s ms",
+                        	},
                         });
                         ++idx;
                     }
