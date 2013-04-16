@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,10 +20,6 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%%-------------------------------------------------------------------
-
-%%%-------------------------------------------------------------------
-%%% @author Chris Jimison
 %%% @doc
 %%%
 %%% @end
@@ -32,14 +29,15 @@
 
 -behaviour(gen_server).
 
-%% API
--export([start_link/0]).
-
--export([test_run/0,
-         issue_order/1,
-         report_results/2,
-         enlist/1,
-         retire/1]).
+%% App layer API
+-export([start_link/0]).            %<<- Starts up the server
+-export([test_run/0]).              %<<- Debugging run to lunch sample
+-export([issue_order/1]).           %<<- Tells the commanders to attack
+-export([issue_http_order/2]).      %<<- Tells the commanders to attack
+-export([report_results/2]).        %<<- callback made by commander when done
+-export([enlist/1]).                %<<-
+-export([retire/1]).
+-export([get_commanders_info/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -53,7 +51,8 @@
 
 -record(state,
     {
-        commanders=[]
+        commanders=[],
+        waiting_pid = []
     }).
 
 %%%===================================================================
@@ -101,8 +100,15 @@ retire(CommanderPid) ->
 issue_order(Order) ->
     gen_server:call(?MODULE, {issue_order, Order}).
 
+issue_http_order(Order, Pid) ->
+    gen_server:call(?MODULE, {issue_http_order, Order, Pid}).
+
 report_results(CommanderPid, Results)->
     gen_server:call(?MODULE, {report_results, CommanderPid, Results}).
+
+get_commanders_info() ->
+    gen_server:call(?MODULE, {get_commanders_info}).
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -119,12 +125,22 @@ report_results(CommanderPid, Results)->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({issue_order, OrderName}, _From, State) ->
-    [{_, Order}] = ets:lookup(plans, OrderName), 
-    [{_, TargetIP}] = ets:lookup(barrage, url),
-    Fun = fun(Pid) ->
-            barrage_commander:execute(Pid, Order, TargetIP) end,
-    lists:foreach(Fun, State#state.commanders),
-    {reply, ok, State};
+    [{_, Order}] = ets:lookup(plans, OrderName),
+    case Order of 
+        [] ->
+            {reply, error_no_match, State};
+        _ ->
+            [{_, TargetIP}] = ets:lookup(barrage, url),
+            Fun = fun(Pid) ->
+                    barrage_commander:execute(Pid, Order, TargetIP) end,
+            lists:foreach(Fun, State#state.commanders),
+            {reply, ok, State}
+    end;
+
+handle_call({issue_http_order, OrderName, Pid}, _From, State) ->
+    Pids = State#state.waiting_pid,
+    NewState = State#state{waiting_pid = [Pid| Pids]},
+    handle_call({issue_order, OrderName}, _From, NewState);
 
 handle_call({enlist, PID}, _From, State) ->
     Commanders = [PID | State#state.commanders],
@@ -155,16 +171,27 @@ handle_call({retire, PID}, _From, State) ->
 %%--------------------------------------------------------------------
 handle_call({report_results, _CPID, Results}, _From, State) ->
     Result = process_results(Results, dict:new()),
-    Keys = dict:fetch_keys(Result),
-    display_result(Keys, Result),
-    %Keys = dict:fetch_keys(Results),
-    %process_results(Results, Keys),
-    {reply, ok, State};
+    %Keys = dict:fetch_keys(Result),
+    Fun = fun(Pid) -> Pid ! {done, Result} end,
+    lists:foreach(Fun, State#state.waiting_pid),
+    %display_result(Keys, Result, State),
+    {reply, ok, State#state{waiting_pid = []}};
 
+handle_call({get_commanders_info}, _From, State) ->
+    Commanders = State#state.commanders,
+    CommanderInfo = get_commanders_names(Commanders, []),
+    {reply, CommanderInfo, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+get_commanders_names([], CommanderData) ->
+    CommanderData;
+get_commanders_names(Commanders, CommanderData) ->
+    [CommanderPid | OtherCommanders] = Commanders,
+    CommanderName = atom_to_binary(node(CommanderPid), utf8),
+    get_commanders_names(OtherCommanders, [CommanderName | CommanderData]).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -220,23 +247,25 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-display_result([], _Result)->
-    ok;
-display_result(Keys, Result)->
-    [Key | OtherKeys]   = Keys,
-    {ok, Data}          = dict:find(Key, Result),
-    SortData            = lists:sort(Data),
-    Size                = length(Data),
-    Average             = lists:sum(Data) / Size,
-    High                = lists:last(SortData),
-    [Low | _]           = SortData,
-    io:format("~n~nAction: ~p --------~n", [Key]),
-    io:format("Number of requests =: ~p~n", [Size]),
-    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
-    io:format("High Time(ms)      =: ~p~n", [High/1000]),
-    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
-
-    display_result(OtherKeys, Result).
+%display_result([], Result, State)->
+%    Fun = fun(Pid) -> Pid ! {done, Result} end,
+%    lists:foreach(Fun, State#state.waiting_pid),
+%    ok;
+%display_result(Keys, Result, State)->
+%    [Key | OtherKeys]   = Keys,
+%    {ok, Data}          = dict:find(Key, Result),
+%    SortData            = lists:sort(Data),
+%    Size                = length(Data),
+%    Average             = lists:sum(Data) / Size,
+%    High                = lists:last(SortData),
+%    [Low | _]           = SortData,
+%    io:format("~n~nAction: ~p --------~n", [Key]),
+%    io:format("Number of requests =: ~p~n", [Size]),
+%    io:format("Average Time(ms)   =: ~p~n", [Average/1000]),
+%    io:format("High Time(ms)      =: ~p~n", [High/1000]),
+%    io:format("Low Time(ms)       =: ~p~n", [Low/1000]),
+%
+%    display_result(OtherKeys, Result, State).
 
 process_results([], MergedDict) ->
     MergedDict;

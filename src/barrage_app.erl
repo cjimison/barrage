@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,16 +20,12 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%%-------------------------------------------------------------------
-
-%%%-------------------------------------------------------------------
-%%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
 %%% @doc
 %%%
 %%% @end
 %%% Created : 2013-04-02 11:31:39.401954
 %%%-------------------------------------------------------------------
+
 -module(barrage_app).
 
 -behaviour(application).
@@ -57,7 +54,23 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
-    inets:start(),
+    ok = inets:start(),
+    Dispatch = cowboy_router:compile([
+            {'_', [
+                    {"/status",     barrage_general_handler, []},
+                    {"/orders",     barrage_general_handler, []},
+                    {"/commanders", barrage_general_handler, []},
+                    {"/issue_order",barrage_general_handler, []},
+                    {"/[...]", cowboy_static, [
+                            {directory, {priv_dir, barrage, []}},
+                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+		    ]} 
+            ]}
+    ]),
+    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
+            {env, [{dispatch, Dispatch}]}
+    ]),
+
     case loadConfigTable() of
         ok ->
             case barrage_sup:start_link() of
@@ -104,6 +117,10 @@ process_plans(Plans) ->
     [{Plan} | OtherPlans]   = Plans,
     Name                    = proplists:get_value(name, Plan),
     Tree                    = proplists:get_value(tree, Plan),
+  
+    [{table_keys, OldKeys}] = ets:lookup(plans, table_keys),
+    NewKeys = [Name | OldKeys],
+    ets:insert(plans, {table_keys, NewKeys}),
     ets:insert(plans, {Name, Tree}),
     process_plans(OtherPlans).
 
@@ -173,23 +190,10 @@ loadConfigTable()->
     ets:new(barrage, [set, named_table]),
     process_config(Configs),
 
-    ets:new(plans, [set, named_table]), 
+    ets:new(plans, [set, named_table]),
+    ets:insert(plans, {table_keys, []}),
     process_plans(Plans),
 
     ets:new(actions, [set, named_table]),
     process_actions(Actions).
 
-    %try
-    %    %{ok, BarrageStr}    = file:read_file("./priv/barrage.json"),
-    %    %io:format("file read, now parse ~n"),
-    %    %{BarrageConfig}     = jiffy:decode(BarrageStr),
-    %    %parseBarrageConfig(BarrageConfig),
-
-    %    %{ok, ActionsStr}    = file:read_file("config/actions.json"),
-    %    %{ok, BehaviorsStr}  = file:read_file("config/behaviors.json"),
-    %    %ActionsData         = jiffy:decode(ActionsStr),
-    %    %BehaviorsData       = jiffy:decode(BehaviorsStr),
-    %    ok
-    %catch
-    %    Exception:Reason -> {error, Exception, Reason}
-    %end.

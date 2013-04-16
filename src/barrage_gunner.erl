@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% Copyright (c) 2013 Christopher Jimison
+%%% @author Chris Jimison
+%%% @copyright (c) 2013 Christopher Jimison
 %%%
 %%% Permission is hereby granted, free of charge, to any person obtaining 
 %%% a copy of this software and associated documentation files 
@@ -19,10 +20,6 @@
 %%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 %%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 %%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-%%%-------------------------------------------------------------------
-
-%%%-------------------------------------------------------------------
-%%% @author Chris Jimison
 %%% @doc
 %%%     This is a client instance.  It should be unnamed
 %%%     and allow to run many worker versions of it.
@@ -250,7 +247,7 @@ do_ordered_count(Children, Idx, Count, State) ->
         true ->
             do_ordered_count(Children, 1, Count - 1, NewState);
         _ ->
-            do_ordered_count(Children, NewIdx, Count - 1, NewState)
+            do_ordered_count(Children, NewIdx, Count, NewState)
     end.
 
 %%%%------------------------------------------------------------------
@@ -421,7 +418,23 @@ prepare_post_args(Args, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store) ->
+build_string(TArgs, Head, Token, ArgName, ArgValue, Store) when is_integer(ArgValue) ->
+    IntArgVal = list_to_binary(integer_to_list(ArgValue)),
+    build_string(TArgs, Head, Token, ArgName, IntArgVal, Store);
+
+build_string(TArgs, Head, Token, ArgName, ArgValue, Store) when is_float(ArgValue) ->
+    FloatArgVal = list_to_binary(float_to_list(ArgValue)),
+    build_string(TArgs, Head, Token, ArgName, FloatArgVal, Store);
+
+build_string(TArgs, Head, Token, ArgName, ArgValue, Store) when is_list(ArgValue) ->
+    ListArgVal = list_to_binary(ArgValue),
+    build_string(TArgs, Head, Token, ArgName, ListArgVal, Store);
+
+build_string(TArgs, Head, Token, ArgName, ArgValue, Store) when is_atom(ArgValue) ->
+    AtomArgVal = list_to_binary(atom_to_list(ArgValue)),
+    build_string(TArgs, Head, Token, ArgName, AtomArgVal, Store);
+
+build_string(TArgs, Head, Token, ArgName, ArgValue, Store) when is_binary(ArgValue) ->
     case TArgs of
         [] ->
             % That is all folks, lets boggie out
@@ -449,7 +462,7 @@ create_get_string(Head, Args, Token, Store) ->
                 true ->
                     NewArgValue = dict:fetch(ArgValue, Store),
                     build_string(   TArgs, Head, Token, 
-                                    ArgName, NewArgValue, Store); 
+                                    ArgName, NewArgValue, Store);
                 _ ->
                     build_string(   TArgs, Head, Token, 
                                     ArgName, ArgValue, Store)
@@ -506,13 +519,13 @@ process_keydata(Results, Data, Keys, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-proces_action_results(_, undefined, _, State) ->
+process_action_results(_, undefined, _, State) ->
     State;
 
-proces_action_results(_, _, undefined, State) ->
+process_action_results(_, _, undefined, State) ->
     State;
 
-proces_action_results(Result, json, Results, State) ->
+process_action_results(Result, json, Results, State) ->
     {_, {_,Info, JsonData}} = Result,
     httpc:store_cookies(Info, binary_to_list(State#state.url)),
 
@@ -527,7 +540,7 @@ proces_action_results(Result, json, Results, State) ->
     NKS     = process_keydata(Results, Data, Keys, Store),
     State#state{keystore=NKS};
 
-proces_action_results(_Result, _Type, _Results, State) ->
+process_action_results(_Result, _Type, _Results, State) ->
     State.
 
 %%--------------------------------------------------------------------
@@ -577,7 +590,7 @@ execute_action(Action, State) ->
                                     Method, 
                                     {binary_to_list(URL), Header}, 
                                     HTTPOps, Ops]),
-            NewState = proces_action_results(Result, ResultsType, Results, State),
+            NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post ->
@@ -593,7 +606,7 @@ execute_action(Action, State) ->
                                         binary_to_list(Body)
                                     }, 
                                     HTTPOps, Ops]),
-            NewState = proces_action_results(Result, ResultsType, Results, State),
+            NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post_json ->
@@ -608,7 +621,7 @@ execute_action(Action, State) ->
                                         Body
                                     }, 
                                     HTTPOps, Ops]),
-            NewState = proces_action_results(Result, ResultsType, Results, State),
+            NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
         post_multipart ->

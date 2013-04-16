@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Barrage</title>
+<script type="text/javascript" src="dist/jquery.min.js"></script>
+<script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
+<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
+<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+</head>
+
+<body id=main>
+    <script>
+        var graphs = [];
+        function IssueOrder(name)
+        {
+            // Replace spaces with %20
+            var url = "issue_order?order=" + name.replace(/\ /g, '%20');
+            $.get(url,function(data, status)
+            {
+                // Clear the old graphs out
+                var graphsLen = graphs.length;
+                for(var graphIdx = 0; graphIdx < graphsLen; ++graphIdx)
+                {
+                    $('#'+graphs[graphIdx]).remove();
+                }
+                graphs = [];
+                // I got back all the results!!!
+                try
+                {
+                    ResultsObj = JSON.parse(data);
+                    var idx = 0;
+                    for(Key in ResultsObj)
+                    {
+                        var chartName = 'IDX_'+idx;
+                        graphs.push(chartName);
+                        $("#main").append('<div id="'+chartName+'" style="height:300px; width:500px;"><\/div>');
+                        var plot1 = $.jqplot (chartName, [ResultsObj[Key]]);
+                        ++idx;
+                    }
+                }
+                catch(ex)
+                {
+                    console.log("Error " + ex);
+                    console.log("Data = " + data);
+                }
+            }); 
+        }
+        $.get("orders",function(data, status)
+        {
+            var orders = JSON.parse(data);
+            var len = orders.length;
+            for(var i = 0; i < len; ++i)
+            {
+                $("#main").append("<input type=\"button\" value=\""+ orders[i] +"\" onclick=\"IssueOrder('"+ orders[i] +"');\" ><\/input>");
+            }
+        }); 
+    </script>
+</body>
+
+</html>
