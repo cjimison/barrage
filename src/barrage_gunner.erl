@@ -135,7 +135,8 @@ handle_call({set_url, URL}, _From, State) ->
         PID ->
             ibrowse:stop_worker_process(PID)
     end,
-    {ok, SPID} = ibrowse:spawn_worker_process(binary_to_list(URL)),
+    %{ok, SPID} = ibrowse:spawn_worker_process(binary_to_list(URL)),
+    SPID=null,
     NewState = State#state{url=URL, spid=SPID},
     Reply = ok,
     {reply, Reply, NewState};
@@ -163,6 +164,7 @@ handle_cast({follow_order, Order}, State) ->
         {noreply, State}
     catch
         _:_ -> 
+            io:format("BUSTED!!!~n"),
             barrage_commander:order_complete(self(), dict:new()),
             {noreply, State}
     end;
@@ -529,32 +531,54 @@ process_keydata(Results, Data, Keys, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-process_action_results(_, undefined, _, State) ->
+%set_cookie_value([], Dic) ->
+%    Dic;
+%
+%set_cookie_value(Cookies, Dic) ->
+%    [Cookie | OtherCookies] = Cookies,
+%    [Key, Value] = string:tokens(Cookie, "="),
+%    NewDic = dict:store(Key, Value, Dic),
+%    set_cookie_value(OtherCookies, NewDic).
+
+process_action_results(undefined, _Type, _ReqRes, _ReqStatus, _ReqHeader, State) ->
+    %CookieDict = 
+    %case proplists:get_all_values("Set-Cookie", ReqHeader) of
+    %    [] ->
+    %        State#state.cookies;
+    %    Cookies ->
+    %        set_cookie_value(Cookies, State#state.cookies)
+    %end,
+    %State#state{cookies=CookieDict};
     State;
 
-process_action_results(_, _, undefined, State) ->
-    State;
-
-process_action_results(Result, json, Results, State) ->
-    {_, {_,Info, JsonData}} = Result,
-    httpc:store_cookies(Info, binary_to_list(State#state.url)),
-
-    %% TODO  This is still a large point of failure
-    %% If the server returns invalid json then this whole client
-    %% is screwed up.  However for this demo pass I am cool
-    %% with things being a little less robust but I need to fix
-    %% it before I move into first production phase
-    {Data} = jiffy:decode(JsonData),
+process_action_results(Results, json, ReqRes, _ReqStatus, _ReqHeader, State) ->
+    %CookieDict = 
+    %case proplists:get_all_values("Set-Cookie", ReqHeader) of
+    %    [] ->
+    %        State#state.cookies;
+    %    Cookies ->
+    %        set_cookie_value(Cookies, State#state.cookies)
+    %end,
+    {Data}  = jiffy:decode(ReqRes),
     Keys    = proplists:get_keys(Results),
     Store   = State#state.keystore,
     NKS     = process_keydata(Results, Data, Keys, Store),
+    %State#state{keystore=NKS, cookies=CookieDict};
     State#state{keystore=NKS};
 
-process_action_results(_Result, _Type, _Results, State) ->
+process_action_results(_Results, _Type, _ReqRes, _ReqStatus, _ReqHeader, State) ->
     State.
 
-process_ibrowse_action_results(_Results, json, _ReqRes, _ReqStatus, _ReqHeader, State) ->
-    State.
+bake_cookies([], BakedCookies) ->
+    BakedCookies;
+
+bake_cookies(Cookies, BakedCookies) ->
+    [{CookieName, CookieValue} | OtherCookies] = Cookies,
+    bake_cookies(OtherCookies, [{cookie, CookieName ++ "=" ++ CookieValue} | BakedCookies]).
+
+prepare_cookies(Dict) ->
+    Cookies = dict:to_list(Dict),
+    bake_cookies(Cookies, []).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -578,20 +602,21 @@ process_ibrowse_action_results(_Results, json, _ReqRes, _ReqStatus, _ReqHeader, 
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
+now_us() -> 
+    {MegaSecs,Secs,MicroSecs} = now(),
+    (MegaSecs*1000000 + Secs)*1000000 + MicroSecs.
+
 execute_action(Action, State) ->
     ActionName  = proplists:get_value(name, Action),
     HeadURL     = State#state.url,
     TailURL     = proplists:get_value(url, Action), 
     BaseURL     = <<HeadURL/binary, TailURL/binary>>,
-    Method      = proplists:get_value(type,Action),
-    Header      = [],
-    HTTPOps     = [],
-    Ops         = [],
 
     %%% Optional Defined
     Args        = proplists:get_value(args, Action),
     Results     = proplists:get_value(results, Action),
     ResultsType = proplists:get_value(results_type, Action),
+    Cookies     = prepare_cookies(State#state.cookies),
     
     case proplists:get_value(type, Action) of
 
@@ -600,52 +625,47 @@ execute_action(Action, State) ->
                                                 Args,
                                                 State#state.keystore),
             LURL            = binary_to_list(URL),
-            {Time, Data}    = timer:tc(ibrowse, send_req_direct,[State#state.spid, 
-                                                        LURL, 
-                                                        [], 
-                                                        get, 
-                                                        [],
-                                                        [{socket_options,[{keepalive,true}]}]]),
-            {ok, ReqStatus, ReqHeader, ReqRes} = Data,
-            NewState = process_ibrowse_action_results(Results, ResultsType, ReqRes, ReqStatus, ReqHeader, State),
-            store_action_results(ActionName, Time, NewState);
+            %{Time, Data}    = timer:tc(ibrowse, send_req_direct,[State#state.spid, 
+            %                                            LURL, 
+            %                                            Cookies, 
+            %                                            get, 
+            %                                            [],
+            %                                            [{socket_options,[{keepalive,true}]}]]),
 
-            %{Time, Result}  = timer:tc(httpc, request, [
-            %                        Method, 
-            %                        {binary_to_list(URL), Header}, 
-            %                        HTTPOps, Ops]),
-            %NewState = process_action_results(Result, ResultsType, Results, State),
-            %store_action_results(ActionName, Time, NewState);
+            Start = now_us(),
+            Data  = ibrowse:send_req(LURL, Cookies, get, [], [{socket_options,[{keepalive,true}]}]),
+            Time = now_us() - Start,
+            {ok, ReqStatus, ReqHeader, ReqRes} = Data,
+            NewState = process_action_results(Results, ResultsType, ReqRes, ReqStatus, ReqHeader, State),
+            store_action_results(ActionName, Time, NewState);
 
         post ->
             Type            = "application/x-www-form-urlencoded",
             Body            = prepare_post_args(Args, 
                                                 State#state.keystore),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
-                                    {
-                                        binary_to_list(BaseURL), 
-                                        Header, 
-                                        Type, 
-                                        binary_to_list(Body)
-                                    }, 
-                                    HTTPOps, Ops]),
-            NewState = process_action_results(Result, ResultsType, Results, State),
+            LURL            = binary_to_list(BaseURL),
+            {Time, Data}    = timer:tc(ibrowse, send_req_direct,[State#state.spid, 
+                                                        LURL, 
+                                                        [{content_type, Type} | Cookies], 
+                                                        post, 
+                                                        Body,
+                                                        [{socket_options,[{keepalive,true}]}]]),
+            {ok, ReqStatus, ReqHeader, ReqRes} = Data,
+            NewState = process_action_results(Results, ResultsType, ReqRes, ReqStatus, ReqHeader, State),
             store_action_results(ActionName, Time, NewState);
 
         post_json ->
             Type            = "application/json",
             Body            = binary_to_list(jiffy:encode({Args})),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
-                                    {
-                                        binary_to_list(BaseURL), 
-                                        Header, 
-                                        Type, 
-                                        Body
-                                    }, 
-                                    HTTPOps, Ops]),
-            NewState = process_action_results(Result, ResultsType, Results, State),
+            LURL            = binary_to_list(BaseURL),
+            {Time, Data}    = timer:tc(ibrowse, send_req_direct,[State#state.spid, 
+                                                        LURL, 
+                                                        [{content_type, Type} | Cookies], 
+                                                        post, 
+                                                        Body,
+                                                        [{socket_options,[{keepalive,true}]}]]),
+            {ok, ReqStatus, ReqHeader, ReqRes} = Data,
+            NewState = process_action_results(Results, ResultsType, ReqRes, ReqStatus, ReqHeader, State),
             store_action_results(ActionName, Time, NewState);
 
         post_multipart ->

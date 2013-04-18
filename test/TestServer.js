@@ -68,10 +68,11 @@ http.createServer(function (req, res)
         else if('/cookie' === url_parts.pathname)
         {
             console.log("Cookies = " + req.headers.cookie);
-            res.writeHead(200, { 
-                'Set-Cookie': 'mycookie=test'+count,
-                'Content-Type': 'text/plain'
-            });
+            res.writeHead(200, [ 
+                ['Set-Cookie', 'mycookie=test'+count],
+                ['Set-Cookie', 'mycookie2=test2_'+count],
+                ['Content-Type', 'text/plain']
+            ]);
             count++;
             obj.card = { ID : 4, name : 'cookie'};
             res.end(JSON.stringify(obj));
@@ -95,12 +96,14 @@ http.createServer(function (req, res)
     }
     else
     {
-        console.log("Got post request");
+        console.log("Got post request: " + req);
         var chunk = '';
         req.on('data', function (data) {
             chunk += data;
         });
         req.on('end', function () {
+            console.log("headers = req.headers");
+            console.log(req.headers);
             var rez = querystring.parse(chunk);
             console.log("Username = " + rez.username + ", Password = " + rez.password);
             var sesObj = { session: 8379283747838 };
