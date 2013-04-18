@@ -47,7 +47,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {url, results, keystore}).
+-record(state, {url, results, keystore, cookies, spid}).
 
 %%%===================================================================
 %%% API
@@ -112,7 +112,7 @@ init([]) ->
     B = crypto:rand_uniform(1, 2147483646),
     C = crypto:rand_uniform(1, 2147483646),
     random:seed(A, B, C),
-    {ok, #state{}}.
+    {ok, #state{spid=null}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -129,7 +129,14 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({set_url, URL}, _From, State) ->
-    NewState = State#state{url=URL},
+    case State#state.spid of
+        null ->
+            ok;
+        PID ->
+            ibrowse:stop_worker_process(PID)
+    end,
+    {ok, SPID} = ibrowse:spawn_worker_process(binary_to_list(URL)),
+    NewState = State#state{url=URL, spid=SPID},
     Reply = ok,
     {reply, Reply, NewState};
 
@@ -150,10 +157,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
     try 
-        httpc:set_options([{cookies, enabled}]),
-        httpc:reset_cookies(),    
-        httpc:set_options([{cookies, enabled}]),
-        State2 = State#state{results=dict:new(), keystore=dict:new()},
+        State2 = State#state{results=dict:new(), keystore=dict:new(), cookies=dict:new()},
         State3 = process_set([Order], State2),
         barrage_commander:order_complete(self(), State3#state.results),
         {noreply, State}
@@ -549,6 +553,9 @@ process_action_results(Result, json, Results, State) ->
 process_action_results(_Result, _Type, _Results, State) ->
     State.
 
+process_ibrowse_action_results(_Results, json, _ReqRes, _ReqStatus, _ReqHeader, State) ->
+    State.
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -592,12 +599,23 @@ execute_action(Action, State) ->
             URL             = prepare_get_args( BaseURL, 
                                                 Args,
                                                 State#state.keystore),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
-                                    {binary_to_list(URL), Header}, 
-                                    HTTPOps, Ops]),
-            NewState = process_action_results(Result, ResultsType, Results, State),
+            LURL            = binary_to_list(URL),
+            {Time, Data}    = timer:tc(ibrowse, send_req_direct,[State#state.spid, 
+                                                        LURL, 
+                                                        [], 
+                                                        get, 
+                                                        [],
+                                                        [{socket_options,[{keepalive,true}]}]]),
+            {ok, ReqStatus, ReqHeader, ReqRes} = Data,
+            NewState = process_ibrowse_action_results(Results, ResultsType, ReqRes, ReqStatus, ReqHeader, State),
             store_action_results(ActionName, Time, NewState);
+
+            %{Time, Result}  = timer:tc(httpc, request, [
+            %                        Method, 
+            %                        {binary_to_list(URL), Header}, 
+            %                        HTTPOps, Ops]),
+            %NewState = process_action_results(Result, ResultsType, Results, State),
+            %store_action_results(ActionName, Time, NewState);
 
         post ->
             Type            = "application/x-www-form-urlencoded",

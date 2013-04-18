@@ -55,6 +55,7 @@
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
     ok = inets:start(),
+    ibrowse:start(),
     Dispatch = cowboy_router:compile([
             {'_', [
                     {"/status",     barrage_general_handler, []},
