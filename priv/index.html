@@ -1,112 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Barrage</title>
-
-<style type="text/css" title="currentStyle">
-	@import "dist/jquery.jqplot.min.css";
-</style>
-<script type="text/javascript" src="dist/jquery.min.js"></script>
-<script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
-<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
-<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
-<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
-<script type="text/javascript" src="dist/plugins/jqplot.highlighter.min.js"></script>
-</head>
-
-<body id=main>
-    <script>
-        var graphs = [];
-        function IssueOrder(name)
-        {
-        	//DISABLE ALL BUTTONS while this is creating the graph
-			$("input[type=button]").attr("disabled", true);
-			        	
-            var url = "issue_order?order=" + encodeURIComponent(name);
-            
-            // Override the jqplot default formatter to
-            // adjust the values from microseconds to milliseconds
-            var tickFormatter = function (format, val) { 
-				var number = val/1000;
-				return number;
-			}
-            $.get(url,function(data, status)
-            {
-                // Clear the old graphs out
-                var graphsLen = graphs.length;
-                for(var graphIdx = 0; graphIdx < graphsLen; ++graphIdx)
-                {
-                    $('#'+graphs[graphIdx]).remove();
-                }
-                graphs = [];
-                // I got back all the results!!!
-                try
-                {
-                    ResultsObj = JSON.parse(data);
-                    var idx = 0;
-                    for(Key in ResultsObj)
-                    {
-                        var chartName = 'IDX_'+idx;
-                        graphs.push(chartName);
-                        $("#main").append('<div id="'+chartName+'"><\/div>');
-                        var plot1 = $.jqplot (chartName, [ResultsObj[Key]], {
-                        	title: Key,
-                        	axesDefaults: {
-                        		pad: 0,
-                        		labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                        		tickRenderer:  $.jqplot.CanvasAxisTickRenderer,
-                        	},
-                        	axes: {
-                        		xaxis: {
-                        			label: 'Requests',
-                        		},
-                        		yaxis: {
-                        			label: 'Time (ms)',
-                        			tickOptions: {
-	                        			formatter: tickFormatter,
-	                        		},
-                        		}
-                        	},
-                        	highlighter: {
-                        		show: true,
-                        		tooltipAxes: "y",
-                        		formatString: "%s ms",
-                        	},
-                        });
-                        ++idx;
-                    }
-                }
-                catch(ex)
-                {
-                    console.log("Error " + ex);
-                    console.log("Data = " + data);
-                }
-            });
+	<head>
+		<title>Barrage</title>
+		
+		<style type="text/css" title="currentStyle">
+			@import "dist/jquery.jqplot.min.css";
 			
-            //RE-ENABLE ALL BUTTONS now that it is done
-            $("input[type=button]").attr("disabled", false);
-        }
-        
-        $.get("orders",function(data, status)
-        {
-            var orders = JSON.parse(data);
-            var len = orders.length;
-            for(var i = 0; i < len; ++i)
-            {
-                $("#main").append("<input type=\"button\" value=\""+ orders[i] +"\" onclick=\"IssueOrder('"+ orders[i] +"');\" ><\/input>");
-            }
-        });
-        
-        function test(name) {
-        	var url = "issue_order?order=" + encodeURIComponent(name);
-            $.get(url,function(data, status)
-            {
-                
-                    console.log(JSON.parse(data));
-
-            });
-        }
-    </script>
-</body>
+			html {
+				font-family: Calibri, Arial, Helvetica, sans-serif;
+			}
+			.jqplot-target {
+				margin-bottom: 50px;
+			}
+		</style>
+		
+		<script type="text/javascript" src="dist/jquery.min.js"></script>
+		<script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.highlighter.min.js"></script>
+		
+		<script type="text/javascript" src="js/main.js"></script>
+		<script type="text/javascript" src="js/jquery.blockUI.js"></script>
+		<script type="text/javascript" src="js/jq.stopwatch.js"></script>
+	</head>
+	
+	<body id=main>
+	
+	</body>
 
 </html>
