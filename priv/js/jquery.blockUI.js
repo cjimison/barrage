@@ -97,11 +97,11 @@
 			// these and use an external stylesheet then do this in your code:
 			// $.blockUI.defaults.css = {};
 			css: {
-				padding:	0,
+				fontSize:	'25pt',
+				padding:	'10px',
 				margin:		0,
-				width:		'30%',
 				top:		'40%',
-				left:		'35%',
+				left:		'45%',
 				textAlign:	'center',
 				color:		'#fff',
 				border:		'none',

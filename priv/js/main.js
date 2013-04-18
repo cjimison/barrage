@@ -38,22 +38,26 @@ $(document).ready(function() {
 	RequestInfo("orders", function(orders) {
 		for (var i = 0; i < orders.length; ++i)
 		{
-			$("#main").append('<input type=\"button\" value=\"'+ orders[i] +'\" onclick=\"IssueOrder(\''+ orders[i] +'\');\" ><\/input>');
+			$("#main").append('<input class="button" type=\"button\" value=\"'+ orders[i] +'\" onclick=\"IssueOrder(\''+ orders[i] +'\');\" ><\/input>');
 		}
+		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	});
 });
 
 function RequestInfo(url, callback) {
-	 var startTime = new Date();
+	var startTime = new Date();
+	var loadinghtml = '<div>Loading Data</div>'
+	loadinghtml += '<div id="loadTimer"><span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span></div>'
+
 	$.ajax({
 		url: url,
 		async: true,
 		beforeSend: function() {
 			if (!gHideProgressOverlay) {
 				 $.blockUI({ 
-					message: '<h2><div id="myStopwatch"><div class="the-time"><span class="hr">00</span> <span class="min">00</span> <span class="sec">00</span></div></div></h2>'
+					message: loadinghtml
 				});
-				$('#myStopwatch').stopwatch();
+				$('#loadTimer').stopwatch();
 			}
 		},
 		success: function(data) {
@@ -100,26 +104,50 @@ function IssueOrder(name) {
 			
 			DEFAULTPROPERTIES.title = plot;
 			
-			gPlotInfo[chartName].data = [data[plot]];
+			gPlotInfo[chartName].data = data[plot];
 			gPlotInfo[chartName].properties = jQuery.extend(true, {}, DEFAULTPROPERTIES);
-			gPlotInfo[chartName].plot = $.jqplot(chartName, gPlotInfo[chartName].data, gPlotInfo[chartName].properties);
+			LoadPlot(chartName);
 			++idx;
 		}
 	
 		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\"><\/input>');
 		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\"><\/input>');
 		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
+		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	});
-	gHideProgressOverlay = false;
+	gHideProgressOverlay = true;
 	//RE-ENABLE ALL BUTTONS now that it is done
 	$("input[type=button]").attr("disabled", false);
+}
+
+function LoadPlot(chartName) {
+	var startTime = new Date();
+	var data = scaleData(gPlotInfo[chartName].data, 250);
+	gPlotInfo[chartName].plot = $.jqplot(chartName, [data], gPlotInfo[chartName].properties);
+	console.log('jqPlot took ' + ((new Date()) - startTime) + ' ms');
+}
+
+function scaleData(data, interval) {
+	var scaledData = [];
+	var dlength = data.length;
+	if (dlength > interval) {
+		for (var i = 0; i < dlength - 1 ; i+=interval)
+		{
+			scaledData.push([i, data[i]]);
+		}
+		scaledData.push([dlength-1, data[dlength-1]]);
+	}
+	else {
+		scaledData = data;
+	}
+	return scaledData;		
 }
 
 function co_ToggleMarkers() {
 	for (chartName in gPlotInfo) {
 		gPlotInfo[chartName].properties.seriesDefaults.showMarker = !gPlotInfo[chartName].plot.series[0].showMarker;
 		gPlotInfo[chartName].plot.destroy();
-		gPlotInfo[chartName].plot = $.jqplot(chartName, gPlotInfo[chartName].data, gPlotInfo[chartName].properties);
+		LoadPlot(chartName);
 	}
 }
 
@@ -127,7 +155,7 @@ function co_RedrawCharts() {
 	for (chartName in gPlotInfo) {
 		gPlotInfo[chartName].properties = jQuery.extend(true, {}, DEFAULTPROPERTIES);
 		gPlotInfo[chartName].plot.destroy();
-		gPlotInfo[chartName].plot = $.jqplot(chartName, gPlotInfo[chartName].data, gPlotInfo[chartName].properties);
+		LoadPlot(chartName);
 	}
 }
 
