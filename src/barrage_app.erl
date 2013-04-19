@@ -77,10 +77,10 @@ start(_StartType, _StartArgs) ->
                 {ok, Pid} ->
                     {ok, Pid};
                 Error ->
-                    Error
+                    {error, Error}
             end;
         Error ->
-            Error
+            {error, Error}
     end.
 
 %%--------------------------------------------------------------------
@@ -113,16 +113,31 @@ stop(_State) ->
 %%--------------------------------------------------------------------
 process_plans([]) ->
     ok;
-process_plans(Plans) ->
-    [{Plan} | OtherPlans]   = Plans,
-    Name                    = proplists:get_value(<<"name">>, Plan),
-    Tree                    = proplists:get_value(<<"tree">>, Plan),
-  
-    [{table_keys, OldKeys}] = ets:lookup(plans, table_keys),
-    NewKeys = [Name | OldKeys],
-    ets:insert(plans, {table_keys, NewKeys}),
-    ets:insert(plans, {Name, Tree}),
-    process_plans(OtherPlans).
+
+process_plans(Plans) when true =:= is_list(Plans) ->
+    [ThePlan | OtherPlans]  = Plans,
+    case is_tuple(ThePlan) of
+        true ->
+            {Plan}  = ThePlan,
+            Name    = proplists:get_value(<<"name">>, Plan),
+            Tree    = proplists:get_value(<<"tree">>, Plan),
+            
+            case (Name /= undefined andalso Tree /= undefined) of
+                true ->
+                    [{table_keys, OldKeys}] = ets:lookup(plans, table_keys),
+                    NewKeys = [Name | OldKeys],
+                    ets:insert(plans, {table_keys, NewKeys}),
+                    ets:insert(plans, {Name, Tree}),
+                    process_plans(OtherPlans);
+                false ->
+                    invalid_plan_elements
+            end;
+        false ->
+            invalid_plan
+    end;
+
+process_plans(_Plans) ->
+    invalid_plans.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -135,11 +150,26 @@ process_plans(Plans) ->
 %%--------------------------------------------------------------------
 process_actions([]) ->
     ok;
-process_actions(Actions) ->
-    [{Action} | OtherActions]   = Actions,
-    Name                        = proplists:get_value(<<"name">>, Action),
-    ets:insert(actions, {Name, Action}),
-    process_actions(OtherActions).
+
+process_actions(Actions) when true =:= is_list(Actions) ->
+    [TheAction | OtherActions]  = Actions,
+    case is_tuple(TheAction) of
+        true ->
+            {Action}= TheAction,
+            Name    = proplists:get_value(<<"name">>, Action),
+            case (Name /= undefined) of
+                true ->
+                    ets:insert(actions, {Name, Action}),
+                    process_actions(OtherActions);
+                false ->
+                    invalid_action_element
+            end;
+        false ->
+            invalid_action
+    end;
+
+process_actions(_Actions) ->
+    invalid_actions.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -152,25 +182,57 @@ process_actions(Actions) ->
 %%--------------------------------------------------------------------
 process_config([]) ->
     ok;
-process_config(Configs) ->
-    [{Config} | OtherConfigs]   = Configs,
-    Type                        = proplists:get_value(<<"type">>, Config),
-    {Args}                      = proplists:get_value(<<"args">>, Config),
-    ets:insert(barrage, {type, Type}),
-    case Type of
-        <<"general">> ->
-            ets:insert(barrage, {enable_general, true}),
-            URL = proplists:get_value(<<"url">>, Args),
-            ets:insert(barrage, {url, URL});
-        <<"commander">> ->
-            ets:insert(barrage, {enable_commander, true}),
-            Gunners = proplists:get_value(<<"gunners">>, Args),
-            General = binary_to_atom(proplists:get_value(<<"general">>, Args), utf8),
-            ets:insert(barrage, {general, General}),
-            ets:insert(barrage, {gunners, Gunners})
-    end,
-    process_config(OtherConfigs).
 
+process_config(Configs) when true =:= is_list(Configs) ->
+    [Config | OtherConfigs] = Configs,
+    case process_config(Config) of
+        ok ->
+            process_config(OtherConfigs);
+        Error ->
+            Error
+    end;
+
+process_config(TheConfig) when true =:= is_tuple(TheConfig) ->
+    {Config} = TheConfig,
+    Type     = proplists:get_value(<<"type">>, Config),
+    TheArgs  = proplists:get_value(<<"args">>, Config),
+    case (undefined /= Type andalso undefined /= TheArgs andalso is_tuple(TheArgs)) of
+        true ->
+            {Args} = TheArgs,
+            ets:insert(barrage, {type, Type}),
+            case Type of
+                <<"general">> ->
+                    ets:insert(barrage, {enable_general, true}),
+                    case proplists:get_value(<<"url">>, Args) of
+                        undefined ->
+                            invalid_config_arg;
+                        URL ->
+                            ets:insert(barrage, {url, URL}),
+                            ok
+                    end;
+                <<"commander">> ->
+                    ets:insert(barrage, {enable_commander, true}),
+                    Gunners = proplists:get_value(<<"gunners">>, Args),
+                    GeneralA= proplists:get_value(<<"general">>, Args),
+                    case (Gunners /= undefined andalso GeneralA /= undefined) of
+                        true ->
+                            General = binary_to_atom(GeneralA, utf8),
+                            ets:insert(barrage, {general, General}),
+                            ets:insert(barrage, {gunners, Gunners}),
+                            ok;
+                        false ->
+                            invalid_config_arg
+                    end;
+                _ ->
+                    invalid_config_type
+
+            end;
+        false ->
+            invalid_config
+    end;
+
+process_config(_Configs) ->
+    invalid_config.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -182,25 +244,32 @@ process_config(Configs) ->
 %%--------------------------------------------------------------------
 loadConfigTable()->
     BasePath        = code:priv_dir(barrage),
-    {ok, ConfigsJ}  = file:read_file(BasePath ++ "/barrage.json"),
-    {ok, PlansJ}    = file:read_file(BasePath ++ "/behaviors.json"),
-    {ok, ActionsJ}  = file:read_file(BasePath ++ "/actions.json"),
-    
-    Configs         = jiffy:decode(ConfigsJ),
-    Plans           = jiffy:decode(PlansJ),
-    Actions         = jiffy:decode(ActionsJ),
-    
-    % Now lets set parse the plans in order to build out an ets table
-    ets:new(barrage, [set, named_table]),
+    try
 
-    ets:insert(barrage, {enable_general, false}),
-    ets:insert(barrage, {enable_commander, false}),
-    process_config(Configs),
+        {ok, ConfigsJ}  = file:read_file(BasePath ++ "/barrage.json"),
+        {ok, PlansJ}    = file:read_file(BasePath ++ "/behaviors.json"),
+        {ok, ActionsJ}  = file:read_file(BasePath ++ "/actions.json"),
+        
+        Configs         = jiffy:decode(ConfigsJ),
+        Plans           = jiffy:decode(PlansJ),
+        Actions         = jiffy:decode(ActionsJ),
+        
+        % Now lets set parse the plans in order to build out an ets table
+        ets:new(barrage, [set, named_table]),
 
-    ets:new(plans, [set, named_table]),
-    ets:insert(plans, {table_keys, []}),
-    process_plans(Plans),
+        ets:insert(barrage, {enable_general, false}),
+        ets:insert(barrage, {enable_commander, false}),
+        ok = process_config(Configs),
 
-    ets:new(actions, [set, named_table]),
-    process_actions(Actions).
+        ets:new(plans, [set, named_table]),
+        ets:insert(plans, {table_keys, []}),
+        ok = process_plans(Plans),
+
+        ets:new(actions, [set, named_table]),
+        process_actions(Actions)
+
+    catch 
+        _:_ ->
+            error_data
+    end.
 
