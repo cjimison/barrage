@@ -35,6 +35,7 @@
 -export([start_link/0]).
 -export([follow_order/2]).
 -export([set_url/2]).
+-export([set_httpc_profile/2]).
 
 
 %% gen_server callbacks
@@ -47,7 +48,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {url, results, keystore}).
+-record(state, {url, results, keystore, inets_pid, profile=default}).
 
 %%%===================================================================
 %%% API
@@ -62,7 +63,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start() ->
-        gen_server:start(?MODULE, [], []).
+    gen_server:start(?MODULE, [], []).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -72,7 +73,7 @@ start() ->
 %% @end
 %%--------------------------------------------------------------------
 start_link() ->
-        gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -88,6 +89,9 @@ follow_order(GunnerPid, Order) ->
 
 set_url(GunnerPid, URL) ->
     gen_server:call(GunnerPid, {set_url, URL}).
+
+set_httpc_profile(GunnerPid, Profile) ->
+    gen_server:call(GunnerPid, {set_httpc_profile, Profile}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -132,6 +136,11 @@ handle_call({set_url, URL}, _From, State) ->
     NewState = State#state{url=URL},
     Reply = ok,
     {reply, Reply, NewState};
+
+handle_call({set_httpc_profile, Profile}, _From, State) ->
+    {ok, PID} = inets:start(httpc, [{profile, Profile}]),
+    NewState = State#state{profile=Profile, inets_pid=PID},
+    {reply, ok, NewState};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -592,10 +601,11 @@ execute_action(Action, State) ->
             URL             = prepare_get_args( BaseURL, 
                                                 Args,
                                                 State#state.keystore),
+            LURL            = binary_to_list(URL),
             {Time, Result}  = timer:tc(httpc, request, [
                                     Method, 
-                                    {binary_to_list(URL), Header}, 
-                                    HTTPOps, Ops]),
+                                    {LURL, Header}, 
+                                    HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
@@ -611,7 +621,7 @@ execute_action(Action, State) ->
                                         Type, 
                                         binary_to_list(Body)
                                     }, 
-                                    HTTPOps, Ops]),
+                                    HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
@@ -626,7 +636,7 @@ execute_action(Action, State) ->
                                         Type, 
                                         Body
                                     }, 
-                                    HTTPOps, Ops]),
+                                    HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 

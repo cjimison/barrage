@@ -78,6 +78,9 @@ create_gunner(GunnerList, 0) ->
     GunnerList;
 create_gunner(GunnerList, Count) ->
     {ok, GunnerPID} = barrage_gunner:start(),
+    ListName = "s_" ++ integer_to_list(Count),
+    AtomName = list_to_atom(ListName),
+    barrage_gunner:set_httpc_profile(GunnerPID, AtomName),
     NewList = [GunnerPID | GunnerList],
     create_gunner(NewList, Count - 1). 
 

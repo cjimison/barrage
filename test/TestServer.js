@@ -39,31 +39,35 @@ http.createServer(function (req, res)
             console.log("I got a login request");
             if(query.username === 'foo' && query.password === 'bar')
             {
-                res.end('8379283747838');
+                res.write('8379283747838');
             }
             else
             {
-                res.end('failed');
-            }
+                res.write('failed');
+            }   
+            res.end();
         }
         else if('/listcards' === url_parts.pathname)
         {
             console.log("I got a listcards request");
             obj.cards = [ { ID: 0, name : 'cardA'}, {ID:1, name: 'cardB'}];
             obj.deckType = 'generic';
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/get_card_details' === url_parts.pathname)
         {
             console.log("I got a get_card_details request");
             obj.card = { ID : 2, name : 'cardC'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/add_card' === url_parts.pathname)
         {
             console.log("I got a add_card request");
             obj.card = { ID : 3, name : 'cardD'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/cookie' === url_parts.pathname)
         {
@@ -74,7 +78,8 @@ http.createServer(function (req, res)
             });
             count++;
             obj.card = { ID : 4, name : 'cookie'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/cookie2' === url_parts.pathname)
         {
@@ -85,12 +90,14 @@ http.createServer(function (req, res)
             });
             count++;
             obj.card = { ID : 5, name : 'cookie2'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else
         {
             console.log("Parts unknown = " + url_parts.pathname);
-            res.end("{}");
+            res.write("{}");
+            res.end();
         }
     }
     else
