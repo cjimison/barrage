@@ -1,0 +1,51 @@
+[
+    {
+        "name"      : "login",
+        "url"       : "/login",
+        "type"      : "post",
+        "args"      : {
+            "username"  : "foo",
+            "pwassword" : "bar"
+        },
+        "results"   : { "session" : "$SESSION" },
+        "args_type" : "http",
+        "results_type": "json"
+    },
+    {
+        "name" : "cookie",
+        "url"  : "/cookie",
+        "type" :"get",
+        "results" : { "session" : "$SESSION" },
+        "args_type" : "http",
+        "results_type" : "json"
+    },
+    {
+        "name" : "cookie2",
+        "url" : "/cookie2",
+        "type" : "get",
+        "results" : { "session" : "$SESSION" },
+        "args_type" : "http",
+        "results_type" : "json"
+    },
+    {
+        "name" : "get_cards",
+        "url" : "/listcards",
+        "type" : "get",
+        "args" :  { "sesionID" : "$SESSION" },
+        "args_type" : "http"
+    },
+    {
+        "name" : "get_card_details",
+        "url"  : "/get_card_details",
+        "type" : "get",
+        "args" :  { "sesionID" : "$SESSION" },
+        "args_type" : "http"
+    },
+    {
+        "name" : "add_card",
+        "url"  : "/add_card",
+        "type" : "get",
+        "args" :  { "sesionID" : "$SESSION" },
+        "args_type" : "http"
+    }
+]

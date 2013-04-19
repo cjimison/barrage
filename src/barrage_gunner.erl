@@ -158,19 +158,19 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    try 
-        httpc:set_options([{cookies, enabled}]),
-        httpc:reset_cookies(),    
-        httpc:set_options([{cookies, enabled}]),
+    %try 
+        httpc:set_options([{cookies, enabled}], State#state.profile),
+        httpc:reset_cookies(State#state.profile),    
+        httpc:set_options([{cookies, enabled}], State#state.profile),
         State2 = State#state{results=dict:new(), keystore=dict:new()},
         State3 = process_set([Order], State2),
         barrage_commander:order_complete(self(), State3#state.results),
-        {noreply, State}
-    catch
-        _:_ -> 
-            barrage_commander:order_complete(self(), dict:new()),
-            {noreply, State}
-    end;
+        {noreply, State};
+    %catch
+    %    _:_ -> 
+    %        barrage_commander:order_complete(self(), dict:new()),
+    %        {noreply, State}
+    %end;
 
 handle_cast(_Msg, State) ->
     io:format("Why did I hit?~n~p~n", [_Msg]),
@@ -231,10 +231,10 @@ process_set(undefined, State) ->
 process_set([], State) ->
     State;
 process_set(Set, State) ->
-    [Order| Orders] = Set,
-    Action      = proplists:get_value(action, Order),
-    Children    = proplists:get_value(children, Order),
-    Args        = proplists:get_value(args, Order),
+    [{Order}| Orders] = Set,
+    Action      = proplists:get_value(<<"action">>, Order),
+    Children    = proplists:get_value(<<"children">>, Order),
+    Args        = proplists:get_value(<<"args">>, Order),
     NewState    = do_action(Action, Args, Children, State),
     process_set(Orders, NewState).
 
@@ -289,19 +289,19 @@ do_ordered_timed(Children, Idx, TimeEnd, State) ->
 do_random_count(_Children, 0, State) ->
     State;
 do_random_count(Children, Count, State) ->
-    Idx = random:uniform(length(Children)),
-    Child = lists:nth(Idx, Children),
-    NewState = process_set([Child], State),
+    Idx         = random:uniform(length(Children)),
+    Child       = lists:nth(Idx, Children),
+    NewState    = process_set([Child], State),
     do_random_count(Children, Count -1, NewState).
 
 %%%%------------------------------------------------------------------
 %%%% do_random_timed
 %%%%------------------------------------------------------------------
 do_random_timed(Children, TimeEnd, State) ->
-    Idx = random:uniform(length(Children)),
-    Child = lists:nth(Idx, Children),
-    NewState = process_set([Child], State),
-    Rez = TimeEnd - now_micro(),
+    Idx         = random:uniform(length(Children)),
+    Child       = lists:nth(Idx, Children),
+    NewState    = process_set([Child], State),
+    Rez         = TimeEnd - now_micro(),
     case Rez > 0 of
         true ->
             do_random_timed(Children, TimeEnd, NewState);
@@ -329,11 +329,11 @@ do_random_wait(Children, Time, State) ->
 do_action(<<"random">>, undefined, Children, State) ->
     do_random_count(Children, 1, State);
 
-do_action(<<"random">>, Args, Children, State) ->
-    Count = proplists:get_value(count, Args),
+do_action(<<"random">>, {Args}, Children, State) ->
+    Count = proplists:get_value(<<"count">>, Args),
     case Count of
         undefined ->
-            Time = proplists:get_value(min_time, Args),
+            Time = proplists:get_value(<<"min_time">>, Args),
             TimeEnd = now_micro() + (Time * 1000),
             do_random_timed(Children, TimeEnd, State);
         _ ->
@@ -346,11 +346,11 @@ do_action(<<"random">>, Args, Children, State) ->
 do_action(<<"ordered">>, undefined, Children, State) ->
     do_ordered_count(Children, 1, 1, State);
 
-do_action(<<"ordered">>, Args, Children, State) ->
-    Count = proplists:get_value(count, Args),
+do_action(<<"ordered">>, {Args}, Children, State) ->
+    Count = proplists:get_value(<<"count">>, Args),
     case Count of
         undefined ->
-            Time = proplists:get_value(min_time, Args),
+            Time = proplists:get_value(<<"min_time">>, Args),
             TimeEnd = now_micro() + (Time * 1000),
             do_ordered_timed(Children, 1, TimeEnd, State);
         _ ->
@@ -364,8 +364,8 @@ do_action(<<"ordered">>, Args, Children, State) ->
 do_action(<<"wait">>, undefined, Children, State) ->
     do_wait(Children, 100, State);
 
-do_action(<<"wait">>, Args, Children, State) ->
-    Count = proplists:get_value(time, Args),
+do_action(<<"wait">>, {Args}, Children, State) ->
+    Count = proplists:get_value(<<"time">>, Args),
     do_wait(Children, Count, State);
 
 %%%%------------------------------------------------------------------
@@ -375,8 +375,8 @@ do_action(<<"wait">>, Args, Children, State) ->
 do_action(<<"random_wait">>, undefined, Children, State) ->
     do_random_wait(Children, 100, State);
 
-do_action(<<"random_wait">>, Args, Children, State) ->
-    Count = proplists:get_value(time, Args),
+do_action(<<"random_wait">>, {Args}, Children, State) ->
+    Count = proplists:get_value(<<"time">>, Args),
     do_random_wait(Children, Count, State);
 
 %%%%------------------------------------------------------------------
@@ -410,7 +410,8 @@ prepare_get_args(Head, undefined, _Store) ->
 prepare_get_args(Head, [], _Store) ->
     Head;
 prepare_get_args(Head, Args, Store) ->
-    create_get_string(Head, Args, <<"?">>, Store). 
+    {TheArgs} = Args,
+    create_get_string(Head, TheArgs, <<"?">>, Store). 
 
 %%--------------------------------------------------------------------
 %% @private
@@ -423,7 +424,8 @@ prepare_get_args(Head, Args, Store) ->
 prepare_post_args(undefined, _Store) ->
     <<"">>;
 prepare_post_args(Args, Store) ->
-    create_get_string(<<"">>, Args, <<"">>, Store). 
+    {TheArgs} = Args,
+    create_get_string(<<"">>, TheArgs, <<"">>, Store). 
 
 %%--------------------------------------------------------------------
 %% @private
@@ -550,9 +552,10 @@ process_action_results(Result, json, Results, State) ->
     %% with things being a little less robust but I need to fix
     %% it before I move into first production phase
     {Data} = jiffy:decode(JsonData),
-    Keys    = proplists:get_keys(Results),
+    {TheResults} = Results,
+    Keys    = proplists:get_keys(TheResults),
     Store   = State#state.keystore,
-    NKS     = process_keydata(Results, Data, Keys, Store),
+    NKS     = process_keydata(TheResults, Data, Keys, Store),
     State#state{keystore=NKS};
 
 process_action_results(_Result, _Type, _Results, State) ->
@@ -581,40 +584,39 @@ process_action_results(_Result, _Type, _Results, State) ->
 %% @end
 %%--------------------------------------------------------------------
 execute_action(Action, State) ->
-    ActionName  = proplists:get_value(name, Action),
+    ActionName  = proplists:get_value(<<"name">>, Action),
     HeadURL     = State#state.url,
-    TailURL     = proplists:get_value(url, Action), 
+    TailURL     = proplists:get_value(<<"url">>, Action), 
     BaseURL     = <<HeadURL/binary, TailURL/binary>>,
-    Method      = proplists:get_value(type,Action),
     Header      = [],
     HTTPOps     = [],
     Ops         = [],
 
     %%% Optional Defined
-    Args        = proplists:get_value(args, Action),
-    Results     = proplists:get_value(results, Action),
-    ResultsType = proplists:get_value(results_type, Action),
+    Args        = proplists:get_value(<<"args">>, Action),
+    Results     = proplists:get_value(<<"results">>, Action),
+    ResultsType = proplists:get_value(<<"results_type">>, Action),
     
-    case proplists:get_value(type, Action) of
+    case proplists:get_value(<<"type">>, Action) of
 
-        get ->
+        <<"get">> ->
             URL             = prepare_get_args( BaseURL, 
                                                 Args,
                                                 State#state.keystore),
             LURL            = binary_to_list(URL),
             {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
+                                    get, 
                                     {LURL, Header}, 
                                     HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
-        post ->
+        <<"post">> ->
             Type            = "application/x-www-form-urlencoded",
             Body            = prepare_post_args(Args, 
                                                 State#state.keystore),
             {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
+                                    post, 
                                     {
                                         binary_to_list(BaseURL), 
                                         Header, 
@@ -625,11 +627,11 @@ execute_action(Action, State) ->
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
-        post_json ->
+        <<"post_json">> ->
             Type            = "application/json",
-            Body            = binary_to_list(jiffy:encode({Args})),
+            Body            = binary_to_list(jiffy:encode(Args)),
             {Time, Result}  = timer:tc(httpc, request, [
-                                    Method, 
+                                    post, 
                                     {
                                         binary_to_list(BaseURL), 
                                         Header, 
@@ -640,7 +642,7 @@ execute_action(Action, State) ->
             NewState = process_action_results(Result, ResultsType, Results, State),
             store_action_results(ActionName, Time, NewState);
 
-        post_multipart ->
+        <<"post_multipart">> ->
             State;
 
         _ ->

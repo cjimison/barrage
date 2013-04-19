@@ -1,0 +1,14 @@
+[
+    {   
+        "type" : "general",
+        "args" : { "url": "http://localhost:1337" }
+    },
+    {
+        "type" : "commander",
+        "args" : 
+        {
+            "general"   : "general@localhost",
+            "gunners"   : 1
+        }
+    }
+]

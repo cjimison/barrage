@@ -72,7 +72,7 @@ get_props(_Gen, _Com) ->
 
 init([]) ->
     [{_, General}]      = ets:lookup(barrage, enable_general),
-    [{_, Commander}]    = ets:lookup(barrage, enable_general),
+    [{_, Commander}]    = ets:lookup(barrage, enable_commander),
     Props               = get_props(General, Commander),
     {ok, { {one_for_one, 5, 10}, Props }}.
 

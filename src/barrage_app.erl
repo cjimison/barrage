@@ -115,8 +115,8 @@ process_plans([]) ->
     ok;
 process_plans(Plans) ->
     [{Plan} | OtherPlans]   = Plans,
-    Name                    = proplists:get_value(name, Plan),
-    Tree                    = proplists:get_value(tree, Plan),
+    Name                    = proplists:get_value(<<"name">>, Plan),
+    Tree                    = proplists:get_value(<<"tree">>, Plan),
   
     [{table_keys, OldKeys}] = ets:lookup(plans, table_keys),
     NewKeys = [Name | OldKeys],
@@ -137,7 +137,7 @@ process_actions([]) ->
     ok;
 process_actions(Actions) ->
     [{Action} | OtherActions]   = Actions,
-    Name                        = proplists:get_value(name, Action),
+    Name                        = proplists:get_value(<<"name">>, Action),
     ets:insert(actions, {Name, Action}),
     process_actions(OtherActions).
 
@@ -154,18 +154,18 @@ process_config([]) ->
     ok;
 process_config(Configs) ->
     [{Config} | OtherConfigs]   = Configs,
-    Type                        = proplists:get_value(type, Config),
-    Args                        = proplists:get_value(args, Config),
+    Type                        = proplists:get_value(<<"type">>, Config),
+    {Args}                      = proplists:get_value(<<"args">>, Config),
     ets:insert(barrage, {type, Type}),
     case Type of
-        general ->
+        <<"general">> ->
             ets:insert(barrage, {enable_general, true}),
-            URL = proplists:get_value(url, Args),
+            URL = proplists:get_value(<<"url">>, Args),
             ets:insert(barrage, {url, URL});
-        commander ->
+        <<"commander">> ->
             ets:insert(barrage, {enable_commander, true}),
-            Gunners = proplists:get_value(gunners, Args),
-            General = proplists:get_value(general, Args),
+            Gunners = proplists:get_value(<<"gunners">>, Args),
+            General = binary_to_atom(proplists:get_value(<<"general">>, Args), utf8),
             ets:insert(barrage, {general, General}),
             ets:insert(barrage, {gunners, Gunners})
     end,
@@ -182,12 +182,19 @@ process_config(Configs) ->
 %%--------------------------------------------------------------------
 loadConfigTable()->
     BasePath        = code:priv_dir(barrage),
-    {ok, Configs}   = file:consult(BasePath ++ "/barrage.config"), 
-    {ok, Plans}     = file:consult(BasePath ++ "/behaviors.config"),
-    {ok, Actions}   = file:consult(BasePath ++ "/actions.config"),
+    {ok, ConfigsJ}  = file:read_file(BasePath ++ "/barrage.json"),
+    {ok, PlansJ}    = file:read_file(BasePath ++ "/behaviors.json"),
+    {ok, ActionsJ}  = file:read_file(BasePath ++ "/actions.json"),
+    
+    Configs         = jiffy:decode(ConfigsJ),
+    Plans           = jiffy:decode(PlansJ),
+    Actions         = jiffy:decode(ActionsJ),
     
     % Now lets set parse the plans in order to build out an ets table
     ets:new(barrage, [set, named_table]),
+
+    ets:insert(barrage, {enable_general, false}),
+    ets:insert(barrage, {enable_commander, false}),
     process_config(Configs),
 
     ets:new(plans, [set, named_table]),
