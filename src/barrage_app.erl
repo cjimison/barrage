@@ -55,24 +55,30 @@
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
     ok = inets:start(),
-    Dispatch = cowboy_router:compile([
-            {'_', [
-                    {"/status",     barrage_general_handler, []},
-                    {"/orders",     barrage_general_handler, []},
-                    {"/commanders", barrage_general_handler, []},
-                    {"/issue_order",barrage_general_handler, []},
-                    {"/[...]", cowboy_static, [
-                            {directory, {priv_dir, barrage, []}},
-                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-		    ]} 
-            ]}
-    ]),
-    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
-            {env, [{dispatch, Dispatch}]}
-    ]),
 
     case loadConfigTable() of
         ok ->
+            [{_, General}] = ets:lookup(barrage, enable_general),
+            case General of
+                true ->
+                    Dispatch = cowboy_router:compile([
+                            {'_', [
+                                    {"/status",     barrage_general_handler, []},
+                                    {"/orders",     barrage_general_handler, []},
+                                    {"/commanders", barrage_general_handler, []},
+                                    {"/issue_order",barrage_general_handler, []},
+                                    {"/[...]", cowboy_static, [
+                                            {directory, {priv_dir, barrage, []}},
+                                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+                                    ]} 
+                            ]}
+                    ]),
+                    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
+                            {env, [{dispatch, Dispatch}]}
+                    ]);
+                _ ->
+                    ok
+            end,
             case barrage_sup:start_link() of
                 {ok, Pid} ->
                     {ok, Pid};

@@ -1,13 +1,9 @@
 [
-    {   
-        "type" : "general",
-        "args" : { "url": "http://localhost:1337" }
-    },
     {
         "type" : "commander",
         "args" : 
         {
-            "general"   : "general@localhost",
+            "general"   : "general@127.0.0.1",
             "gunners"   : 1
         }
     }
