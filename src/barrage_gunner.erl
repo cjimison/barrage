@@ -542,9 +542,9 @@ process_action_results(_, undefined, _, State) ->
 process_action_results(_, _, undefined, State) ->
     State;
 
-process_action_results(Result, json, Results, State) ->
+process_action_results(Result, <<"json">>, Results, State) ->
     {_, {_,Info, JsonData}} = Result,
-    httpc:store_cookies(Info, binary_to_list(State#state.url)),
+    httpc:store_cookies(Info, binary_to_list(State#state.url), State#state.profile),
 
     %% TODO  This is still a large point of failure
     %% If the server returns invalid json then this whole client
