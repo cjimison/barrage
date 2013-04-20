@@ -1,4 +1,6 @@
 var gPlotInfo = {};
+var gHideProgressOverlay = true;
+
 var DEFAULTPROPERTIES =
 	{
 		title: "",
@@ -32,8 +34,6 @@ var DEFAULTPROPERTIES =
 		},
 	};
 
-var gHideProgressOverlay = true;
-
 $(document).ready(function() {
 	RequestInfo("orders", function(orders) {
 		for (var i = 0; i < orders.length; ++i)
@@ -46,7 +46,7 @@ $(document).ready(function() {
 
 function RequestInfo(url, callback) {
 	var startTime = new Date();
-	var loadinghtml = '<div>Loading Data</div>'
+	var loadinghtml = '<div>Requesting Data</div>'
 	loadinghtml += '<div id="loadTimer"><span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span></div>'
 
 	$.ajax({
@@ -65,17 +65,14 @@ function RequestInfo(url, callback) {
 			$.unblockUI();
 			
 		},
-		error: function (xhr, ajaxOptions, errorThrown) {
-			console.log(qType + ' Failed: ERROR ' + xhr.status + ' - ' + xhr.responseText);
+		error: function (xhr, ajaxOptions, thrownError) {
+			console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
 		}
 	});
 }
 
 function IssueOrder(name) {
-	//DISABLE ALL BUTTONS while this is creating the graph
-	$("input[type=button]").attr("disabled", true);
-	gHideProgressOverlay = false;
-					
+	gHideProgressOverlay = false;			
 	var url = "issue_order?order=" + encodeURIComponent(name);
 	
 	// Override the jqplot default formatter to
@@ -105,19 +102,18 @@ function IssueOrder(name) {
 			DEFAULTPROPERTIES.title = plot;
 			
 			gPlotInfo[chartName].data = data[plot];
-			gPlotInfo[chartName].properties = jQuery.extend(true, {}, DEFAULTPROPERTIES);
+			gPlotInfo[chartName].properties = jQuery.extend(true, getMediumProperty(chartName), DEFAULTPROPERTIES);
 			LoadPlot(chartName);
 			++idx;
 		}
 	
 		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\"><\/input>');
+		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Medium Line\" onclick=\"co_ToggleMedium()\"><\/input>');
 		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\"><\/input>');
-		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
+		//$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
 		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	});
 	gHideProgressOverlay = true;
-	//RE-ENABLE ALL BUTTONS now that it is done
-	$("input[type=button]").attr("disabled", false);
 }
 
 function LoadPlot(chartName) {
@@ -131,8 +127,7 @@ function scaleData(data, interval) {
 	var scaledData = [];
 	var dlength = data.length;
 	if (dlength > interval) {
-		for (var i = 0; i < dlength - 1 ; i+=interval)
-		{
+		for (var i = 0; i < dlength - 1 ; i+=interval) {
 			scaledData.push([i, data[i]]);
 		}
 		scaledData.push([dlength-1, data[dlength-1]]);
@@ -143,6 +138,26 @@ function scaleData(data, interval) {
 	return scaledData;		
 }
 
+function getMediumProperty(chartName)
+{
+	var dlength = gPlotInfo[chartName].data.length;
+	var sum = 0;
+	for (i = 0; i < dlength; ++i) {
+		sum += gPlotInfo[chartName].data[i];
+	}
+	
+	var medium = sum/dlength;
+	
+	return {canvasOverlay: {
+				objects: [
+					{horizontalLine: {
+						y: medium,
+					}},
+				]
+			}}
+			
+}
+
 function co_ToggleMarkers() {
 	for (chartName in gPlotInfo) {
 		gPlotInfo[chartName].properties.seriesDefaults.showMarker = !gPlotInfo[chartName].plot.series[0].showMarker;
@@ -151,9 +166,17 @@ function co_ToggleMarkers() {
 	}
 }
 
+function co_ToggleMedium() {
+	for (chartName in gPlotInfo) {
+		gPlotInfo[chartName].properties.canvasOverlay.show = !gPlotInfo[chartName].plot.options.canvasOverlay.show;
+		gPlotInfo[chartName].plot.destroy();
+		LoadPlot(chartName);
+	}
+}
+
 function co_RedrawCharts() {
 	for (chartName in gPlotInfo) {
-		gPlotInfo[chartName].properties = jQuery.extend(true, {}, DEFAULTPROPERTIES);
+		gPlotInfo[chartName].properties = jQuery.extend(true, getMediumProperty(chartName), DEFAULTPROPERTIES);
 		gPlotInfo[chartName].plot.destroy();
 		LoadPlot(chartName);
 	}
