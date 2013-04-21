@@ -32,7 +32,7 @@
 %% API
 -export([start/0, 
          start_link/0,
-         execute/3,
+         execute/4,
          order_complete/2]).
 
 %% gen_server callbacks
@@ -84,8 +84,8 @@ create_gunner(GunnerList, Count) ->
     NewList = [GunnerPID | GunnerList],
     create_gunner(NewList, Count - 1). 
 
-execute(Pid, Orders, TargetIP) ->
-    gen_server:cast(Pid, {execute, {Orders, TargetIP}}).
+execute(Pid, Orders, Server, Port) ->
+    gen_server:cast(Pid, {execute, {Orders, Server, Port}}).
 
 order_complete(GunnerPid, Results) ->
     gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
@@ -138,7 +138,7 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({execute, {Order, TargetURL}}, State) when 
+handle_cast({execute, {Order, Server, Port}}, State) when 
         State#state.executing == false ->
     %NOTE: I am currently doing this in two phases
     %      so the timing syncs up a little better.
@@ -146,7 +146,7 @@ handle_cast({execute, {Order, TargetURL}}, State) when
     %      REFACTOR: Have the follow_order take a
     %      target URL as well.
     FunTarget = fun(Pid) -> 
-            barrage_gunner:set_url(Pid, TargetURL)
+            barrage_gunner:set_server_info(Pid, Server, Port)
     end,
 
     FunFire = fun(Pid) ->

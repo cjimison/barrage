@@ -140,11 +140,17 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
             case Type of
                 <<"general">> ->
                     ets:insert(barrage, {enable_general, true}),
-                    case proplists:get_value(<<"url">>, Args) of
+                    case proplists:get_value(<<"server">>, Args) of
                         undefined ->
                             invalid_config_arg;
-                        URL ->
-                            ets:insert(barrage, {url, URL}),
+                        Server ->
+                            ets:insert(barrage, {server, Server}),
+                            case proplists:get_value(<<"port">>, Args) of
+                                undefined ->
+                                    ets:insert(barrage, {port, 80});
+                                Port ->
+                                    ets:insert(barrage, {port, Port})
+                            end,
                             ok
                     end;
                 <<"commander">> ->

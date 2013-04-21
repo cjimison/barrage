@@ -3,7 +3,10 @@
         "name" : "Simple Test",
         "tree" : { "action":"login" }
     },
-
+    {
+        "name" : "Google Test",
+        "tree" : { "action":"google_search" }
+    },
     {
         "name" : "Cookie Test",
         "tree" : {
