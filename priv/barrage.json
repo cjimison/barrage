@@ -1,7 +1,11 @@
 [
     {   
         "type" : "general",
-        "args" : { "url": "http://localhost:1337" }
+        "args" : 
+        { 
+            "ip"    : "localhost",
+            "port"  : 1337
+        }
     },
     {
         "type" : "commander",

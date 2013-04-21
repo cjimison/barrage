@@ -1,15 +1,19 @@
 [
     {
-        "name"      : "login",
-        "url"       : "/login",
-        "type"      : "post",
-        "args"      : {
+        "name"          : "login",
+        "url"           : "/login",
+        "request_type"  : "https",
+        "port"          : 1337,
+        "server"        : "localhost",
+        "type"          : "post",
+        "args"          :
+        {
             "username"  : "foo",
             "pwassword" : "bar"
         },
-        "results"   : { "session" : "$SESSION" },
-        "args_type" : "http",
-        "results_type": "json"
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "json"
     },
     {
         "name" : "cookie",

@@ -54,6 +54,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
+    ok = ssl:start(),
     ok = inets:start(),
 
     case loadConfigTable() of
