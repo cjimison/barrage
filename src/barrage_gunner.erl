@@ -158,19 +158,19 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({follow_order, Order}, State) ->
     % This is where we will start to multiplex out the system
-    %try 
+    try 
         httpc:set_options([{cookies, enabled}], State#state.profile),
         httpc:reset_cookies(State#state.profile),    
         httpc:set_options([{cookies, enabled}], State#state.profile),
         State2 = State#state{results=dict:new(), keystore=dict:new()},
         State3 = process_set([Order], State2),
         barrage_commander:order_complete(self(), State3#state.results),
-        {noreply, State};
-    %catch
-    %    _:_ -> 
-    %        barrage_commander:order_complete(self(), dict:new()),
-    %        {noreply, State}
-    %end;
+        {noreply, State}
+    catch _:_ ->
+        io:format("Gunner Exception.  Bail out of this Tree~n"), 
+        barrage_commander:order_complete(self(), dict:new()),
+        {noreply, State}
+    end;
 
 handle_cast(_Msg, State) ->
     io:format("Why did I hit?~n~p~n", [_Msg]),

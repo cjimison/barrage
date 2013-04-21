@@ -52,11 +52,13 @@
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-prepare_post_args(undefined, _Store) ->
-    <<"">>;
-prepare_post_args(Args, Store) ->
-    {TheArgs} = Args,
-    encode_uri_args_value(<<"">>, TheArgs, <<"">>, Store). 
+encode_post_args(undefined, _Store) ->
+    "";
+encode_post_args({Args}, Store) ->
+    encode_uri_args_value("", Args, "", Store);
+
+encode_post_args(_Args, _Store) ->
+    "".
 
 get_protocol_type(undefined, State) ->
     binary_to_list(State#state.protocol);
@@ -114,7 +116,7 @@ encode_uri_args_value(URL, Args, Token, ClientStore) ->
                     encode_get_args(TArgs, URL, Token, binary_to_list(ArgName), ArgValue, ClientStore)
             end;
         _ ->
-            encode_get_args(TArgs, URL, Token, ArgName, ArgValue, ClientStore)
+            encode_get_args(TArgs, URL, Token, binary_to_list(ArgName), ArgValue, ClientStore)
     end.
 
 encode_get_args(Args, URL, Token, ArgName, ArgValue, Store) when is_binary(ArgValue) ->
@@ -205,8 +207,6 @@ process_action_results(Result, <<"json">>, Results, URL, State) ->
 process_action_results(_Result, _Type, _Results, _URL, State) ->
     State.
 
-
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -242,7 +242,7 @@ execute(Action, State) when
     Page        = binary_to_list(proplists:get_value(<<"url">>, Action)), 
     URL         = lists:concat([Protocol, "://", Domain, ":", Port, Page]),
 
-    Header      = [],
+    Header      = [{"P3P", "CP='ALL IND DSP COR ADM CONo CUR CUSo IVAo IVDo PSA PSD TAI TELo OUR SAMo CNT COM INT NAV ONL PHY PRE PUR UNI'"}],
     HTTPOps     = [],
     Ops         = [],
 
@@ -267,15 +267,14 @@ execute(Action, State) when
 
         <<"post">> ->
             Type            = "application/x-www-form-urlencoded",
-            Body            = prepare_post_args(Args, 
-                                                State#state.keystore),
+            Body            = encode_post_args(Args, State#state.keystore),
             {Time, Result}  = timer:tc(httpc, request, [
                                     post, 
                                     {
                                         URL, 
                                         Header, 
                                         Type, 
-                                        binary_to_list(Body)
+                                        Body
                                     }, 
                                     HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(  Result,
@@ -287,6 +286,9 @@ execute(Action, State) when
 
         <<"post_json">> ->
             Type            = "application/json",
+            %TODO I need to do the token replacement stuff
+            % As a note of refactor I should use this same token replace
+            % system in the get and post args stuff
             Body            = binary_to_list(jiffy:encode(Args)),
             {Time, Result}  = timer:tc(httpc, request, [
                                     post, 
