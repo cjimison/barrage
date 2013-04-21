@@ -3,8 +3,8 @@
         "type" : "general",
         "args" : 
         { 
-            "ip"    : "localhost",
-            "port"  : 1337
+            "server"    : "localhost",
+            "port"      : 1337
         }
     },
     {

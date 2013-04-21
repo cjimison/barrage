@@ -32,7 +32,7 @@
 %% API
 -export([execute/2]).
 
--record(state, {url, results, keystore, inets_pid, profile=default}).
+-record(state, {server, port, protocol = <<"http">>, results, keystore, inets_pid, profile=default}).
 
 %%%===================================================================
 %%% Public API
@@ -47,22 +47,6 @@
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Prepare the "get" based arguments for processing
-%%
-%% @spec 
-%% @end
-%%--------------------------------------------------------------------
-prepare_get_args(Head, undefined, _Store) ->
-    Head;
-prepare_get_args(Head, [], _Store) ->
-    Head;
-prepare_get_args(Head, Args, Store) ->
-    {TheArgs} = Args,
-    create_get_string(Head, TheArgs, <<"?">>, Store). 
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
 %% Prepare the "post" based arguments for processing
 %%
 %% @spec 
@@ -72,7 +56,25 @@ prepare_post_args(undefined, _Store) ->
     <<"">>;
 prepare_post_args(Args, Store) ->
     {TheArgs} = Args,
-    create_get_string(<<"">>, TheArgs, <<"">>, Store). 
+    encode_uri_args_value(<<"">>, TheArgs, <<"">>, Store). 
+
+get_protocol_type(undefined, State) ->
+    binary_to_list(State#state.protocol);
+
+get_protocol_type(Protocol, _State) ->
+    binary_to_list(Protocol).
+
+get_server_domain(undefined, State) ->
+    binary_to_list(State#state.server);
+
+get_server_domain(Server, _State) ->
+    binary_to_list(Server).
+
+get_port_value(undefined, State) ->
+    State#state.port;
+
+get_port_value(Port, _State) ->
+    Port.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -82,63 +84,51 @@ prepare_post_args(Args, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store) 
-    when is_integer(ArgValue) ->
-    IntArgVal = list_to_binary(integer_to_list(ArgValue)),
-    build_string(TArgs, Head, Token, ArgName, IntArgVal, Store);
 
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store)
-    when is_float(ArgValue) ->
-    FloatArgVal = list_to_binary(float_to_list(ArgValue)),
-    build_string(TArgs, Head, Token, ArgName, FloatArgVal, Store);
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Prepare the "get" based arguments for processing
+%%
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+encode_uri_args(Head, undefined, _Store) ->
+    Head;
+encode_uri_args(Head, {Args}, Store) ->
+    encode_uri_args_value(Head, Args, "?", Store); 
+encode_uri_args(Head, _Args, _Store) ->
+    Head.
 
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store)
-    when is_list(ArgValue) ->
-    ListArgVal = list_to_binary(ArgValue),
-    build_string(TArgs, Head, Token, ArgName, ListArgVal, Store);
-
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store)
-    when is_atom(ArgValue) ->
-    AtomArgVal = list_to_binary(atom_to_list(ArgValue)),
-    build_string(TArgs, Head, Token, ArgName, AtomArgVal, Store);
-
-build_string(TArgs, Head, Token, ArgName, ArgValue, Store)
-    when is_binary(ArgValue) ->
-    case TArgs of
-        [] ->
-            % That is all folks, lets boggie out
-            <<  Head/binary, 
-                Token/binary, 
-                ArgName/binary, 
-                <<"=">>/binary, 
-                ArgValue/binary>>;
-        _ ->
-            H1 = << Head/binary, 
-                    Token/binary, 
-                    ArgName/binary, 
-                    <<"=">>/binary, 
-                    ArgValue/binary>>,
-            create_get_string(H1, TArgs, <<"&">>, Store)
-    end.
-
-create_get_string(Head, Args, Token, Store) ->
+encode_uri_args_value(URL, Args, Token, ClientStore) ->
     [{ArgName, ArgValue} | TArgs] = Args,
     <<Tag:1/binary, _TagData/binary>> = ArgValue,
     case Tag of
         <<"$">> ->
-            IsKey = dict:is_key(ArgValue, Store),
+            IsKey = dict:is_key(ArgValue, ClientStore),
             case IsKey of
                 true ->
-                    NewArgValue = dict:fetch(ArgValue, Store),
-                    build_string(   TArgs, Head, Token, 
-                                    ArgName, NewArgValue, Store);
+                    NewArgValue = dict:fetch(ArgValue, ClientStore),
+                    encode_get_args(TArgs, URL, Token, binary_to_list(ArgName), NewArgValue, ClientStore);
                 _ ->
-                    build_string(   TArgs, Head, Token, 
-                                    ArgName, ArgValue, Store)
+                    encode_get_args(TArgs, URL, Token, binary_to_list(ArgName), ArgValue, ClientStore)
             end;
         _ ->
-            build_string(TArgs, Head, Token, ArgName, ArgValue, Store)
+            encode_get_args(TArgs, URL, Token, ArgName, ArgValue, ClientStore)
     end.
+
+encode_get_args(Args, URL, Token, ArgName, ArgValue, Store) when is_binary(ArgValue) ->
+    encode_get_args(Args, URL, Token, ArgName, binary_to_list(ArgValue), Store); 
+    
+encode_get_args(Args, URL, Token, ArgName, ArgValue, Store) ->
+    NURL = lists:concat([URL, Token, ArgName, "=" , ArgValue]),
+    case Args of
+        [] ->
+            NURL;
+        _ ->
+            encode_uri_args_value(NURL, Args, "&", Store)
+    end.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -188,16 +178,16 @@ process_keydata(Results, Data, Keys, Store) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-process_action_results(_, undefined, _, State) ->
+process_action_results(_, undefined, _, _, State) ->
     State;
 
-process_action_results(_, _, undefined, State) ->
+process_action_results(_, _, undefined, _, State) ->
     State;
 
-process_action_results(Result, <<"json">>, Results, State) ->
+process_action_results(Result, <<"json">>, Results, URL, State) ->
     {_, {_,Info, JsonData}} = Result,
     httpc:store_cookies(Info, 
-                        binary_to_list(State#state.url), 
+                        URL, 
                         State#state.profile),
 
     %% TODO  This is still a large point of failure
@@ -212,8 +202,10 @@ process_action_results(Result, <<"json">>, Results, State) ->
     NKS             = process_keydata(TheResults, Data, Keys, Store),
     State#state{keystore=NKS};
 
-process_action_results(_Result, _Type, _Results, State) ->
+process_action_results(_Result, _Type, _Results, _URL, State) ->
     State.
+
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -238,11 +230,18 @@ process_action_results(_Result, _Type, _Results, State) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-execute(Action, State) ->
+execute(Action, State) when 
+    is_record(State, state) andalso
+    is_list(Action) ->
+
     ActionName  = proplists:get_value(<<"name">>, Action),
-    HeadURL     = State#state.url,
-    TailURL     = proplists:get_value(<<"url">>, Action), 
-    BaseURL     = <<HeadURL/binary, TailURL/binary>>,
+   
+    Protocol    = get_protocol_type(proplists:get_value(<<"protocol">>, Action), State), 
+    Domain      = get_server_domain(proplists:get_value(<<"server">>, Action), State), 
+    Port        = get_port_value(proplists:get_value(<<"port">>, Action), State), 
+    Page        = binary_to_list(proplists:get_value(<<"url">>, Action)), 
+    URL         = lists:concat([Protocol, "://", Domain, ":", Port, Page]),
+
     Header      = [],
     HTTPOps     = [],
     Ops         = [],
@@ -251,14 +250,10 @@ execute(Action, State) ->
     Args        = proplists:get_value(<<"args">>, Action),
     Results     = proplists:get_value(<<"results">>, Action),
     ResultsType = proplists:get_value(<<"results_type">>, Action),
-    
-    case proplists:get_value(<<"type">>, Action) of
 
+    case proplists:get_value(<<"type">>, Action) of
         <<"get">> ->
-            URL             = prepare_get_args( BaseURL, 
-                                                Args,
-                                                State#state.keystore),
-            LURL            = binary_to_list(URL),
+            LURL            = encode_uri_args( URL, Args, State#state.keystore),
             {Time, Result}  = timer:tc(httpc, request, [
                                     get, 
                                     {LURL, Header}, 
@@ -266,6 +261,7 @@ execute(Action, State) ->
             NewState = process_action_results(  Result, 
                                                 ResultsType,
                                                 Results,
+                                                URL,
                                                 State),
             store_action_results(ActionName, Time, NewState);
 
@@ -276,7 +272,7 @@ execute(Action, State) ->
             {Time, Result}  = timer:tc(httpc, request, [
                                     post, 
                                     {
-                                        binary_to_list(BaseURL), 
+                                        URL, 
                                         Header, 
                                         Type, 
                                         binary_to_list(Body)
@@ -285,6 +281,7 @@ execute(Action, State) ->
             NewState = process_action_results(  Result,
                                                 ResultsType,
                                                 Results,
+                                                URL,
                                                 State),
             store_action_results(ActionName, Time, NewState);
 
@@ -294,7 +291,7 @@ execute(Action, State) ->
             {Time, Result}  = timer:tc(httpc, request, [
                                     post, 
                                     {
-                                        binary_to_list(BaseURL), 
+                                        URL, 
                                         Header, 
                                         Type, 
                                         Body
@@ -303,6 +300,7 @@ execute(Action, State) ->
             NewState = process_action_results(  Result,
                                                 ResultsType,
                                                 Results,
+                                                URL,
                                                 State),
             store_action_results(ActionName, Time, NewState);
 
@@ -312,5 +310,7 @@ execute(Action, State) ->
         _ ->
             % Undefined type of post
             State
-    end.
+    end;
 
+execute(_Action, _State) ->
+    error_arguments_incorrect_type.

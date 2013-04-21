@@ -34,7 +34,7 @@
 -export([start/0]).
 -export([start_link/0]).
 -export([follow_order/2]).
--export([set_url/2]).
+-export([set_server_info/3]).
 -export([set_httpc_profile/2]).
 
 
@@ -48,7 +48,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {url, results, keystore, inets_pid, profile=default}).
+-record(state, {server, port, protocol = <<"http">>, results, keystore, inets_pid, profile=default}).
 
 %%%===================================================================
 %%% API
@@ -87,8 +87,8 @@ start_link() ->
 follow_order(GunnerPid, Order) ->
     gen_server:cast(GunnerPid, {follow_order, Order}).
 
-set_url(GunnerPid, URL) ->
-    gen_server:call(GunnerPid, {set_url, URL}).
+set_server_info(GunnerPid, Server, Port) ->
+    gen_server:call(GunnerPid, {set_server_info, Server, Port}).
 
 set_httpc_profile(GunnerPid, Profile) ->
     gen_server:call(GunnerPid, {set_httpc_profile, Profile}).
@@ -132,8 +132,8 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({set_url, URL}, _From, State) ->
-    NewState = State#state{url=URL},
+handle_call({set_server_info, Server, Port}, _From, State) ->
+    NewState = State#state{server=Server, port=Port},
     Reply = ok,
     {reply, Reply, NewState};
 
