@@ -183,9 +183,9 @@ handle_call({report_results, CPID, Results}, _From, State) ->
         [] ->
             Fun = fun(Pid) -> Pid ! {done, Result} end,
             lists:foreach(Fun, State#state.waiting_pid),
-            {reply, ok, State#state{waiting_pid = [], blocked=[]}};
+            {reply, ok, State#state{waiting_pid = [], blocked=[], results=dict:new()}};
         _ ->
-            {reply, ok, State#state{blocked = ActiveCommanders}}
+            {reply, ok, State#state{blocked = ActiveCommanders, results=Result}}
     end;
 
 %%%%------------------------------------------------------------------

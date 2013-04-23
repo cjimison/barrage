@@ -4,6 +4,37 @@
         "tree" : { "action":"login" }
     },
     {
+        "name" : "Simple behavior Test",
+        "tree" : { "behavior":"Simple Test" }
+    },
+    {
+        "name" : "Random Login Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                {
+                    "action"    : "load_kv_store",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES", 
+                        "file"      : "usernames.json" 
+                    }
+                },
+                {
+                    "action"    : "read_random_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES", 
+                        "key"       : "$USER_NAME", 
+                        "value"     : "$PASS_WORD" 
+                    }
+                }
+            ]
+        }
+    },
+    {
         "name" : "Google Test",
         "tree" : { "action":"google_search" }
     },

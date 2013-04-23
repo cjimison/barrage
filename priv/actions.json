@@ -13,6 +13,19 @@
         "results_type"  : "json"
     },
     {
+        "name"          : "named_login",
+        "url"           : "/login",
+        "type"          : "post",
+        "args"          :
+        {
+            "username"  : "$USER_NAME",
+            "password"  : "$PASS_WORD"
+        },
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "json"
+    },
+    {
         "name"          : "cookie",
         "url"           : "/cookie",
         "type"          : "get",

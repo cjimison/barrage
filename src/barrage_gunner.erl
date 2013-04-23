@@ -232,11 +232,19 @@ process_set([], State) ->
     State;
 process_set(Set, State) ->
     [{Order}| Orders] = Set,
-    Action      = proplists:get_value(<<"action">>, Order),
-    Children    = proplists:get_value(<<"children">>, Order),
-    Args        = proplists:get_value(<<"args">>, Order),
-    NewState    = do_action(Action, Args, Children, State),
-    process_set(Orders, NewState).
+    
+    case proplists:get_value(<<"action">>, Order) of
+        undefined ->
+            Behavior    = proplists:get_value(<<"behavior">>, Order),
+            [{_,BO}]    = ets:lookup(plans, Behavior),
+            NextState   = process_set([BO], State),
+            process_set(Orders, NextState);
+        Action ->
+            Children    = proplists:get_value(<<"children">>, Order),
+            Args        = proplists:get_value(<<"args">>, Order),
+            NewState    = do_action(Action, Args, Children, State),
+            process_set(Orders, NewState)
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
