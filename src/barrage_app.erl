@@ -54,9 +54,6 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
-    ok = ssl:start(),
-    ok = inets:start(),
-
     case loadConfigTable() of
         ok ->
             [{_, General}] = ets:lookup(barrage, enable_general),

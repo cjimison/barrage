@@ -6,6 +6,11 @@
   {applications, [
                   kernel,
                   stdlib,
+                  crypto,
+                  public_key,
+                  ssl,
+                  inets,
+                  ranch,
                   cowboy
                  ]},
   {mod, { barrage_app, []}},
