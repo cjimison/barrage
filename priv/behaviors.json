@@ -68,7 +68,15 @@
                     }
                 },
 
-                { "action" : "named_login"}
+                { "action" : "named_login"},
+                {
+                    "action"    : "conditional",
+                    "args"      : { "$USERNAME" : "$USERNAME" },
+                    "children"  : [
+                        { "action" : "cookie"},
+                        { "action" : "cookie2"}
+                    ]
+                }
             ]
         }
     },

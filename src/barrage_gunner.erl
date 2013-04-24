@@ -368,7 +368,6 @@ do_action(<<"ordered">>, {Args}, Children, State) ->
 %%%%------------------------------------------------------------------
 %%%% Action: <<"wait">>
 %%%%------------------------------------------------------------------
-
 do_action(<<"wait">>, undefined, Children, State) ->
     do_wait(Children, 100, State);
 
@@ -379,7 +378,6 @@ do_action(<<"wait">>, {Args}, Children, State) ->
 %%%%------------------------------------------------------------------
 %%%% Action: <<"random_wait">>
 %%%%------------------------------------------------------------------
-
 do_action(<<"random_wait">>, undefined, Children, State) ->
     do_random_wait(Children, 100, State);
 
@@ -387,6 +385,9 @@ do_action(<<"random_wait">>, {Args}, Children, State) ->
     Count = proplists:get_value(<<"time">>, Args),
     do_random_wait(Children, Count, State);
 
+%%%%------------------------------------------------------------------
+%%%% Action: <<"set_variable">>
+%%%%------------------------------------------------------------------
 do_action(<<"set_variable">>, undefined, _Children, State) ->
     State;
 
@@ -419,6 +420,9 @@ do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
     Value   = proplists:get_value(<<"value">>, Args),
     barrage_action_kvs:read_random(Profile, Key, Value, State);
 
+%%%%------------------------------------------------------------------
+%%%% Action: <<"read_named_kv">>
+%%%%------------------------------------------------------------------
 do_action(<<"read_named_kv">>, undefined, _Children, State) ->
     State;
 
@@ -428,6 +432,9 @@ do_action(<<"read_named_kv">>, {Args}, _Children, State) ->
     Variable= proplists:get_value(<<"variable">>, Args),
     barrage_action_kvs:read_name(Profile, Key, Variable, State);
 
+%%%%------------------------------------------------------------------
+%%%% Action: <<"store_to_kv">>
+%%%%------------------------------------------------------------------
 do_action(<<"store_to_kv">>, undefined, _Children, State) ->
     State;
 
@@ -436,6 +443,35 @@ do_action(<<"store_to_kv">>, {Args}, _Children, State) ->
     Variable= proplists:get_value(<<"variable">>, Args),
     Key     = proplists:get_value(<<"key">>, Args),
     barrage_action_kvs:read_name(Variable, Profile, Key, State);
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"conditional">>
+%%%%------------------------------------------------------------------
+do_action(<<"conditional">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"conditional">>, {Args}, Children, State) ->
+    [{Key, Value}]  = Args,
+    ActualKey       = get_stored_value(Key, State),
+    ValueKey        = get_stored_value(Value, State),
+    case length(Children) of
+        1 ->
+            case (ActualKey == ValueKey) of 
+                true ->
+                    process_set([lists:nth(1, Children)], State);
+                _ ->
+                    State
+            end;
+        2 ->
+            case (ActualKey == ValueKey) of 
+                true ->
+                    process_set([lists:nth(1, Children)], State);
+                false ->
+                    process_set([lists:nth(2, Children)], State)
+            end;
+        _->
+            State 
+    end;
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined
@@ -455,3 +491,20 @@ do_action(ActionName, _Args, Children, State) ->
             process_set(Children, NewState)
     end.
 
+%%%%------------------------------------------------------------------
+%%%% get_stored_value
+%%%% This will pull a named value out of the key storage
+%%%%------------------------------------------------------------------
+get_stored_value(Name, State) ->
+    <<Tag:1/binary, _TagData/binary>> = Name,
+    case Tag of
+        <<"$">> ->
+            case dict:is_key(Name, State#state.keystore) of
+                true ->
+                    dict:fetch(Name, State#state.keystore);
+                _->
+                    Name
+            end;
+        _->
+            Name
+    end.
