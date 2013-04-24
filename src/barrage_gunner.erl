@@ -445,6 +445,61 @@ do_action(<<"store_to_kv">>, {Args}, _Children, State) ->
     barrage_action_kvs:read_name(Variable, Profile, Key, State);
 
 %%%%------------------------------------------------------------------
+%%%% Action: <<"read_array_idx">>
+%%%%------------------------------------------------------------------
+do_action(<<"read_array_idx">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"read_array_idx">>, {Args}, _Children, State) ->
+    Key         = proplists:get_value(<<"key">>, Args),
+    Idx         = proplists:get_value(<<"idx">>, Args),
+    Variable    = proplists:get_value(<<"variable">>, Args),
+
+    NewKey      = get_stored_value(Key, State),
+    NewIdx      = get_stored_value(Idx, State),
+    {ok, Array} = dict:find(NewKey, State#state.keystore),
+    case is_binary(NewIdx) of
+        true ->
+            LIdx= binary_to_list(NewIdx),
+            IIdx= list_to_integer(LIdx), 
+            NewData     = list:nth(IIdx, Array),
+            NewDic      = dict:store(Variable, NewData, State#state.keystore),
+            State#state{keystore = NewDic};
+        false ->
+            case is_list(NewIdx) of
+                true ->
+                    IIdx= list_to_integer(NewIdx), 
+                    NewData     = list:nth(IIdx, Array),
+                    NewDic      = dict:store(Variable, NewData, State#state.keystore),
+                    State#state{keystore = NewDic};
+                false ->
+                    NewData     = list:nth(NewIdx, Array),
+                    NewDic      = dict:store(Variable, NewData, State#state.keystore),
+                    State#state{keystore = NewDic}
+            end
+    end;
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"read_random_array_idx">>
+%%%%------------------------------------------------------------------
+do_action(<<"read_random_array_idx">>, undefined, _Children, State) ->
+    State;
+do_action(<<"read_random_array_idx">>, {Args}, _Children, State) ->
+    Key         = proplists:get_value(<<"key">>, Args),
+    Variable    = proplists:get_value(<<"variable">>, Args),
+    NewKey      = get_stored_value(Key, State),
+    {ok, Array} = dict:find(NewKey, State#state.keystore),
+    case length(Array) of 
+        0 ->
+            State;
+        Len ->
+            Idx         = random:uniform(Len),
+            NewData     = list:nth(Idx, Array),
+            NewDic      = dict:store(Variable, NewData, State#state.keystore),
+            State#state{keystore = NewDic}
+    end;
+
+%%%%------------------------------------------------------------------
 %%%% Action: <<"conditional">>
 %%%%------------------------------------------------------------------
 do_action(<<"conditional">>, undefined, _Children, State) ->

@@ -201,6 +201,21 @@ process_action_results(Result, <<"json">>, Results, URL, State) ->
     NKS             = process_keydata(TheResults, Data, Keys, Store),
     State#state{keystore=NKS};
 
+process_action_results(Result, <<"json_obj">>, Results, URL, State) ->
+    {_, {_,Info, JsonData}} = Result,
+    httpc:store_cookies(Info, 
+                        URL, 
+                        State#state.profile),
+
+    %% TODO  This is still a large point of failure
+    %% If the server returns invalid json then this whole client
+    %% is screwed up.  However for this demo pass I am cool
+    %% with things being a little less robust but I need to fix
+    %% it before I move into first production phase
+    {Data}          = jiffy:decode(JsonData),
+    NewStore = dict:store(Results, Data, State#state.keystore),
+    State#state{keystore=NewStore};
+
 process_action_results(_Result, _Type, _Results, _URL, State) ->
     State.
 

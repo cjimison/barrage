@@ -93,6 +93,24 @@ http.createServer(function (req, res)
             res.write(JSON.stringify(obj));
             res.end();
         }
+        else if('/create_kvs' == url_parts.pathname)
+        {
+            console.log("Building KVS");
+            var KVS = { 
+                        address : "1234 Happy Street",
+                        email   : "foo@bar.com",
+                        userName: "foobar",
+                        data    : { state : "happy", points : 234 },
+                        data_a  : [ 123, 321, 4, "hello"]
+            };
+            res.write(JSON.stringify(KVS));
+            res.end();
+        }
+        if('/print_state' == url_parts.pathname)
+        {
+            console.log("Username = " + query.username + ", State = " + query.state);
+            res.end();
+        }
         else
         {
             console.log("Parts unknown = " + url_parts.pathname);

@@ -36,6 +36,46 @@
         }
     },
     {
+        "name" : "KVS Load Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                { "action"      : "create_kvs" },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "KVS", 
+                        "key"       : "data", 
+                        "variable"  : "$DATA_KVS" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "KVS", 
+                        "key"       : "userName", 
+                        "variable"  : "$USER_NAME" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "$DATA_KVS", 
+                        "key"       : "state", 
+                        "variable"  : "$STATE" 
+                    }
+                },
+                { "action"      : "print_state" }
+            ]
+        }
+
+    },
+    {
         "name" : "Specific Login Test",
         "tree" : 
         { 

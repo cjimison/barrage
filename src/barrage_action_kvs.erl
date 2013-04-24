@@ -34,6 +34,8 @@
 
 -include("barrage_gunner.hrl").
 
+-define (is_dict (D), is_tuple (D) andalso element (1, D) =:= dict).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -66,9 +68,24 @@ read_random(Profile, KeyStorageName, ValueStorageName, State) ->
 
 read_name(Profile, KeyName, StorageName, State) ->
     {ok, KVS}   = dict:find(Profile, State#state.keystore),
-    {ok, Value} = dict:find(KeyName, KVS),
-    NewDic      = dict:store(StorageName, Value, State#state.keystore),
-    State#state{keystore = NewDic}.
+    case is_list(KVS) of
+        true ->
+            Value       = proplists:get_value(KeyName, KVS),
+            NewDic      = dict:store(StorageName, Value, State#state.keystore),
+            State#state{keystore = NewDic};
+        false ->
+            case ?is_dict(KVS) of
+                true ->
+                    {ok, Value} = dict:find(KeyName, KVS),
+                    NewDic      = dict:store(StorageName, Value, State#state.keystore),
+                    State#state{keystore = NewDic};
+                false ->
+                    {PLkvs}     = KVS,
+                    Value       = proplists:get_value(KeyName, PLkvs),
+                    NewDic      = dict:store(StorageName, Value, State#state.keystore),
+                    State#state{keystore = NewDic}
+            end
+    end.
 
 store_key(VarName, Profile, KeyName, State) ->
     {ok, KVS}   = dict:find(Profile, State#state.keystore),
@@ -76,7 +93,6 @@ store_key(VarName, Profile, KeyName, State) ->
     NewDic      = dict:store(KeyName, KeyVal, KVS),
     KeyStore    = dict:store(Profile, NewDic, State#state.keystore),
     State#state{keystore=KeyStore}.
-
 
 %%%===================================================================
 %%% Internal functions

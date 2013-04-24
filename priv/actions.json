@@ -26,6 +26,24 @@
         "results_type"  : "json"
     },
     {
+       "name"           : "create_kvs",
+        "url"           : "/create_kvs",
+        "type"          : "get",
+        "results"       : "KVS",
+        "results_type"  : "json_obj"
+    },
+    {
+       "name"           : "print_state",
+        "url"           : "/print_state",
+        "type"          : "get",
+        "args"          :
+        {
+            "username"  : "$USER_NAME",
+            "state"     : "$STATE"
+        },
+        "args_type"     : "http"
+    },
+    {
         "name"          : "cookie",
         "url"           : "/cookie",
         "type"          : "get",
