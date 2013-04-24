@@ -18,25 +18,66 @@
                     "action"    : "load_kv_store",
                     "args"      : 
                     { 
-                        "kv_store"  : "USER_NAMES", 
-                        "file"      : "usernames.json" 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "file"      : "user_data.json" 
                     }
                 },
                 {
                     "action"    : "read_random_kv",
                     "args"      : 
                     { 
-                        "kv_store"  : "USER_NAMES", 
-                        "key"       : "$USER_NAME", 
-                        "value"     : "$PASS_WORD" 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "$USERNAME", 
+                        "value"     : "$PASSWORD" 
                     }
-                }
+                },
+                { "action" : "named_login"}
+            ]
+        }
+    },
+    {
+        "name" : "Specific Login Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                {
+                    "action"    : "load_kv_store",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "file"      : "user_data.json" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "tom", 
+                        "variable"  : "$PASSWORD" 
+                    }
+                },
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "$USERNAME", 
+                        "value" : "tom" 
+                    }
+                },
+
+                { "action" : "named_login"}
             ]
         }
     },
     {
         "name" : "Google Test",
-        "tree" : { "action":"google_search" }
+        "tree" : 
+        { 
+            "action"    : "google_search" 
+        }
     },
     {
         "name" : "Cookie Test",

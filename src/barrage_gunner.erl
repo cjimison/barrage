@@ -48,7 +48,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {server, port, protocol = <<"http">>, results, keystore, inets_pid, profile=default}).
+-include("barrage_gunner.hrl").
 
 %%%===================================================================
 %%% API
@@ -386,6 +386,56 @@ do_action(<<"random_wait">>, undefined, Children, State) ->
 do_action(<<"random_wait">>, {Args}, Children, State) ->
     Count = proplists:get_value(<<"time">>, Args),
     do_random_wait(Children, Count, State);
+
+do_action(<<"set_variable">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"set_variable">>, {Args}, _Children, State) ->
+    Key     = proplists:get_value(<<"key">>, Args),
+    Value   = proplists:get_value(<<"value">>, Args),
+    NewDict = dict:store(Key, Value, State#state.keystore),
+    State#state{keystore=NewDict};
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"load_kv_store">>
+%%%%------------------------------------------------------------------
+do_action(<<"load_kv_store">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"load_kv_store">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"kv_store">>, Args),
+    File    = proplists:get_value(<<"file">>, Args),
+    barrage_action_kvs:load(Profile, File, State);
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"read_random_kv">>
+%%%%------------------------------------------------------------------
+do_action(<<"read_random_kv">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"kv_store">>, Args),
+    Key     = proplists:get_value(<<"key">>, Args),
+    Value   = proplists:get_value(<<"value">>, Args),
+    barrage_action_kvs:read_random(Profile, Key, Value, State);
+
+do_action(<<"read_named_kv">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"read_named_kv">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"kv_store">>, Args),
+    Key     = proplists:get_value(<<"key">>, Args),
+    Variable= proplists:get_value(<<"variable">>, Args),
+    barrage_action_kvs:read_name(Profile, Key, Variable, State);
+
+do_action(<<"store_to_kv">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"store_to_kv">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"kv_store">>, Args),
+    Variable= proplists:get_value(<<"variable">>, Args),
+    Key     = proplists:get_value(<<"key">>, Args),
+    barrage_action_kvs:read_name(Variable, Profile, Key, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined

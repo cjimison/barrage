@@ -1,0 +1,8 @@
+{
+    "john"  : "foo_bar",
+    "barry" : "bar_foo",
+    "joe"   : "one_two",
+    "bill"  : "two_one",
+    "tom"   : "1_2",
+    "sam"   : "2_1"
+}

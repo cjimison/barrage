@@ -18,8 +18,8 @@
         "type"          : "post",
         "args"          :
         {
-            "username"  : "$USER_NAME",
-            "password"  : "$PASS_WORD"
+            "username"  : "$USERNAME",
+            "password"  : "$PASSWORD"
         },
         "results"       : { "session" : "$SESSION" },
         "args_type"     : "http",
