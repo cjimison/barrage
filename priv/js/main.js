@@ -75,13 +75,8 @@ function IssueOrder(name) {
 	gHideProgressOverlay = false;			
 	var url = "issue_order?order=" + encodeURIComponent(name);
 	
-	// Override the jqplot default formatter to
-	// adjust the values from microseconds to milliseconds
-	var tickFormatter = function (format, val) { 
-		var number = val/1000;
-		return number;
-	}
-	
+	// Remove any previous chart info
+	$('.ChartInfo').remove();
 	// Remove any custom graphoptions
 	$('.ChartOptions').remove();
 	// Clear the old graphs out
@@ -90,28 +85,39 @@ function IssueOrder(name) {
 	}
 	gPlotInfo = {};
 
-	RequestInfo(url, function(data) {            
-		var idx = 0;
-		for(plot in data)
+	RequestInfo(url, function(data) {
+		
+		if (!$.isEmptyObject(data))
 		{
-			var chartName = 'IDX_'+idx;
-			$("#main").append('<div id="'+chartName+'"><\/div>');
-			
-			gPlotInfo[chartName] = {"plot": null, "data" : [], "properties" : {}};
-			
-			DEFAULTPROPERTIES.title = plot;
-			
-			gPlotInfo[chartName].data = data[plot];
-			gPlotInfo[chartName].properties = jQuery.extend(true, getMediumProperty(chartName), DEFAULTPROPERTIES);
-			LoadPlot(chartName);
-			++idx;
+			var idx = 0;
+			for(plot in data)
+			{
+				var chartName = 'IDX_'+idx;
+				$("#main").append('<div id="'+chartName+'"><\/div>');
+				
+				gPlotInfo[chartName] = {"plot": null, "data" : [], "properties" : {}};
+				
+				DEFAULTPROPERTIES.title = plot;
+				
+				gPlotInfo[chartName].data = data[plot];
+				gPlotInfo[chartName].properties = $.extend(true, setDefaultProperties_Calc(chartName), DEFAULTPROPERTIES);
+				LoadPlot(chartName);
+				
+				$("#main").append(getSummary(plot, chartName));
+				++idx;
+			}
+		
+			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\"><\/input>');
+			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Mean Line\" onclick=\"co_ToggleHorizontalLine(\'mean\')\"><\/input>');
+			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Median Line\" onclick=\"co_ToggleHorizontalLine(\'median\')\"><\/input>');
+			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\"><\/input>');
+			//$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
+			$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
-	
-		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\"><\/input>');
-		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Medium Line\" onclick=\"co_ToggleMedium()\"><\/input>');
-		$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\"><\/input>');
-		//$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
-		$("input[type=button]").button();		//Apply jquery-ui for buttons
+		else
+		{
+			$("#main").append('<div class=\"ChartInfo\"><center><h1>No Data Returned<\/h1><\/center><\/div>');
+		}
 	});
 	gHideProgressOverlay = true;
 }
@@ -138,24 +144,88 @@ function scaleData(data, interval) {
 	return scaledData;		
 }
 
-function getMediumProperty(chartName)
+function setDefaultProperties_Calc(chartName)
 {
-	var dlength = gPlotInfo[chartName].data.length;
-	var sum = 0;
-	for (i = 0; i < dlength; ++i) {
-		sum += gPlotInfo[chartName].data[i];
+	var data = gPlotInfo[chartName].data;
+	var mean = calcMean(data);
+	var median = calcMedian(data);
+	
+	var prop = {};
+	prop.canvasOverlay = {
+							show: true,
+							objects: [
+								{horizontalLine: {
+									name: 'mean',
+									y: mean,
+									show: false,
+								}},
+								{horizontalLine: {
+									name: 'median',
+									y: median,
+									show: false,
+									color: 'rgb(66, 98, 144)',
+								}},
+							]
+						 };
+	
+	if (data.length == 1) {
+		prop.axes = {
+						xaxis: {
+							min: 0,
+							max: 2,
+							tickInterval: 1,
+						}
+					}
 	}
 	
-	var medium = sum/dlength;
+	return prop;
+}
+
+function calcMean(array) {
+	var sum = 0;
+	var arrLength = array.length;
+	for (var i = 0; i < arrLength; ++i) {
+		sum += array[i];
+	}
+
+	return sum/arrLength;
+}
+
+function calcMedian(array) {
+	var data = array.slice(0)		//Clones the array so we don't modify the ordering of the existing array
+	var dataLength = data.length;
+	var middle = Math.floor(dataLength/2);
 	
-	return {canvasOverlay: {
-				objects: [
-					{horizontalLine: {
-						y: medium,
-					}},
-				]
-			}}
-			
+	data.sort( function(a,b) {return a - b;} );
+ 
+    if(dataLength % 2)
+        return data[middle];		//ODD so return the middle of the sorted array
+    else
+        return (data[middle-1] + data[middle]) / 2;		//EVEN so return the average of the two middle numbers of the sorted array
+}
+
+function getSummary(plotName, chartName)
+{
+	var data = gPlotInfo[chartName].data;
+	var numOfRequests = data.length;
+	var max = Math.max.apply(null, data);
+	var min = Math.max.apply(null, data);
+	
+	var summaryhtml = '<table class=\"ChartInfo\">';
+	summaryhtml += '<caption>'+ plotName +'<\/caption>';
+	summaryhtml += '<thead><tr>';
+	summaryhtml +=  '<th>Total Requests<\/th>';
+	summaryhtml +=  '<th>High<\/th>';
+	summaryhtml +=  '<th>Low<\/th>';
+	summaryhtml += '<\/tr><\/thead>';
+	summaryhtml += '<tbody><tr>';
+	summaryhtml +=  '<td>'+ numOfRequests +'<\/td>';
+	summaryhtml +=  '<td>'+ max +'<\/td>';
+	summaryhtml +=  '<td>'+ min +'<\/td>';	
+	summaryhtml += '<\/tr><\/tbody>';
+	summaryhtml += '<\/table>';
+	
+	return summaryhtml;
 }
 
 function co_ToggleMarkers() {
@@ -166,17 +236,18 @@ function co_ToggleMarkers() {
 	}
 }
 
-function co_ToggleMedium() {
+function co_ToggleHorizontalLine(linename) {
 	for (chartName in gPlotInfo) {
-		gPlotInfo[chartName].properties.canvasOverlay.show = !gPlotInfo[chartName].plot.options.canvasOverlay.show;
-		gPlotInfo[chartName].plot.destroy();
-		LoadPlot(chartName);
+		var co =  gPlotInfo[chartName].plot.plugins.canvasOverlay;
+		var line = co.get(linename);
+		line.options.show = !line.options.show;
+		co.draw(gPlotInfo[chartName].plot);
 	}
 }
 
 function co_RedrawCharts() {
 	for (chartName in gPlotInfo) {
-		gPlotInfo[chartName].properties = jQuery.extend(true, getMediumProperty(chartName), DEFAULTPROPERTIES);
+		gPlotInfo[chartName].properties = $.extend(true, setDefaultProperties_Calc(chartName), DEFAULTPROPERTIES);
 		gPlotInfo[chartName].plot.destroy();
 		LoadPlot(chartName);
 	}
