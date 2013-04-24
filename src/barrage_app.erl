@@ -100,9 +100,40 @@ start(_StartType, _StartArgs) ->
 stop(_State) ->
     ok.
 
+get_config_file(undefined) ->
+    "/barrage.json";
+get_config_file(Value) ->
+    binary_to_list(Value).
+
+get_behavior_file(undefined) ->
+    "/behaviors.json";
+get_behavior_file(Value) ->
+    binary_to_list(Value).
+
+get_action_file(undefined) ->
+    "/behaviors.json";
+get_action_file(Value) ->
+    binary_to_list(Value).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+get_file_names() ->
+    BasePath        = code:priv_dir(barrage),
+    case filelib:is_regular(BasePath ++ "/files.json") of
+        true ->
+            {ok, FilesJ}= file:read_file(BasePath ++ "/files.json"), 
+            {Files}     = jiffy:decode(FilesJ),
+            {
+                BasePath ++ get_config_file(proplists:get_value(<<"config">>, Files)),
+                BasePath ++ get_behavior_file(proplists:get_value(<<"behaviors">>, Files)),
+                BasePath ++ get_action_file(proplists:get_value(<<"actions">>, Files))
+            };
+        false ->
+            {   BasePath ++ "/barrage.json", 
+                BasePath ++ "/behaviors.json", 
+                BasePath ++ "/actions.json"}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -113,12 +144,11 @@ stop(_State) ->
 %% @end
 %%--------------------------------------------------------------------
 loadConfigTable()->
-    BasePath        = code:priv_dir(barrage),
     try
-
-        {ok, ConfigsJ}  = file:read_file(BasePath ++ "/barrage.json"),
-        {ok, PlansJ}    = file:read_file(BasePath ++ "/behaviors.json"),
-        {ok, ActionsJ}  = file:read_file(BasePath ++ "/actions.json"),
+        {BarrageConfig, BehaviorConfig, ActionConfig} = get_file_names(),
+        {ok, ConfigsJ}  = file:read_file(BarrageConfig),
+        {ok, PlansJ}    = file:read_file(BehaviorConfig),
+        {ok, ActionsJ}  = file:read_file(ActionConfig),
         
         Configs         = jiffy:decode(ConfigsJ),
         Plans           = jiffy:decode(PlansJ),
