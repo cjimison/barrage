@@ -18,7 +18,7 @@
                     "action"    : "load_kv_store",
                     "args"      : 
                     { 
-                        "kv_store"  : "USER_NAMES", 
+                        "kv_store"  : "USER_NAMES_DATA", 
                         "file"      : "usernames.json" 
                     }
                 },
@@ -26,11 +26,12 @@
                     "action"    : "read_random_kv",
                     "args"      : 
                     { 
-                        "kv_store"  : "USER_NAMES", 
-                        "key"       : "$USER_NAME", 
-                        "value"     : "$PASS_WORD" 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "$USERNAME", 
+                        "value"     : "$PASSWORD" 
                     }
-                }
+                },
+                { "action" : "named_login"}
             ]
         }
     },

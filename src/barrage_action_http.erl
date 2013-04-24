@@ -28,17 +28,14 @@
 %%%-------------------------------------------------------------------
 -module(barrage_action_http).
 
-
 %% API
 -export([execute/2]).
 
--record(state, {server, port, protocol = <<"http">>, results, keystore, inets_pid, profile=default}).
+-include("barrage_gunner.hrl").
 
 %%%===================================================================
 %%% Public API
 %%%===================================================================
-
-
 
 %%%===================================================================
 %%% Internal functions

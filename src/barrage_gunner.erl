@@ -48,7 +48,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {server, port, protocol = <<"http">>, results, keystore, inets_pid, profile=default}).
+-include("barrage_gunner.hrl").
 
 %%%===================================================================
 %%% API
@@ -386,6 +386,21 @@ do_action(<<"random_wait">>, undefined, Children, State) ->
 do_action(<<"random_wait">>, {Args}, Children, State) ->
     Count = proplists:get_value(<<"time">>, Args),
     do_random_wait(Children, Count, State);
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"load_kv_store">>
+%%%%------------------------------------------------------------------
+do_action(<<"load_kv_store">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"load_kv_store">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"kv_store">>, Args),
+    File    = proplists:get_value(<<"file">>, Args),
+    barrage_action_kvs:execute_load(Profile, File, State);
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"read_random_kv">>
+%%%%------------------------------------------------------------------
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined
