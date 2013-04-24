@@ -19,7 +19,7 @@
                     "args"      : 
                     { 
                         "kv_store"  : "USER_NAMES_DATA", 
-                        "file"      : "usernames.json" 
+                        "file"      : "user_data.json" 
                     }
                 },
                 {
@@ -36,8 +36,48 @@
         }
     },
     {
+        "name" : "Specific Login Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                {
+                    "action"    : "load_kv_store",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "file"      : "user_data.json" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "tom", 
+                        "variable"  : "$PASSWORD" 
+                    }
+                },
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "$USERNAME", 
+                        "value" : "tom" 
+                    }
+                },
+
+                { "action" : "named_login"}
+            ]
+        }
+    },
+    {
         "name" : "Google Test",
-        "tree" : { "action":"google_search" }
+        "tree" : 
+        { 
+            "action"    : "google_search" 
+        }
     },
     {
         "name" : "Cookie Test",

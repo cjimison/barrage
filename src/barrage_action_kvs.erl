@@ -27,10 +27,10 @@
 -module(barrage_action_kvs).
 
 %% API
--export([execute_load_kvs/3]).
--export([execute_read_random_kvs/4]).
--export([execute_read_name_kvs/4]).
--export([execute_store_key_kvs/3]).
+-export([load/3]).
+-export([read_random/4]).
+-export([read_name/4]).
+-export([store_key/4]).
 
 -include("barrage_gunner.hrl").
 
@@ -45,34 +45,36 @@
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-execute_load_kvs(Profile, File, State) ->
+load(Profile, File, State) ->
     BasePath    = code:priv_dir(barrage),
-    {ok, KVSRaw}= file:read_file(BasePath ++ "/" ++ list_to_binary(File)), 
+    LFile       = binary_to_list(File),
+    Path        = BasePath ++ "/" ++ LFile,
+    {ok, KVSRaw}= file:read_file(Path), 
     {KVS}       = jiffy:decode(KVSRaw),
-    KVSStore    = dic:from_list(KVS),
-    StateKVS    = dic:store(Profile, KVSStore, State#state.keystore),
+    KVSStore    = dict:from_list(KVS),
+    StateKVS    = dict:store(Profile, KVSStore, State#state.keystore),
     State#state{keystore = StateKVS}.
 
-execute_read_random_kvs(Profile, KeyStorageName, ValueStorageName, State) ->
-    {ok, KVS}   = dic:find(Profile, State#state.keystore),
-    KVSList     = dic:to_list(KVS),
+read_random(Profile, KeyStorageName, ValueStorageName, State) ->
+    {ok, KVS}   = dict:find(Profile, State#state.keystore),
+    KVSList     = dict:to_list(KVS),
     Idx         = random:uniform(length(KVSList)),
     {Name, Val} = lists:nth(Idx, KVSList),
-    NameDic     = dic:store(KeyStorageName, Name, State#state.keystore), 
-    ValDic      = dic:store(ValueStorageName, Val, NameDic), 
+    NameDic     = dict:store(KeyStorageName, Name, State#state.keystore), 
+    ValDic      = dict:store(ValueStorageName, Val, NameDic), 
     State#state{keystore = ValDic}.
 
-execute_read_name_kvs(Profile, KeyName, StorageName, State) ->
-    {ok, KVS}   = dic:find(Profile, State#state.keystore),
-    {ok, Value} = dic:find(KeyName, KVS),
-    NewDic      = dic:store(StorageName, Value, State#state.keystore),
+read_name(Profile, KeyName, StorageName, State) ->
+    {ok, KVS}   = dict:find(Profile, State#state.keystore),
+    {ok, Value} = dict:find(KeyName, KVS),
+    NewDic      = dict:store(StorageName, Value, State#state.keystore),
     State#state{keystore = NewDic}.
 
-execute_store_key_kvs(Profile, KeyName, State) ->
-    {ok, KVS}   = dic:find(Profile, State#state.keystore),
-    {ok, KeyVal}= dic:find(KeyName, State#state.keystore),
-    NewDic      = dic:store(KeyName, KeyVal, KVS),
-    KeyStore    = dic:store(Profile, NewDic, State#state.keystore),
+store_key(VarName, Profile, KeyName, State) ->
+    {ok, KVS}   = dict:find(Profile, State#state.keystore),
+    {ok, KeyVal}= dict:find(VarName, State#state.keystore),
+    NewDic      = dict:store(KeyName, KeyVal, KVS),
+    KeyStore    = dict:store(Profile, NewDic, State#state.keystore),
     State#state{keystore=KeyStore}.
 
 
