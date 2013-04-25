@@ -1,6 +1,8 @@
 var gPlotInfo = {};
 var gHideProgressOverlay = true;
 
+var CONVERTTO = {'milliseconds' : 1/1000};
+
 var DEFAULTPROPERTIES =
 	{
 		title: "",
@@ -20,7 +22,7 @@ var DEFAULTPROPERTIES =
 				label: 'Time (ms)',
 				tickOptions: {
 					formatter: function (format, val) { 
-									var number = val/1000;	//microseconds to milliseconds
+									var number = roundTo(val * CONVERTTO.milliseconds, 1000);
 									return number;
 								},
 				},
@@ -36,11 +38,15 @@ var DEFAULTPROPERTIES =
 
 $(document).ready(function() {
 	RequestInfo("orders", function(orders) {
-		for (var i = 0; i < orders.length; ++i)
+		if (!$.isEmptyObject(orders))
 		{
-			$("#main").append('<input class="button" type=\"button\" value=\"'+ orders[i] +'\" onclick=\"IssueOrder(\''+ orders[i] +'\');\" ><\/input>');
+			$("#main").append('<div id="Request_Plot">');
+			for (var i = 0; i < orders.length; ++i)
+			{
+				$("#Request_Plot").append('<input class="button" type=\"button\" value=\"'+ orders[i] +'\" onclick=\"IssueOrder(\''+ orders[i] +'\');\" >');
+			}
+			$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
-		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	});
 });
 
@@ -75,25 +81,25 @@ function IssueOrder(name) {
 	gHideProgressOverlay = false;			
 	var url = "issue_order?order=" + encodeURIComponent(name);
 	
-	// Remove any previous chart info
-	$('.ChartInfo').remove();
 	// Remove any custom graphoptions
-	$('.ChartOptions').remove();
+	$('#Chart_Options').remove();
 	// Clear the old graphs out
 	for (chartName in gPlotInfo) {
-		$('#'+chartName).remove();
+		var arr = chartName.split('_');
+		$('#'+arr[0]).remove();
 	}
 	gPlotInfo = {};
 
 	RequestInfo(url, function(data) {
-		
 		if (!$.isEmptyObject(data))
 		{
 			var idx = 0;
 			for(plot in data)
 			{
-				var chartName = 'IDX_'+idx;
-				$("#main").append('<div id="'+chartName+'"><\/div>');
+				var section = 'IDX'+idx;
+				var chartName = section+'_Chart';
+				$("#main").append('<div id="'+section+'">');
+				$("#"+section).append('<div id="'+chartName+'">');
 				
 				gPlotInfo[chartName] = {"plot": null, "data" : [], "properties" : {}};
 				
@@ -103,15 +109,16 @@ function IssueOrder(name) {
 				gPlotInfo[chartName].properties = $.extend(true, setDefaultProperties_Calc(chartName), DEFAULTPROPERTIES);
 				LoadPlot(chartName);
 				
-				$("#main").append(getSummary(plot, chartName));
+				$("#"+section).append(getSummary(plot, chartName));
 				++idx;
 			}
 		
-			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\"><\/input>');
-			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Mean Line\" onclick=\"co_ToggleHorizontalLine(\'mean\')\"><\/input>');
-			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Toggle Median Line\" onclick=\"co_ToggleHorizontalLine(\'median\')\"><\/input>');
-			$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\"><\/input>');
-			//$("#main").append('<input type=\"button\" class=\"ChartOptions\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\"><\/input>');
+			$("#main").append('<div id="Chart_Options">');
+			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\">');
+			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Mean Line\" onclick=\"co_ToggleHorizontalLine(\'mean\')\">');
+			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Median Line\" onclick=\"co_ToggleHorizontalLine(\'median\')\">');
+			$("#Chart_Options").append('<input type=\"button\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\">');
+			//$("#Chart_Options").append('<input type=\"button\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\">');
 			$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
 		else
@@ -208,8 +215,10 @@ function getSummary(plotName, chartName)
 {
 	var data = gPlotInfo[chartName].data;
 	var numOfRequests = data.length;
-	var max = Math.max.apply(null, data);
-	var min = Math.max.apply(null, data);
+	var max = roundTo(Math.max.apply(null, data) * CONVERTTO.milliseconds, 1000) + ' ms';
+	var min = roundTo(Math.min.apply(null, data) * CONVERTTO.milliseconds, 1000) + ' ms';
+	var mean = roundTo(calcMean(data) * CONVERTTO.milliseconds, 1000) + ' ms';
+	var median = roundTo(calcMedian(data) * CONVERTTO.milliseconds, 1000) + ' ms';
 	
 	var summaryhtml = '<table class=\"ChartInfo\">';
 	summaryhtml += '<caption>'+ plotName +'<\/caption>';
@@ -217,15 +226,24 @@ function getSummary(plotName, chartName)
 	summaryhtml +=  '<th>Total Requests<\/th>';
 	summaryhtml +=  '<th>High<\/th>';
 	summaryhtml +=  '<th>Low<\/th>';
+	summaryhtml +=  '<th>Mean<\/th>';
+	summaryhtml +=  '<th>Median<\/th>';
 	summaryhtml += '<\/tr><\/thead>';
 	summaryhtml += '<tbody><tr>';
 	summaryhtml +=  '<td>'+ numOfRequests +'<\/td>';
 	summaryhtml +=  '<td>'+ max +'<\/td>';
-	summaryhtml +=  '<td>'+ min +'<\/td>';	
+	summaryhtml +=  '<td>'+ min +'<\/td>';
+	summaryhtml +=  '<td>'+ mean +'<\/td>';
+	summaryhtml +=  '<td>'+ median +'<\/td>';
 	summaryhtml += '<\/tr><\/tbody>';
 	summaryhtml += '<\/table>';
 	
 	return summaryhtml;
+}
+
+function roundTo(number, to)
+{
+    return Math.round(number * to) / to;
 }
 
 function co_ToggleMarkers() {
