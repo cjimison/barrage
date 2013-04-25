@@ -27,7 +27,7 @@ load_sys_data(Configs) ->
     TableInfo = ets:info(barrage),
     case TableInfo of 
         undefined ->
-            ets:new(barrage, [set, named_table]);
+            ets:new(barrage, [set, named_table, public]);
         _ ->
             ok
     end,
@@ -45,9 +45,10 @@ load_behavior_data(Behaviors) ->
     TableInfo = ets:info(plans),
     case TableInfo of 
         undefined ->
-            ets:new(plans, [set, named_table]),
+            ets:new(plans, [set, named_table, public]),
             ets:insert(plans, {table_keys, []});
         _ ->
+            ets:insert(plans, {table_keys, []}),
             ok
     end,
     process_behavior_data(Behaviors).
@@ -62,7 +63,7 @@ load_action_data(Actions) ->
     TableInfo = ets:info(actions),
     case TableInfo of 
         undefined ->
-            ets:new(actions, [set, named_table]);
+            ets:new(actions, [set, named_table, public]);
         _ ->
             ok
     end,

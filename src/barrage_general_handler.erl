@@ -68,6 +68,28 @@ handle_named_request(<<"GET">>, <<"/issue_order">>, Req) ->
     Req3 = cowboy_req:compact(Req2),
     barrage_general:issue_http_order(Order, self()),
     blocker_loop(Req3);
+
+handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, PlansJ, Req2} = cowboy_req:body_qs(Req),
+            Plans   = jiffy:decode(PlansJ),
+            ok      = barrage_parser:load_behavior_data(Plans),
+            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
+        false ->
+            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"No Body">>,Req)
+    end;
+
+handle_named_request(<<"POST">>, <<"/upload_actions">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, ActionsJ, Req2} = cowboy_req:body_qs(Req),
+            Actions   = jiffy:decode(ActionsJ),
+            ok      = barrage_parser:load_action_data(Actions),
+            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
+        false ->
+            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"No Body">>,Req)
+    end;
     
 handle_named_request(_, _, Req) ->
     cowboy_req:reply(405, Req).

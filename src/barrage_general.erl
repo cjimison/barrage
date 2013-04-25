@@ -136,9 +136,14 @@ handle_call({issue_order, OrderName}, _From, State) ->
                     NewState = State#state{ results=dict:new(), 
                                             blocked=State#state.commanders},
                     [{_, TargetServer}] = ets:lookup(barrage, server),
-                    [{_, TargetPort}] = ets:lookup(barrage, port),
-                    Fun = fun(Pid) ->
+                    [{_, TargetPort}]   = ets:lookup(barrage, port),
+                    Plans               = ets:tab2list(plans),
+                    Actions             = ets:tab2list(actions),
+                    SetFun              = fun(Pid) ->
+                            barrage_commander:set_data(Pid, Plans, Actions) end,
+                    Fun                 = fun(Pid) ->
                             barrage_commander:execute(Pid, Order, TargetServer, TargetPort) end,
+                    lists:foreach(SetFun, State#state.commanders),
                     lists:foreach(Fun, State#state.commanders),
                     {reply, ok, NewState};
                 _->

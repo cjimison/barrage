@@ -32,6 +32,7 @@
 %% API
 -export([start/0, 
          start_link/0,
+         set_data/3,
          execute/4,
          order_complete/2]).
 
@@ -84,6 +85,9 @@ create_gunner(GunnerList, Count) ->
     NewList = [GunnerPID | GunnerList],
     create_gunner(NewList, Count - 1). 
 
+set_data(Pid, Plans, Actions) ->
+    gen_server:cast(Pid, {set_data, {Plans, Actions}}).
+
 execute(Pid, Orders, Server, Port) ->
     gen_server:cast(Pid, {execute, {Orders, Server, Port}}).
 
@@ -127,6 +131,12 @@ init([]) ->
 handle_call(_Request, _From, State) ->
         Reply = ok,
         {reply, Reply, State}.
+
+handle_cast({set_data, {Plans, Actions}}, State) when 
+    State#state.executing == false ->
+    true = ets:insert(plans, Plans),
+    true = ets:insert(actions, Actions),
+    {noreply, State};
 
 %%--------------------------------------------------------------------
 %% @private
