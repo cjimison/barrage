@@ -1,6 +1,7 @@
 var gPlotInfo = {};
 var gHideProgressOverlay = true;
 
+var POSTURLS = ['upload_behaviors', 'upload_actions'];
 var CONVERTTO = {'milliseconds' : 1/1000};
 
 var DEFAULTPROPERTIES =
@@ -36,14 +37,14 @@ var DEFAULTPROPERTIES =
 		},
 	};
 
-$(document).ready(function() {
+$(document).ready(function() {	
 	RequestInfo("orders", function(orders) {
 		if (!$.isEmptyObject(orders))
 		{
 			$("#main").append('<div id="Request_Plot">');
 			for (var i = 0; i < orders.length; ++i)
 			{
-				$("#Request_Plot").append('<input class="button" type=\"button\" value=\"'+ orders[i] +'\" onclick=\"IssueOrder(\''+ orders[i] +'\');\" >');
+				$("#Request_Plot").append('<input type=\"button\" value=\"'+ orders[i] +'\" onclick=\"rp_IssueOrder(\''+ orders[i] +'\');\" >');
 			}
 			$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
@@ -51,7 +52,6 @@ $(document).ready(function() {
 });
 
 function RequestInfo(url, callback) {
-	var startTime = new Date();
 	var loadinghtml = '<div>Requesting Data</div>'
 	loadinghtml += '<div id="loadTimer"><span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span></div>'
 
@@ -77,7 +77,7 @@ function RequestInfo(url, callback) {
 	});
 }
 
-function IssueOrder(name) {
+function rp_IssueOrder(name) {
 	gHideProgressOverlay = false;			
 	var url = "issue_order?order=" + encodeURIComponent(name);
 	
@@ -211,6 +211,11 @@ function calcMedian(array) {
         return (data[middle-1] + data[middle]) / 2;		//EVEN so return the average of the two middle numbers of the sorted array
 }
 
+function roundTo(number, to)
+{
+    return Math.round(number * to) / to;
+}
+
 function getSummary(plotName, chartName)
 {
 	var data = gPlotInfo[chartName].data;
@@ -239,11 +244,6 @@ function getSummary(plotName, chartName)
 	summaryhtml += '<\/table>';
 	
 	return summaryhtml;
-}
-
-function roundTo(number, to)
-{
-    return Math.round(number * to) / to;
 }
 
 function co_ToggleMarkers() {
@@ -275,4 +275,70 @@ function co_SaveCharts() {
 	for (chartName in gPlotInfo) {
 		console.log("Saving " + chartName);
 	}
+}
+
+
+
+function pd_showUploadButtons(hide) {
+	if (!hide)
+	{
+		$("#Post_Data").append('<div id="Upload_Buttons">');
+		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Behaviors\" onclick=\"pd_PostTo(\'upload_behaviors\')\" >');
+		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Actions\" onclick=\"pd_PostTo(\'upload_actions\')\" >');
+		$("input[type=button]").button();		//Apply jquery-ui for buttons
+	}
+	else
+	{
+		$('#Upload_Buttons').remove();
+	}
+}
+
+function pd_PostTo(url) {
+	var data = getFileData();
+	
+	PostInfo(url, data, function(response) {
+		console.log("test" + response);
+	});
+	
+	//Reset and hide the Post Data Controls
+	var control = $("#fileChoser");
+	control.replaceWith( control = control.val('').clone( true ) );
+	pd_showUploadButtons(true);
+}
+
+function getFileData() {
+	var files = $('#fileChoser')[0].files;
+	
+	if (!files.length) {
+      return null;
+    }
+    else
+    {
+		var file = files[0];
+		var reader = new FileReader();
+		// If we use onloadend, we need to check the readyState.
+		reader.onloadend = function(evt) {
+			if (evt.target.readyState == FileReader.DONE) { // DONE == 2
+				return evt.target.result
+			}
+		};
+		reader.readAsText(file);
+    }
+}
+
+function PostInfo(url, data, callback) {
+	url = "upload_actions";
+	data = 'TEST';
+	$.ajax({
+		url: url,
+		type: 'POST',
+		data: data,
+		async: true,
+		success: function(data) {
+			callback(JSON.parse(data));			
+		},
+		error: function (xhr, ajaxOptions, thrownError) {
+			console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
+		}
+	});
 }
