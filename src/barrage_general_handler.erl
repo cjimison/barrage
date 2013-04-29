@@ -73,7 +73,8 @@ handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
             {ok, PlansJ, Req2} = cowboy_req:body_qs(Req),
-            Plans   = jiffy:decode(PlansJ),
+            Data    = proplists:get_value(<<"data">>, PlansJ),
+            Plans   = jiffy:decode(Data),
             ok      = barrage_parser:load_behavior_data(Plans),
             cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
         false ->
@@ -83,8 +84,10 @@ handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
 handle_named_request(<<"POST">>, <<"/upload_actions">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
+
             {ok, ActionsJ, Req2} = cowboy_req:body_qs(Req),
-            Actions   = jiffy:decode(ActionsJ),
+            Data    = proplists:get_value(<<"data">>, ActionsJ),
+            Actions   = jiffy:decode(Data),
             ok      = barrage_parser:load_action_data(Actions),
             cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
         false ->

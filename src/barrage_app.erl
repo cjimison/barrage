@@ -65,6 +65,8 @@ start(_StartType, _StartArgs) ->
                                     {"/orders",     barrage_general_handler, []},
                                     {"/commanders", barrage_general_handler, []},
                                     {"/issue_order",barrage_general_handler, []},
+                                    {"/upload_behaviors",barrage_general_handler, []},
+                                    {"/upload_actions",barrage_general_handler, []},
                                     {"/[...]", cowboy_static, [
                                             {directory, {priv_dir, barrage, []}},
                                             {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
