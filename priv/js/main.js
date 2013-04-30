@@ -280,6 +280,7 @@ function co_SaveCharts() {
 
 
 function pd_showUploadButtons(hide) {
+	$('#Upload_Buttons').remove();
 	if (!hide)
 	{
 		$("#Post_Data").append('<div id="Upload_Buttons">');
@@ -287,30 +288,12 @@ function pd_showUploadButtons(hide) {
 		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Actions\" onclick=\"pd_PostTo(\'upload_actions\')\" >');
 		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	}
-	else
-	{
-		$('#Upload_Buttons').remove();
-	}
 }
 
 function pd_PostTo(url) {
-	var data = getFileData();
-	
-	PostInfo(url, data, function(response) {
-		console.log("test" + response);
-	});
-	
-	//Reset and hide the Post Data Controls
-	var control = $("#fileChoser");
-	control.replaceWith( control = control.val('').clone( true ) );
-	pd_showUploadButtons(true);
-}
-
-function getFileData() {
 	var files = $('#fileChoser')[0].files;
-	
 	if (!files.length) {
-      return null;
+      console.log("No file selected");
     }
     else
     {
@@ -319,23 +302,29 @@ function getFileData() {
 		// If we use onloadend, we need to check the readyState.
 		reader.onloadend = function(evt) {
 			if (evt.target.readyState == FileReader.DONE) { // DONE == 2
-				return evt.target.result
+				var data = evt.target.result;
+				PostInfo(url, data, function(response) {
+					console.log("test" + response);
+				});
 			}
 		};
 		reader.readAsText(file);
     }
+	
+	//Reset and hide the Post Data Controls
+	var control = $("#fileChoser");
+	control.replaceWith( control = control.val('').clone( true ) );
+	pd_showUploadButtons(true);
 }
 
 function PostInfo(url, data, callback) {
-	url = "upload_actions";
-	data = 'TEST';
 	$.ajax({
 		url: url,
 		type: 'POST',
 		data: data,
 		async: true,
 		success: function(data) {
-			callback(JSON.parse(data));			
+			callback(JSON.parse(data));
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
