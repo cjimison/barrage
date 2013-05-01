@@ -8,16 +8,16 @@ var DEFAULTPROPERTIES =
 	{
 		title: "",
 		seriesDefaults: {
-			showMarker: true,
+			showMarker: true
 		},
 		axesDefaults: {
 			pad: 0,
 			labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-			tickRenderer:  $.jqplot.CanvasAxisTickRenderer,
+			tickRenderer:  $.jqplot.CanvasAxisTickRenderer
 		},
 		axes: {
 			xaxis: {
-				label: 'Requests',
+				label: 'Requests'
 			},
 			yaxis: {
 				label: 'Time (ms)',
@@ -25,16 +25,16 @@ var DEFAULTPROPERTIES =
 					formatter: function (format, val) { 
 									var number = roundTo(val * CONVERTTO.milliseconds, 1000);
 									return number;
-								},
-				},
-			},
+								}
+				}
+			}
 		},
 		highlighter: {
 			show: true,
 			tooltipOffset: 5,
 			tooltipAxes: "y",
-			formatString: "%s ms",
-		},
+			formatString: "%s ms"
+		}
 	};
 
 $(document).ready(function() {	
@@ -52,8 +52,9 @@ $(document).ready(function() {
 });
 
 function RequestInfo(url, callback) {
-	var loadinghtml = '<div>Requesting Data</div>'
-	loadinghtml += '<div id="loadTimer"><span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span></div>'
+	var loadinghtml = '<div>Requesting Data</div><div id="loadTimer"> \
+	                  <span class="hr">00</span>:<span class="min">00</span>: \
+	                  <span class="sec">00</span></div>';
 
 	$.ajax({
 		url: url,
@@ -164,14 +165,14 @@ function setDefaultProperties_Calc(chartName)
 								{horizontalLine: {
 									name: 'mean',
 									y: mean,
-									show: false,
+									show: false
 								}},
 								{horizontalLine: {
 									name: 'median',
 									y: median,
 									show: false,
-									color: 'rgb(66, 98, 144)',
-								}},
+									color: 'rgb(66, 98, 144)'
+								}}
 							]
 						 };
 	
@@ -180,9 +181,9 @@ function setDefaultProperties_Calc(chartName)
 						xaxis: {
 							min: 0,
 							max: 2,
-							tickInterval: 1,
+							tickInterval: 1
 						}
-					}
+					};
 	}
 	
 	return prop;
@@ -199,7 +200,7 @@ function calcMean(array) {
 }
 
 function calcMedian(array) {
-	var data = array.slice(0)		//Clones the array so we don't modify the ordering of the existing array
+	var data = array.slice(0);		//Clones the array so we don't modify the ordering of the existing array
 	var dataLength = data.length;
 	var middle = Math.floor(dataLength/2);
 	
@@ -305,6 +306,7 @@ function pd_PostTo(url) {
 				var data = evt.target.result;
 				PostInfo(url, data, function(response) {
 					console.log("test" + response);
+					window.location.reload(true);
 				});
 			}
 		};

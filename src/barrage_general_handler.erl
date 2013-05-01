@@ -72,26 +72,23 @@ handle_named_request(<<"GET">>, <<"/issue_order">>, Req) ->
 handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-            {ok, PlansJ, Req2} = cowboy_req:body_qs(Req),
-            Data    = proplists:get_value(<<"data">>, PlansJ),
-            Plans   = jiffy:decode(Data),
-            ok      = barrage_parser:load_behavior_data(Plans),
-            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            Plans                       = jiffy:decode(Data),
+            ok                          = barrage_parser:load_behavior_data(Plans),
+            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"{\"error\":\"none\"}">>,Req2);
         false ->
-            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"No Body">>,Req)
+            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"{\"error\":\"No Body\"}">>,Req)
     end;
 
 handle_named_request(<<"POST">>, <<"/upload_actions">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-
-            {ok, ActionsJ, Req2} = cowboy_req:body_qs(Req),
-            Data    = proplists:get_value(<<"data">>, ActionsJ),
-            Actions   = jiffy:decode(Data),
-            ok      = barrage_parser:load_action_data(Actions),
-            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"Success">>,Req2);
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            Actions                     = jiffy:decode(Data),
+            ok                          = barrage_parser:load_action_data(Actions),
+            cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],<<"{\"error\":\"none\"}">>,Req2);
         false ->
-            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"No Body">>,Req)
+            cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"{\"error\":\"No Body\"}">>,Req)
     end;
     
 handle_named_request(_, _, Req) ->
