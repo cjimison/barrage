@@ -487,14 +487,14 @@ do_action(<<"read_random_array_idx">>, undefined, _Children, State) ->
 do_action(<<"read_random_array_idx">>, {Args}, _Children, State) ->
     Key         = proplists:get_value(<<"key">>, Args),
     Variable    = proplists:get_value(<<"variable">>, Args),
-    NewKey      = get_stored_value(Key, State),
-    {ok, Array} = dict:find(NewKey, State#state.keystore),
+
+    {ok, Array} = dict:find(Key, State#state.keystore),
     case length(Array) of 
         0 ->
             State;
         Len ->
             Idx         = random:uniform(Len),
-            NewData     = list:nth(Idx, Array),
+            NewData     = lists:nth(Idx, Array),
             NewDic      = dict:store(Variable, NewData, State#state.keystore),
             State#state{keystore = NewDic}
     end;
