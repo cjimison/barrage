@@ -133,6 +133,39 @@ encode_get_args(Args, URL, Token, ArgName, ArgValue, Store) ->
 %% @private
 %% @doc
 %%
+%% Replace all found Store keys in Text by their corresponding values
+%% 
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+replace_tokens_in_text(Text, Store) ->
+    dict:fold( fun replace_one_key/3, Text, Store ).
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
+%% Replace a Key by its Value if the key is found in Text
+%% 
+%% @spec 
+%% @end
+%%--------------------------------------------------------------------
+replace_one_key(Key, Value, Text) ->
+    << FirstChar:1/binary , _Rest/binary >> = Key,
+    case FirstChar of
+        <<"$">> when is_binary(Value) ->
+            EscapedKey = "\\" ++ binary_to_list(Key),
+            re:replace(Text, "\"" ++ EscapedKey ++ "\"", "\"" ++ binary_to_list(Value) ++ "\"", [ {return, list}, global ] );
+        _   ->
+            Text
+    end.    
+
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%%
 %%  Write the results to the process calls state ref
 %% 
 %% @spec 
@@ -302,13 +335,14 @@ execute(Action, State) when
             % As a note of refactor I should use this same token replace
             % system in the get and post args stuff
             Body            = binary_to_list(jiffy:encode(Args)),
+            ReplacedBody    = replace_tokens_in_text(Body, State#state.keystore),
             {Time, Result}  = timer:tc(httpc, request, [
                                     post, 
                                     {
                                         URL, 
                                         Header, 
                                         Type, 
-                                        Body
+                                        ReplacedBody
                                     }, 
                                     HTTPOps, Ops, State#state.profile]),
             NewState = process_action_results(  Result,
