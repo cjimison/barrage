@@ -455,25 +455,25 @@ do_action(<<"read_array_idx">>, {Args}, _Children, State) ->
     Idx         = proplists:get_value(<<"idx">>, Args),
     Variable    = proplists:get_value(<<"variable">>, Args),
 
-    NewKey      = get_stored_value(Key, State),
+   %% NewKey      = get_stored_value(Key, State),
     NewIdx      = get_stored_value(Idx, State),
-    {ok, Array} = dict:find(NewKey, State#state.keystore),
+    {ok, Array} = dict:find( Key, State#state.keystore),
     case is_binary(NewIdx) of
         true ->
             LIdx= binary_to_list(NewIdx),
             IIdx= list_to_integer(LIdx), 
-            NewData     = list:nth(IIdx, Array),
+            NewData     = lists:nth(IIdx, Array),
             NewDic      = dict:store(Variable, NewData, State#state.keystore),
             State#state{keystore = NewDic};
         false ->
             case is_list(NewIdx) of
                 true ->
                     IIdx= list_to_integer(NewIdx), 
-                    NewData     = list:nth(IIdx, Array),
+                    NewData     = lists:nth(IIdx, Array),
                     NewDic      = dict:store(Variable, NewData, State#state.keystore),
                     State#state{keystore = NewDic};
                 false ->
-                    NewData     = list:nth(NewIdx, Array),
+                    NewData     = lists:nth(NewIdx, Array),
                     NewDic      = dict:store(Variable, NewData, State#state.keystore),
                     State#state{keystore = NewDic}
             end
