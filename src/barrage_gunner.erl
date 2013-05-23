@@ -408,6 +408,18 @@ do_action(<<"load_kv_store">>, {Args}, _Children, State) ->
     File    = proplists:get_value(<<"file">>, Args),
     barrage_action_kvs:load(Profile, File, State);
 
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"load_array_store">>
+%%%%------------------------------------------------------------------
+do_action(<<"load_array_store">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"load_array_store">>, {Args}, _Children, State) ->
+    Profile = proplists:get_value(<<"array_store">>, Args),
+    File    = proplists:get_value(<<"file">>, Args),
+    barrage_action_kvs:load_array(Profile, File, State);
+
 %%%%------------------------------------------------------------------
 %%%% Action: <<"read_random_kv">>
 %%%%------------------------------------------------------------------
@@ -418,7 +430,7 @@ do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"kv_store">>, Args),
     Key     = proplists:get_value(<<"key">>, Args),
     Value   = proplists:get_value(<<"value">>, Args),
-    barrage_action_kvs:read_random(Profile, Key, Value, State);
+    barrage_action_kvs:read_random(Profile, Key, Value, State);  
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"read_named_kv">>
@@ -478,7 +490,7 @@ do_action(<<"read_array_idx">>, {Args}, _Children, State) ->
     end;
 
 %%%%------------------------------------------------------------------
-%%%% Action: <<"read_array_idx">>
+%%%% Action: <<"read_doc_set_idx">>
 %%%%------------------------------------------------------------------
 do_action(<<"read_doc_set_idx">>, undefined, _Children, State) ->
     State;
@@ -511,6 +523,32 @@ do_action(<<"read_doc_set_idx">>, {Args}, _Children, State) ->
     end;
 
 %%%%------------------------------------------------------------------
+%%%% Action: <<"read_sequential_array_idx">>
+%%%%------------------------------------------------------------------
+do_action(<<"read_sequential_array_idx">>, undefined, _Children, State) ->
+    State;
+do_action(<<"read_sequential_array_idx">>, {Args}, _Children, State) ->
+    Key         = proplists:get_value(<<"key">>, Args),
+    Variable    = proplists:get_value(<<"variable">>, Args),
+    CurIdxKey   = <<Key/binary,"_CURRENT_IDX">>,
+    CurIdx = case dict:find(CurIdxKey, State#state.keystore) of
+                {ok, FoundValue} -> FoundValue;
+                error -> 0
+             end,
+
+    {ok, Array} = dict:find(Key, State#state.keystore),
+    case length(Array) of 
+        0 ->
+            State;
+        Len ->
+            Idx         = CurIdx rem Len,
+            NewData     = lists:nth(Idx+1, Array),
+            NewDic      = dict:store(Variable, NewData, State#state.keystore),
+            UpdatedDic  = dict:store(CurIdxKey, Idx+1, NewDic),
+            State#state{keystore = UpdatedDic}
+    end;
+
+%%%%------------------------------------------------------------------
 %%%% Action: <<"read_random_array_idx">>
 %%%%------------------------------------------------------------------
 do_action(<<"read_random_array_idx">>, undefined, _Children, State) ->
@@ -530,8 +568,9 @@ do_action(<<"read_random_array_idx">>, {Args}, _Children, State) ->
             State#state{keystore = NewDic}
     end;
 
+
 %%%%------------------------------------------------------------------
-%%%% Action: <<"read_random_array_idx">>
+%%%% Action: <<"read_random_doc_set_idx">>
 %%%%------------------------------------------------------------------
 do_action(<<"read_random_doc_set_idx">>, undefined, _Children, State) ->
     State;

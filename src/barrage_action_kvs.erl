@@ -28,6 +28,7 @@
 
 %% API
 -export([load/3]).
+-export([load_array/3]).
 -export([read_random/4]).
 -export([read_name/4]).
 -export([store_key/4]).
@@ -55,6 +56,16 @@ load(Profile, File, State) ->
     {KVS}       = jiffy:decode(KVSRaw),
     KVSStore    = dict:from_list(KVS),
     StateKVS    = dict:store(Profile, KVSStore, State#state.keystore),
+    State#state{keystore = StateKVS}.
+
+
+load_array(Profile, File, State) ->
+    BasePath    = code:priv_dir(barrage),
+    LFile       = binary_to_list(File),
+    Path        = BasePath ++ "/" ++ LFile,
+    {ok, KVSRaw}= file:read_file(Path), 
+    ArrayStore  = jiffy:decode(KVSRaw),
+    StateKVS    = dict:store(Profile, ArrayStore, State#state.keystore),
     State#state{keystore = StateKVS}.
 
 read_random(Profile, KeyStorageName, ValueStorageName, State) ->
