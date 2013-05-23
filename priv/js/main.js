@@ -37,7 +37,8 @@ var DEFAULTPROPERTIES =
 		}
 	};
 
-$(document).ready(function() {	
+$(document).ready(function() {
+	fartscroll();
 	RequestInfo("orders", function(orders) {
 		if (!$.isEmptyObject(orders))
 		{
@@ -52,9 +53,10 @@ $(document).ready(function() {
 });
 
 function RequestInfo(url, callback) {
-	var loadinghtml = '<div>Requesting Data</div><div id="loadTimer"> \
-	                  <span class="hr">00</span>:<span class="min">00</span>: \
-	                  <span class="sec">00</span></div>';
+	var loadinghtml =  '<div>Requesting Data</div>\
+						<div id="loadTimer">\
+							<span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span>\
+						</div>';
 
 	$.ajax({
 		url: url,
