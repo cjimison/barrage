@@ -432,6 +432,27 @@ do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
     Value   = proplists:get_value(<<"value">>, Args),
     barrage_action_kvs:read_random(Profile, Key, Value, State);  
 
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"read_random_number">>
+%%%%------------------------------------------------------------------
+do_action(<<"read_random_value">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"read_random_value">>, {Args}, _Children, State) ->
+    Min     = proplists:get_value(<<"min">>, Args),
+    Max     = proplists:get_value(<<"max">>, Args),
+    Preffix = proplists:get_value(<<"preffix">>, Args),
+    NumberKey  = proplists:get_value(<<"number">>, Args),
+    NameKey    = proplists:get_value(<<"name">>, Args),
+    
+    Number  = Min + random:uniform(Max - Min),
+    BinNumber = integer_to_binary(Number),
+    Name    = <<Preffix/binary, BinNumber/binary>>, 
+    NewDic  = dict:store(NumberKey, Number, State#state.keystore),
+    UpdatedDic  = dict:store(NameKey, Name, NewDic),    
+    State#state{keystore = UpdatedDic};
+
 %%%%------------------------------------------------------------------
 %%%% Action: <<"read_named_kv">>
 %%%%------------------------------------------------------------------
@@ -535,7 +556,6 @@ do_action(<<"read_sequential_array_idx">>, {Args}, _Children, State) ->
                 {ok, FoundValue} -> FoundValue;
                 error -> 0
              end,
-
     {ok, Array} = dict:find(Key, State#state.keystore),
     case length(Array) of 
         0 ->
