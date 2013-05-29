@@ -59,25 +59,15 @@ start(_StartType, _StartArgs) ->
             [{_, General}] = ets:lookup(barrage, enable_general),
             case General of
                 true ->
-                    Dispatch = cowboy_router:compile([
-                            {'_', [
-                                    {"/status",     barrage_general_handler, []},
-                                    {"/orders",     barrage_general_handler, []},
-                                    {"/commanders", barrage_general_handler, []},
-                                    {"/issue_order",barrage_general_handler, []},
-                                    {"/upload_behaviors",barrage_general_handler, []},
-                                    {"/upload_actions",barrage_general_handler, []},
-                                    {"/[...]", cowboy_static, [
-                                            {directory, {priv_dir, barrage, []}},
-                                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-                                    ]} 
-                            ]}
-                    ]),
+                    %% this is a general so load up the correct endpoints
                     {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
-                            {env, [{dispatch, Dispatch}]}
+                            {env, [{dispatch, create_general_dispatch()}]}
                     ]);
                 _ ->
-                    ok
+                    %% this is a commander so load up the commander endpoints
+                    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
+                            {env, [{dispatch, create_commander_dispatch()}]}
+                    ])
             end,
             case barrage_sup:start_link() of
                 {ok, Pid} ->
@@ -102,6 +92,41 @@ start(_StartType, _StartArgs) ->
 stop(_State) ->
     ok.
 
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+create_general_dispatch() ->
+    cowboy_router:compile([
+            {'_', [
+                    {"/general/status",     barrage_general_handler, []},
+                    {"/general/orders",     barrage_general_handler, []},
+                    {"/general/commanders", barrage_general_handler, []},
+                    {"/general/issue_order",barrage_general_handler, []},
+                    {"/general/upload_behaviors",barrage_general_handler, []},
+                    {"/general/upload_actions",barrage_general_handler, []},
+                    {"/[...]", cowboy_static, [
+                            {directory, {priv_dir, barrage, []}},
+                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+                    ]} 
+            ]}
+    ]).
+
+create_commander_dispatch() ->
+    cowboy_router:compile([
+            {'_', [
+                    {"/commander/status",     barrage_general_handler, []},
+                    {"/commander/orders",     barrage_general_handler, []},
+                    {"/commander/commanders", barrage_general_handler, []},
+                    {"/commander/issue_order",barrage_general_handler, []},
+                    {"/commander/upload_behaviors",barrage_general_handler, []},
+                    {"/commander/upload_actions",barrage_general_handler, []},
+                    {"/[...]", cowboy_static, [
+                            {directory, {priv_dir, barrage, []}},
+                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+                    ]} 
+            ]}
+    ]).
+
 get_config_file(undefined) ->
     "/barrage.json";
 get_config_file(Value) ->
@@ -117,9 +142,6 @@ get_action_file(undefined) ->
 get_action_file(Value) ->
     binary_to_list(Value).
 
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
 get_file_names() ->
     BasePath        = code:priv_dir(barrage),
     case filelib:is_regular(BasePath ++ "/files.json") of

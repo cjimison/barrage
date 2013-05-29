@@ -53,23 +53,27 @@ handle(Req, State) ->
     handle_named_request(Method, Path, Req3),
     {ok, Req2, State}.
 
-handle_named_request(<<"GET">>, <<"/orders">>, Req) ->
+handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
+    JSON = jiffy:encode({[{<<"staus">>, <<"allgood">>}]}),
+    cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],JSON,Req);
+
+handle_named_request(<<"GET">>, <<"/general/orders">>, Req) ->
     [{table_keys, Keys}] = ets:lookup(plans, table_keys),
     JSON = jiffy:encode(Keys),
     cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],JSON,Req);
 
-handle_named_request(<<"GET">>, <<"/commanders">>, Req) ->
+handle_named_request(<<"GET">>, <<"/general/commanders">>, Req) ->
     Commanders = barrage_general:get_commanders_info(), 
     JSON = jiffy:encode(Commanders),
     cowboy_req:reply(200,[{<<"content-encoding">>,<<"utf-8">>}],JSON,Req);
 
-handle_named_request(<<"GET">>, <<"/issue_order">>, Req) ->
+handle_named_request(<<"GET">>, <<"/general/issue_order">>, Req) ->
     {Order, Req2} = cowboy_req:qs_val(<<"order">>, Req), 
     Req3 = cowboy_req:compact(Req2),
     barrage_general:issue_http_order(Order, self()),
     blocker_loop(Req3);
 
-handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
+handle_named_request(<<"POST">>, <<"/general/upload_behaviors">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
@@ -80,7 +84,7 @@ handle_named_request(<<"POST">>, <<"/upload_behaviors">>, Req) ->
             cowboy_req:reply(400,[{<<"content-encoding">>,<<"utf-8">>}],<<"{\"error\":\"No Body\"}">>,Req)
     end;
 
-handle_named_request(<<"POST">>, <<"/upload_actions">>, Req) ->
+handle_named_request(<<"POST">>, <<"/general/upload_actions">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
