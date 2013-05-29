@@ -39,7 +39,7 @@ var DEFAULTPROPERTIES =
 
 $(document).ready(function() {
 	fartscroll();
-	RequestInfo("orders", function(orders) {
+	RequestInfo("general/orders", function(orders) {
 		if (!$.isEmptyObject(orders))
 		{
 			$("#main").append('<div id="Request_Plot">');
@@ -82,7 +82,7 @@ function RequestInfo(url, callback) {
 
 function rp_IssueOrder(name) {
 	gHideProgressOverlay = false;			
-	var url = "issue_order?order=" + encodeURIComponent(name);
+	var url = "general/issue_order?order=" + encodeURIComponent(name);
 	
 	// Remove any custom graphoptions
 	$('#Chart_Options').remove();
