@@ -4,7 +4,7 @@
         "args" : 
         { 
             "server"    : "127.0.0.1",
-            "port"      : 1337
+            "port"      : 8080 
         }
     },
     {
@@ -12,7 +12,8 @@
         "args" : 
         {
             "general"   : "general@127.0.0.1",
-            "gunners"   : 1
+            "gunners"   : 1,
+            "port"      : 8080 
         }
     }
 ]

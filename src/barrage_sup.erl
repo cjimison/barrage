@@ -51,23 +51,54 @@ start_link() ->
 %% ===================================================================
 get_props(true, true) ->
     [
-        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
-        {tag1, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]},
-        {tag2, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
+        {
+            tag0,
+            {reloader, start_link, []}, 
+            permanent, 10000, worker, [reloader]
+        },
+        {   
+            tag1,
+            {barrage_general, start_link, []}, 
+            permanent, 10000, worker, [barrage_general]
+        },
+        {
+            tag2,
+            {barrage_commander, start_link, []}, 
+            permanent, 10000, worker, [barrage_commander]
+        }
     ]; 
 get_props(true, false) ->
     [
-        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
-        {tag1, {barrage_general, start_link, []}, permanent, 10000, worker, [barrage_general]}
+        {
+            tag0,
+            {reloader, start_link, []}, 
+            permanent, 10000, worker, [reloader]
+        },
+        {
+            tag1,
+            {barrage_general, start_link, []},
+            permanent, 10000, worker,[barrage_general]
+        }
     ]; 
 get_props(false, true) ->
     [
-        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]},
-        {tag2, {barrage_commander, start_link, []}, permanent, 10000, worker, [barrage_commander]}
+        {
+            tag0,
+            {reloader, start_link, []}, 
+            permanent, 10000, worker, [reloader]
+        },
+        {
+            tag2,
+            {barrage_commander, start_link, []},
+            permanent, 10000, worker, [barrage_commander]
+        }
     ]; 
 get_props(_Gen, _Com) ->
     [
-        {tag0, {reloader, start_link, []}, permanent, 10000, worker, [reloader_server]}
+        {
+            tag0,
+            {reloader, start_link, []}, 
+            permanent, 10000, worker, [reloader]}
     ].
 
 init([]) ->

@@ -34,6 +34,8 @@
          start_link/0,
          set_data/3,
          execute/4,
+         gunner_count/0,
+         gunner_count/1,
          order_complete/2]).
 
 %% gen_server callbacks
@@ -75,15 +77,11 @@ start_link() ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-create_gunner(GunnerList, 0) ->
-    GunnerList;
-create_gunner(GunnerList, Count) ->
-    {ok, GunnerPID} = barrage_gunner:start(),
-    ListName = "s_" ++ integer_to_list(Count),
-    AtomName = list_to_atom(ListName),
-    barrage_gunner:set_httpc_profile(GunnerPID, AtomName),
-    NewList = [GunnerPID | GunnerList],
-    create_gunner(NewList, Count - 1). 
+gunner_count() ->
+    gen_server:call(?MODULE, {gunner_count}).
+
+gunner_count(Pid) ->
+    gen_server:call(Pid, {gunner_count}).
 
 set_data(Pid, Plans, Actions) ->
     gen_server:cast(Pid, {set_data, {Plans, Actions}}).
@@ -93,6 +91,8 @@ execute(Pid, Orders, Server, Port) ->
 
 order_complete(GunnerPid, Results) ->
     gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
+
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -128,15 +128,13 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call(_Request, _From, State) ->
-        Reply = ok,
-        {reply, Reply, State}.
+handle_call({gunner_count}, _From, State) ->
+    Count = length(State#state.gunners),
+    {reply, Count, State};
 
-handle_cast({set_data, {Plans, Actions}}, State) when 
-    State#state.executing == false ->
-    true = ets:insert(plans, Plans),
-    true = ets:insert(actions, Actions),
-    {noreply, State};
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -148,6 +146,12 @@ handle_cast({set_data, {Plans, Actions}}, State) when
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_cast({set_data, {Plans, Actions}}, State) when 
+    State#state.executing == false ->
+    true = ets:insert(plans, Plans),
+    true = ets:insert(actions, Actions),
+    {noreply, State};
+
 handle_cast({execute, {Order, Server, Port}}, State) when 
         State#state.executing == false ->
     %NOTE: I am currently doing this in two phases
@@ -238,4 +242,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+create_gunner(GunnerList, 0) ->
+    GunnerList;
+
+create_gunner(GunnerList, Count) ->
+    {ok, GunnerPID} = barrage_gunner:start(),
+    ListName = "s_" ++ integer_to_list(Count),
+    AtomName = list_to_atom(ListName),
+    barrage_gunner:set_httpc_profile(GunnerPID, AtomName),
+    NewList = [GunnerPID | GunnerList],
+    create_gunner(NewList, Count - 1).
 

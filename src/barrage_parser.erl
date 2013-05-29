@@ -134,7 +134,9 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
     {Config} = TheConfig,
     Type     = proplists:get_value(<<"type">>, Config),
     TheArgs  = proplists:get_value(<<"args">>, Config),
-    case (undefined /= Type andalso undefined /= TheArgs andalso is_tuple(TheArgs)) of
+    case   (undefined /= Type andalso 
+            undefined /= TheArgs andalso 
+            is_tuple(TheArgs)) of
         true ->
             {Args} = TheArgs,
             ets:insert(barrage, {type, Type}),
@@ -163,6 +165,12 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
                             General = binary_to_atom(GeneralA, utf8),
                             ets:insert(barrage, {general, General}),
                             ets:insert(barrage, {gunners, Gunners}),
+                            case proplists:get_value(<<"port">>, Args) of
+                                undefined ->
+                                    ets:insert(barrage, {port, 80});
+                                Port ->
+                                    ets:insert(barrage, {port, Port})
+                            end,
                             ok;
                         false ->
                             invalid_config_arg

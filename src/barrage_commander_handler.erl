@@ -1,6 +1,26 @@
 %%%-------------------------------------------------------------------
 %%% @author Chris Jimison
-%%% @copyright (C) 2013, Not Rigged Games LLC
+%%% @copyright (c) 2013 Christopher Jimison
+%%%
+%%% Permission is hereby granted, free of charge, to any person 
+%%% obtaining a copy of this software and associated documentation file 
+%%% (the "Software"), to deal in the Software without restriction, 
+%%% including without limitation the rights to use, copy, modify, merge 
+%%% publish, distribute, sublicense, and/or sell copies of the Software 
+%%% and to permit persons to whom the Software is furnished to do so, 
+%%% subject to the following conditions:
+%%% 
+%%% The above copyright notice and this permission notice shall be 
+%%% included in all copies or substantial portions of the Software.
+%%% 
+%%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+%%% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+%%% MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+%%% NONINFRINGEMENT. 
+%%% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR AN 
+%%% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+%%% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+%%% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %%% @doc
 %%%
 %%% @end
@@ -11,7 +31,10 @@
 %% Module callbacks
 -export([init/3]).
 -export([handle/2]).
+-export([routes/0]).
 -export([terminate/3]).
+
+-define(HTTP_CONTENT_ENC, [{<<"content-encoding">>,<<"utf-8">>}]).
 
 %%%===================================================================
 %%% Module callbacks
@@ -35,7 +58,27 @@ init(_Transport, Req, []) ->
 %% @end
 %%--------------------------------------------------------------------
 handle(Req, State) ->
-    {ok, Req, State}.
+    {Method, Req2}  = cowboy_req:method(Req),
+    {Path, Req3}    = cowboy_req:path(Req2),
+    handle_named_request(Method, Path, Req3),
+    {ok, Req3, State}.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Array of value URL routes that this handler will accept
+%%
+%% @spec routes() -> [{url, barrage_commander_handler, []}] 
+%% @end
+%%--------------------------------------------------------------------
+routes() ->
+    [
+        {"/commander/status",       barrage_commander_handler, []},
+        {"/commander/set_network",  barrage_commander_handler, []},
+        {"/commander/set_general",  barrage_commander_handler, []},
+        {"/commander/set_gunners",  barrage_commander_handler, []},
+        {"/commander/connect",      barrage_commander_handler, []},
+        {"/commander/disconnect",   barrage_commander_handler, []}
+    ].
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -50,6 +93,30 @@ terminate(_Reason, _Req, _State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
+    io:format("A~n"),
+    Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
+    Node    = erlang:atom_to_binary(erlang:node(), utf8),
+    Count   = list_to_binary(integer_to_list(barrage_commander:gunner_count())),
+    JSON    = <<"{\"network\":\"",Cookie/binary,"\",\"cname\":\"",
+                Node/binary,"\",\"gcount\":",Count/binary,"}">>,
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON,Req);
 
+handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
+    cowboy_req:reply(405, Req);
 
+handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
+    cowboy_req:reply(405, Req);
+
+handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
+    cowboy_req:reply(405, Req);
+
+handle_named_request(<<"POST">>, <<"/commander/connect">>, Req) ->
+    cowboy_req:reply(405, Req);
+
+handle_named_request(<<"POST">>, <<"/commander/disconnect">>, Req) ->
+    cowboy_req:reply(405, Req);
+
+handle_named_request(_, _, Req) ->
+    cowboy_req:reply(405, Req).
 

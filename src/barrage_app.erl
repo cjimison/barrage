@@ -56,17 +56,46 @@
 start(_StartType, _StartArgs) ->
     case loadConfigTable() of
         ok ->
+            [{_, Port}] = ets:lookup(barrage, port),
             [{_, General}] = ets:lookup(barrage, enable_general),
-            case General of
-                true ->
-                    %% this is a general so load up the correct endpoints
-                    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
-                            {env, [{dispatch, create_general_dispatch()}]}
+            [{_, Commander}] = ets:lookup(barrage, enable_commander),
+            case {General, Commander} of
+                {true, true} ->
+                    Routes = barrage_general_handler:routes() ++
+                             barrage_commander_handler:routes() ++
+                             [{"/[...]", cowboy_static, [
+                                    {directory, {priv_dir, barrage, []}},
+                                    {mimetypes, 
+                                        {fun mimetypes:path_to_mimes/2, default}}
+                                ]}], 
+                    Dispatch = cowboy_router:compile([{'_', Routes } ]),
+                    %% this is a general so load up the correct end points
+                    {ok, _} = cowboy:start_http(http, 100, [{port, Port}], [
+                            {env, [{dispatch, Dispatch}]}
                     ]);
-                _ ->
-                    %% this is a commander so load up the commander endpoints
-                    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
-                            {env, [{dispatch, create_commander_dispatch()}]}
+                {true, false} ->
+                    Routes = barrage_general_handler:routes() ++
+                             [{"/[...]", cowboy_static, [
+                                    {directory, {priv_dir, barrage, []}},
+                                    {mimetypes, 
+                                        {fun mimetypes:path_to_mimes/2, default}}
+                                ]}], 
+                    Dispatch = cowboy_router:compile([{'_', Routes } ]),
+                    %% this is a general so load up the correct end points
+                    {ok, _} = cowboy:start_http(http, 100, [{port, Port}], [
+                            {env, [{dispatch, Dispatch}]}
+                    ]);
+                {false, true} ->
+                    Routes = barrage_commander_handler:routes() ++
+                             [{"/[...]", cowboy_static, [
+                                    {directory, {priv_dir, barrage, []}},
+                                    {mimetypes, 
+                                        {fun mimetypes:path_to_mimes/2, default}}
+                                ]}], 
+                    Dispatch = cowboy_router:compile([{'_', Routes } ]),
+                    %% this is a general so load up the correct end points
+                    {ok, _} = cowboy:start_http(http, 100, [{port, Port}], [
+                            {env, [{dispatch, Dispatch}]}
                     ])
             end,
             case barrage_sup:start_link() of
@@ -95,38 +124,6 @@ stop(_State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-create_general_dispatch() ->
-    cowboy_router:compile([
-            {'_', [
-                    {"/general/status",     barrage_general_handler, []},
-                    {"/general/orders",     barrage_general_handler, []},
-                    {"/general/commanders", barrage_general_handler, []},
-                    {"/general/issue_order",barrage_general_handler, []},
-                    {"/general/upload_behaviors",barrage_general_handler, []},
-                    {"/general/upload_actions",barrage_general_handler, []},
-                    {"/[...]", cowboy_static, [
-                            {directory, {priv_dir, barrage, []}},
-                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-                    ]} 
-            ]}
-    ]).
-
-create_commander_dispatch() ->
-    cowboy_router:compile([
-            {'_', [
-                    {"/commander/status",     barrage_general_handler, []},
-                    {"/commander/orders",     barrage_general_handler, []},
-                    {"/commander/commanders", barrage_general_handler, []},
-                    {"/commander/issue_order",barrage_general_handler, []},
-                    {"/commander/upload_behaviors",barrage_general_handler, []},
-                    {"/commander/upload_actions",barrage_general_handler, []},
-                    {"/[...]", cowboy_static, [
-                            {directory, {priv_dir, barrage, []}},
-                            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-                    ]} 
-            ]}
-    ]).
-
 get_config_file(undefined) ->
     "/barrage.json";
 get_config_file(Value) ->
@@ -149,9 +146,12 @@ get_file_names() ->
             {ok, FilesJ}= file:read_file(BasePath ++ "/files.json"), 
             {Files}     = jiffy:decode(FilesJ),
             {
-                BasePath ++ get_config_file(proplists:get_value(<<"config">>, Files)),
-                BasePath ++ get_behavior_file(proplists:get_value(<<"behaviors">>, Files)),
-                BasePath ++ get_action_file(proplists:get_value(<<"actions">>, Files))
+                BasePath ++ 
+                get_config_file(proplists:get_value(<<"config">>, Files)),
+                BasePath ++ 
+                get_behavior_file(proplists:get_value(<<"behaviors">>, Files)),
+                BasePath ++ 
+                get_action_file(proplists:get_value(<<"actions">>, Files))
             };
         false ->
             {   BasePath ++ "/barrage.json", 
