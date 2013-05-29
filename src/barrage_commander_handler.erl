@@ -102,9 +102,9 @@ handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
     General = erlang:atom_to_binary(GeneralA, utf8),
     io:format("General = ~p~n", [General]),
     JSON    = <<"{\"network\":\"",
-                Cookie/binary,"\",\"cname\":\"",
+                Cookie/binary,"\",\"commander\":\"",
                 Node/binary,"\",\"general\":\"",
-                General/binary,"\", \"gcount\":",
+                General/binary,"\", \"gunners\":",
                 Count/binary,"}">>,
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON,Req);
 
