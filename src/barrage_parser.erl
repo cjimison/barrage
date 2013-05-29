@@ -160,7 +160,8 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
                     ets:insert(barrage, {enable_commander, true}),
                     Gunners = proplists:get_value(<<"gunners">>, Args),
                     GeneralA= proplists:get_value(<<"general">>, Args),
-                    case (Gunners /= undefined andalso GeneralA /= undefined) of
+                    case (Gunners /= undefined andalso 
+                          GeneralA /= undefined) of
                         true ->
                             General = binary_to_atom(GeneralA, utf8),
                             ets:insert(barrage, {general, General}),

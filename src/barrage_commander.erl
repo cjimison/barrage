@@ -92,8 +92,6 @@ execute(Pid, Orders, Server, Port) ->
 order_complete(GunnerPid, Results) ->
     gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
 
-
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc

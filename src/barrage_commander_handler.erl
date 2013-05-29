@@ -98,25 +98,69 @@ handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
     Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
     Node    = erlang:atom_to_binary(erlang:node(), utf8),
     Count   = list_to_binary(integer_to_list(barrage_commander:gunner_count())),
-    JSON    = <<"{\"network\":\"",Cookie/binary,"\",\"cname\":\"",
-                Node/binary,"\",\"gcount\":",Count/binary,"}">>,
+    [{_, GeneralA}] = ets:lookup(barrage, general),
+    General = erlang:atom_to_binary(GeneralA, utf8),
+    io:format("General = ~p~n", [General]),
+    JSON    = <<"{\"network\":\"",
+                Cookie/binary,"\",\"cname\":\"",
+                Node/binary,"\",\"general\":\"",
+                General/binary,"\", \"gcount\":",
+                Count/binary,"}">>,
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON,Req);
 
 handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
-    cowboy_req:reply(405, Req);
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            {Plans}                     = jiffy:decode(Data),
+            case proplists:get_value(<<"network">>, Plans) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"no network name set\"}">>,
+                                    Req2);
+                CookieB ->
+                    Cookie  = erlang:binary_to_atom(CookieB, utf8),
+                    true    = erlang:set_cookie(node(), Cookie),
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"none\"}">>,
+                                    Req2)
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
 
 handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
-    cowboy_req:reply(405, Req);
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            {Cmd}                       = jiffy:decode(Data),
+            case proplists:get_value(<<"general">>, Cmd) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"no network name set\"}">>,
+                                    Req2);
+                GeneralL ->
+                    General = erlang:binary_to_atom(GeneralL, utf8),
+                    ets:insert(barrage, {general, General}),
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"none\"}">>,
+                                    Req2)
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
 
-handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
-    cowboy_req:reply(405, Req);
+handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, _Req) ->
+    ok;
 
-handle_named_request(<<"POST">>, <<"/commander/connect">>, Req) ->
-    cowboy_req:reply(405, Req);
+handle_named_request(<<"POST">>, <<"/commander/connect">>, _Req) ->
+    ok;
 
-handle_named_request(<<"POST">>, <<"/commander/disconnect">>, Req) ->
-    cowboy_req:reply(405, Req);
+handle_named_request(<<"POST">>, <<"/commander/disconnect">>, _Req) ->
+    ok;
 
-handle_named_request(_, _, Req) ->
-    cowboy_req:reply(405, Req).
+handle_named_request(_, _, _Req) ->
+    ok.
 
