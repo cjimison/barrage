@@ -447,7 +447,9 @@ do_action(<<"read_random_value">>, {Args}, _Children, State) ->
     NameKey    = proplists:get_value(<<"name">>, Args),
     
     Number  = Min + random:uniform(Max - Min),
-    BinNumber = integer_to_binary(Number),
+    % $TODO this doesn't work for 15B or less. 
+    %BinNumber = integer_to_binary(Number),
+    BinNumber = list_to_binary(integer_to_list(Number)),
     Name    = <<Preffix/binary, BinNumber/binary>>, 
     NewDic  = dict:store(NumberKey, Number, State#state.keystore),
     UpdatedDic  = dict:store(NameKey, Name, NewDic),    

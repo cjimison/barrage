@@ -43,7 +43,6 @@ blocker_loop(Req) ->
             blocker_loop(Req) 
     end.
 
-
 init(_Transport, Req, []) ->
     {ok, Req, undefined}.
 
