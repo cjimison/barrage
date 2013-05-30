@@ -133,59 +133,92 @@ process_sys_data(Configs) when true =:= is_list(Configs) ->
 process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
     {Config} = TheConfig,
     Type     = proplists:get_value(<<"type">>, Config),
-    TheArgs  = proplists:get_value(<<"args">>, Config),
-    case   (undefined /= Type andalso 
-            undefined /= TheArgs andalso 
-            is_tuple(TheArgs)) of
-        true ->
-            {Args} = TheArgs,
-            ets:insert(barrage, {type, Type}),
-            case Type of
-                <<"general">> ->
-                    ets:insert(barrage, {enable_general, true}),
-                    case proplists:get_value(<<"server">>, Args) of
-                        undefined ->
-                            invalid_config_arg;
-                        Server ->
-                            ets:insert(barrage, {server, Server}),
-                            case proplists:get_value(<<"port">>, Args) of
-                                undefined ->
-                                    ets:insert(barrage, {port, 80});
-                                Port ->
-                                    ets:insert(barrage, {port, Port})
-                            end,
-                            ok
-                    end;
-                <<"commander">> ->
-                    ets:insert(barrage, {enable_commander, true}),
-                    Gunners = proplists:get_value(<<"gunners">>, Args),
-                    GeneralA= proplists:get_value(<<"general">>, Args),
-                    case (Gunners /= undefined andalso 
-                          GeneralA /= undefined) of
-                        true ->
-                            General = binary_to_atom(GeneralA, utf8),
-                            ets:insert(barrage, {general, General}),
-                            ets:insert(barrage, {gunners, Gunners}),
-                            case proplists:get_value(<<"port">>, Args) of
-                                undefined ->
-                                    ets:insert(barrage, {port, 80});
-                                Port ->
-                                    ets:insert(barrage, {port, Port})
-                            end,
-                            ok;
-                        false ->
-                            invalid_config_arg
-                    end;
+    ets:insert(barrage, {type, Type}),
+    Args     = get_args_block(Config),
+    
+    case Type of
+        <<"general">> ->
+            ets:insert(barrage, {enable_general, true}),
+            Server  = get_server_ip(Args),
+            Port    = get_port_val(Args),
+            ets:insert(barrage, {server, Server}),
+            ets:insert(barrage, {port, Port}),
+            ok;
+        <<"commander">> ->
+            ets:insert(barrage, {enable_commander, true}),
+            Gunners = get_gunner_count(Args),
+            General = get_general_name(Args),
+            Connect = get_connected_val(Args),
+            ets:insert(barrage, {general, General}),
+            ets:insert(barrage, {gunners, Gunners}),
+            ets:insert(barrage, {connect_on_launch, Connect}),
+            %% If the port is already set by the general then
+            %% just use it.  It is an override
+            case ets:lookup(barrage, port) of
+                [] ->
+                    ets:insert(barrage, {port, get_port_val(Args)});
                 _ ->
-                    invalid_config_type
-
-            end;
-        false ->
-            invalid_config
+                    ok
+            end,
+            ok;
+        _ ->
+            invalid_config_type
     end;
 
 process_sys_data(_Configs) ->
     invalid_config.
+
+get_server_ip(Args) ->
+    case proplists:get_value(<<"server">>, Args) of
+        undefined ->
+            <<"127.0.0.1">>;
+        Server ->
+            Server
+    end.
+
+get_args_block(Config) ->
+    case proplists:get_value(<<"args">>, Config) of 
+        undefined ->
+            [];
+        {Args} ->
+            Args
+    end.
+
+get_port_val(Args) ->
+    case proplists:get_value(<<"port">>, Args) of
+        undefined ->
+            8080;
+        Port ->
+            Port
+    end.
+
+get_connected_val(Args) ->
+    General = proplists:get_value(<<"general">>, Args),
+    Connect = proplists:get_value(<<"connect_on_launch">>, Args),
+    case {General, Connect} of
+        {undefined, _ } ->
+            false;
+        {_, undefined } ->
+            false;
+        {_, _} ->
+            Connect
+    end.
+
+get_general_name(Args) ->
+    case proplists:get_value(<<"general">>, Args) of
+        undefined ->
+            not_set;
+        General ->
+            binary_to_atom(General, utf8)
+    end.
+
+get_gunner_count(Args) ->
+    case proplists:get_value(<<"gunners">>, Args) of
+        undefined ->
+            10;
+        Count ->
+            Count
+    end.
 
 %%--------------------------------------------------------------------
 %% @private

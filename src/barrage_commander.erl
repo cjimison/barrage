@@ -128,14 +128,24 @@ is_connected() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
+    [{_, Connect}] = ets:lookup(barrage, connect_on_launch),
     [{_, General}] = ets:lookup(barrage, general),
-    rpc:call(General, barrage_general, enlist, [self()]),
     [{_, GunnerCount}] = ets:lookup(barrage, gunners),
-    State = #state{ general     = General, 
-                    gunners     = create_gunners([], GunnerCount),
-                    connected   = true
-                },
-    {ok, State}.
+    case Connect of
+        true ->
+            State = #state{ general     = General, 
+                            gunners     = create_gunners([], GunnerCount),
+                            connected   = true
+                        },
+            rpc:call(General, barrage_general, enlist, [self()]),
+            {ok, State};
+        _ ->
+            State = #state{ general     = General, 
+                            gunners     = create_gunners([], GunnerCount),
+                            connected   = false
+                        },
+            {ok, State}
+    end.
 
 
 %%--------------------------------------------------------------------

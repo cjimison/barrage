@@ -3,17 +3,18 @@
         "type" : "general",
         "args" : 
         { 
-            "server"    : "127.0.0.1",
-            "port"      : 8080 
+            "server"            : "127.0.0.1",
+            "port"              : 8080 
         }
     },
     {
         "type" : "commander",
         "args" : 
         {
-            "general"   : "general@127.0.0.1",
-            "gunners"   : 1,
-            "port"      : 8080 
+            "general"           : "general@127.0.0.1",
+            "gunners"           : 1,
+            "port"              : 8080,
+            "connect_on_launch" : false
         }
     }
 ]
