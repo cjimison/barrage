@@ -14,7 +14,7 @@
             "general"           : "general@127.0.0.1",
             "gunners"           : 1,
             "port"              : 8080,
-            "connect_on_launch" : false
+            "connect_on_launch" : true 
         }
     }
 ]

@@ -147,7 +147,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
                                     Req2);
                 GeneralL ->
                     General = erlang:binary_to_atom(GeneralL, utf8),
-                    case barrage_command:change_general(General) of
+                    case barrage_commander:change_general(General) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -174,7 +174,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
                                     <<"{\"error\":\"No gunners set\"}">>,
                                     Req2);
                 Gunners ->
-                    case barrage_command:change_gunner_count(Gunners) of
+                    case barrage_commander:change_gunner_count(Gunners) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -191,7 +191,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
     end;
 
 handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
-    case barrage_command:connect() of
+    case barrage_commander:connect() of
         ok ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,
@@ -203,7 +203,7 @@ handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
     end;
 
 handle_named_request(<<"GET">>, <<"/commander/disconnect">>, Req) ->
-    case barrage_command:disconnect() of
+    case barrage_commander:disconnect() of
         ok ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,
@@ -211,6 +211,10 @@ handle_named_request(<<"GET">>, <<"/commander/disconnect">>, Req) ->
         queued ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
             <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+            Req);
+        _ ->
+            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+            <<"{\"error\":\"none\", \"status\":\"error\"}">>,
             Req)
     end;
 

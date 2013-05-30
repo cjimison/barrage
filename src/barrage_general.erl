@@ -51,9 +51,9 @@
 
 -record(state,
     {
-        commanders=[],
-        blocked = [],
-        waiting_pid = [],
+        blocked         = [],
+        waiting_pid     = [],
+        commanders      = dict:new(),
         results
     }).
 
@@ -137,18 +137,28 @@ handle_call({issue_order, OrderName}, _From, State) ->
         _ ->
             case State#state.blocked of
                 [] ->
+                    Pids = dict:fetch_keys(State#state.commanders),
                     NewState = State#state{ results=dict:new(), 
-                                            blocked=State#state.commanders},
+                                            blocked=Pids},
                     [{_, TargetServer}] = ets:lookup(barrage, server),
                     [{_, TargetPort}]   = ets:lookup(barrage, port),
                     Plans               = ets:tab2list(plans),
                     Actions             = ets:tab2list(actions),
+                    
                     SetFun              = fun(Pid) ->
-                            barrage_commander:set_data(Pid, Plans, Actions) end,
+                            barrage_commander:set_data( Pid, 
+                                                        Plans,
+                                                        Actions)
+                    end,
+
                     Fun                 = fun(Pid) ->
-                            barrage_commander:execute(Pid, Order, TargetServer, TargetPort) end,
-                    lists:foreach(SetFun, State#state.commanders),
-                    lists:foreach(Fun, State#state.commanders),
+                            barrage_commander:execute(  Pid, 
+                                                        Order,
+                                                        TargetServer,
+                                                        TargetPort)
+                    end,
+                    lists:foreach(SetFun, Pids),
+                    lists:foreach(Fun, Pids),
                     {reply, ok, NewState};
                 _->
                     %No test is going to be run.
@@ -168,16 +178,19 @@ handle_call({issue_http_order, OrderName, Pid}, _From, State) ->
 %%%% enlist
 %%%%------------------------------------------------------------------
 handle_call({enlist, PID}, _From, State) ->
-    Commanders = [PID | State#state.commanders],
-    NewState = State#state{commanders=Commanders}, 
+    Ref = erlang:monitor(process, PID),
+    PidDict = dict:store(PID, Ref, State#state.commanders),
+    NewState = State#state{commanders = PidDict}, 
     {reply, ok, NewState};
 
 %%%%------------------------------------------------------------------
 %%%% retire
 %%%%------------------------------------------------------------------
 handle_call({retire, PID}, _From, State) ->
-    Commanders = State#state.commanders -- [PID],
-    NewState = State#state{commanders=Commanders}, 
+    {ok, Ref}   = dict:find(PID, State#state.commanders),
+    NewDict     = dict:erase(PID, State#state.commanders), 
+    NewState    = State#state{commanders = NewDict}, 
+    erlang:demonitor(Ref),
     {reply, ok, NewState};
 
 %%%%------------------------------------------------------------------
@@ -192,16 +205,22 @@ handle_call({report_results, CPID, Results}, _From, State) ->
         [] ->
             Fun = fun(Pid) -> Pid ! {done, Result} end,
             lists:foreach(Fun, State#state.waiting_pid),
-            {reply, ok, State#state{waiting_pid = [], blocked=[], results=dict:new()}};
+            {reply, ok, State#state{
+                                        waiting_pid = [],
+                                        blocked     = [], 
+                                        results     = dict:new()
+                                    }};
         _ ->
-            {reply, ok, State#state{blocked = ActiveCommanders, results=Result}}
+            {reply, ok, State#state{
+                                        blocked     = ActiveCommanders,
+                                        results     = Result}}
     end;
 
 %%%%------------------------------------------------------------------
 %%%% get_commanders_info
 %%%%------------------------------------------------------------------
 handle_call({get_commanders_info}, _From, State) ->
-    Commanders = State#state.commanders,
+    Commanders = dict:fetch_keys(State#state.commanders),
     CommanderInfo = get_commanders_names(Commanders, []),
     {reply, CommanderInfo, State};
 
@@ -211,7 +230,7 @@ handle_call({change_cookie, Cookie}, _From, State) when
     DisFun = fun(Pid) -> 
         barrage_commander:disconnect(Pid) 
     end,
-    lists:foreach(DisFun, State#state.commanders),
+    lists:foreach(DisFun, dict:fetch_keys(State#state.commanders)),
     true = erlang:set_cookie(node(), Cookie),
     {reply, ok, State};
 
@@ -244,6 +263,25 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_info({'DOWN', _Ref, process, CPid, _Reason}, State) ->
+    NewDict     = dict:erase(CPid, State#state.commanders), 
+    Commanders          = State#state.blocked,
+    ActiveCommanders    = lists:delete(CPid, Commanders),
+    case ActiveCommanders of 
+        [] ->
+            {noreply, State#state{
+                                    waiting_pid = [],
+                                    blocked     = [], 
+                                    results     = dict:new(),
+                                    commanders   = NewDict
+                                }};
+        _ ->
+            {noreply, State#state{ 
+                                    blocked     = ActiveCommanders,
+                                    commanders  = NewDict
+                                }}
+    end;
+
 handle_info(_Info, State) ->
         {noreply, State}.
 
@@ -282,7 +320,8 @@ get_commanders_names([], CommanderData) ->
 get_commanders_names(Commanders, CommanderData) ->
     [CommanderPid | OtherCommanders] = Commanders,
     CommanderName = atom_to_binary(node(CommanderPid), utf8),
-    get_commanders_names(OtherCommanders, [CommanderName | CommanderData]).
+    get_commanders_names(OtherCommanders, 
+                        [CommanderName | CommanderData]).
 
 process_results([], MergedDict) ->
     MergedDict;
