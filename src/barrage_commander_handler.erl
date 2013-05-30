@@ -89,23 +89,22 @@ routes() ->
 %%--------------------------------------------------------------------
 terminate(_Reason, _Req, _State) ->
     ok.
-
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
-    io:format("A~n"),
     Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
     Node    = erlang:atom_to_binary(erlang:node(), utf8),
     Count   = list_to_binary(integer_to_list(barrage_commander:gunner_count())),
     [{_, GeneralA}] = ets:lookup(barrage, general),
     General = erlang:atom_to_binary(GeneralA, utf8),
-    io:format("General = ~p~n", [General]),
+    Status  = get_commander_state(),
     JSON    = <<"{\"network\":\"",
                 Cookie/binary,"\",\"commander\":\"",
                 Node/binary,"\",\"general\":\"",
-                General/binary,"\", \"gunners\":",
-                Count/binary,"}">>,
+                General/binary,"\",\"gunners\":",
+                Count/binary,",\"state\":\"",
+                Status/binary,"\"}">>,
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON,Req);
 
 handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
@@ -218,3 +217,10 @@ handle_named_request(<<"GET">>, <<"/commander/disconnect">>, Req) ->
 handle_named_request(_, _, _Req) ->
     ok.
 
+get_commander_state() ->
+    case barrage_commander:is_connected() of
+        true ->
+            <<"connected">>;
+        false ->
+            <<"disconnected">>
+    end.

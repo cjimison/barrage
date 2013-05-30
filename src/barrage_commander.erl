@@ -40,6 +40,7 @@
          change_general/1,
          connect/0,
          disconnect/0,
+         is_connected/0,
          change_gunner_count/1,
          order_complete/2]).
 
@@ -59,6 +60,7 @@
         gunners=[],
         executing=false,
         wait_count=0,
+        connected=false,
         reports
     }).
 
@@ -111,6 +113,9 @@ disconnect() ->
 
 connect() ->
     gen_server:call(?MODULE, connect).
+
+is_connected() ->
+    gen_server:call(?MODULE, is_connected).
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -126,8 +131,10 @@ init([]) ->
     [{_, General}] = ets:lookup(barrage, general),
     rpc:call(General, barrage_general, enlist, [self()]),
     [{_, GunnerCount}] = ets:lookup(barrage, gunners),
-    State = #state{ general = General, 
-                    gunners = create_gunners([], GunnerCount)},
+    State = #state{ general     = General, 
+                    gunners     = create_gunners([], GunnerCount),
+                    connected   = true
+                },
     {ok, State}.
 
 
@@ -145,7 +152,7 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({gunner_count, Count}, _From, State) -> 
+handle_call({gunner_count}, _From, State) -> 
     Count = length(State#state.gunners),
     {reply, Count, State};
 
@@ -173,13 +180,18 @@ handle_call(connect, _From, State) when
         State#state.executing == false ->
     [{_, General}] = ets:lookup(barrage, general),
     rpc:call(General, barrage_general, enlist, [self()]),
-    {reply, ok, State};
+    NewState = State#state{connected=true},
+    {reply, ok, NewState};
 
 handle_call(disconnect, _From, State) when 
         State#state.executing == false ->
     [{_, General}] = ets:lookup(barrage, general),
     rpc:call(General, barrage_general, retire, [self()]),
-    {reply, ok, State};
+    NewState = State#state{connected=false},
+    {reply, ok, NewState};
+
+handle_call(is_connected, _From, State) ->
+    {reply, State#state.connected, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
