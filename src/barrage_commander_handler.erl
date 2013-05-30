@@ -203,7 +203,7 @@ handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
             Req)
     end;
 
-handle_named_request(<<"POST">>, <<"/commander/disconnect">>, Req) ->
+handle_named_request(<<"GET">>, <<"/commander/disconnect">>, Req) ->
     case barrage_command:disconnect() of
         ok ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
