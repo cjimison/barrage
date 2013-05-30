@@ -32,6 +32,7 @@
 
 %% API
 -export([start/0]).
+-export([stop/1]).
 -export([start_link/0]).
 -export([follow_order/2]).
 -export([set_server_info/3]).
@@ -64,6 +65,9 @@
 %%--------------------------------------------------------------------
 start() ->
     gen_server:start(?MODULE, [], []).
+
+stop(GunnerPid) ->
+    gen_server:call(GunnerPid, stop).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -141,6 +145,9 @@ handle_call({set_httpc_profile, Profile}, _From, State) ->
     {ok, PID} = inets:start(httpc, [{profile, Profile}]),
     NewState = State#state{profile=Profile, inets_pid=PID},
     {reply, ok, NewState};
+
+handle_call(stop, _From, State) ->
+    {stop, normal, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

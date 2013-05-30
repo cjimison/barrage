@@ -120,10 +120,16 @@ handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
                                     Req2);
                 CookieB ->
                     Cookie  = erlang:binary_to_atom(CookieB, utf8),
-                    true    = erlang:set_cookie(node(), Cookie),
-                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
-                                    <<"{\"error\":\"none\"}">>,
-                                    Req2)
+                    case barrage_commander:change_cookie(Cookie) of
+                        ok ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                            <<"{\"error\":\"none\"}">>,
+                                            Req2);
+                        queued ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+                            Req2)
+                    end
             end;
         false ->
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
@@ -138,28 +144,76 @@ handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
             case proplists:get_value(<<"general">>, Cmd) of
                 undefined ->
                     cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
-                                    <<"{\"error\":\"no network name set\"}">>,
+                                    <<"{\"error\":\"no general\"}">>,
                                     Req2);
                 GeneralL ->
                     General = erlang:binary_to_atom(GeneralL, utf8),
-                    ets:insert(barrage, {general, General}),
-                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
-                                    <<"{\"error\":\"none\"}">>,
-                                    Req2)
+                    case barrage_command:change_general(General) of
+                        ok ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                            <<"{\"error\":\"none\"}">>,
+                                            Req2);
+                        queued ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+                            Req2)
+                    end
             end;
         false ->
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"No Body\"}">>,Req)
     end;
 
-handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, _Req) ->
-    ok;
+handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            {Cmd}                       = jiffy:decode(Data),
+            case proplists:get_value(<<"gunners">>, Cmd) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"No gunners set\"}">>,
+                                    Req2);
+                Gunners ->
+                    case barrage_command:change_gunner_count(Gunners) of
+                        ok ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                            <<"{\"error\":\"none\"}">>,
+                                            Req2);
+                        queued ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+                            Req2)
+                    end
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
 
-handle_named_request(<<"POST">>, <<"/commander/connect">>, _Req) ->
-    ok;
+handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
+    case barrage_command:connect() of
+        ok ->
+            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\"}">>,
+                            Req);
+        queued ->
+            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+            Req)
+    end;
 
-handle_named_request(<<"POST">>, <<"/commander/disconnect">>, _Req) ->
-    ok;
+handle_named_request(<<"POST">>, <<"/commander/disconnect">>, Req) ->
+    case barrage_command:disconnect() of
+        ok ->
+            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\"}">>,
+                            Req);
+        queued ->
+            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+            Req)
+    end;
 
 handle_named_request(_, _, _Req) ->
     ok.

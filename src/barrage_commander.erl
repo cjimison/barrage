@@ -36,6 +36,11 @@
          execute/4,
          gunner_count/0,
          gunner_count/1,
+         change_cookie/1,
+         change_general/1,
+         connect/0,
+         disconnect/0,
+         change_gunner_count/1,
          order_complete/2]).
 
 %% gen_server callbacks
@@ -92,6 +97,20 @@ execute(Pid, Orders, Server, Port) ->
 order_complete(GunnerPid, Results) ->
     gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
 
+change_cookie(Cookie) ->
+    gen_server:call(?MODULE, {change_cookie, Cookie}).
+
+change_general(General) ->
+    gen_server:call(?MODULE, {change_general, General}).
+
+change_gunner_count(Count) ->
+    gen_server:call(?MODULE, {change_gunners, Count}).
+
+disconnect() ->
+    gen_server:call(?MODULE, disconnect).
+
+connect() ->
+    gen_server:call(?MODULE, connect).
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -108,7 +127,7 @@ init([]) ->
     rpc:call(General, barrage_general, enlist, [self()]),
     [{_, GunnerCount}] = ets:lookup(barrage, gunners),
     State = #state{ general = General, 
-                    gunners = create_gunner([], GunnerCount)},
+                    gunners = create_gunners([], GunnerCount)},
     {ok, State}.
 
 
@@ -126,9 +145,41 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({gunner_count}, _From, State) ->
+handle_call({gunner_count, Count}, _From, State) -> 
     Count = length(State#state.gunners),
     {reply, Count, State};
+
+handle_call({change_cookie, Cookie}, _From, State) when 
+        State#state.executing == false ->
+    true = erlang:set_cookie(node(), Cookie),
+    {reply, ok, State};
+
+handle_call({change_general, General}, _From, State) when 
+        State#state.executing == false ->
+    %[{_, OldGeneral}] = ets:lookup(barrage, general),
+    %rpc:call(OldGeneral, barrage_general, retire, [self()]),
+    ets:insert(barrage, {general, General}),
+    %rpc:call(General, barrage_general, enlist, [self()]),
+    {reply, ok, State};
+
+handle_call({change_gunners, Count}, _From, State) when 
+        State#state.executing == false ->
+    destroy_gunners(State#state.gunners),
+    NewState = #state{gunners = create_gunners([], Count)},
+    {reply, ok, NewState};
+
+
+handle_call(connect, _From, State) when 
+        State#state.executing == false ->
+    [{_, General}] = ets:lookup(barrage, general),
+    rpc:call(General, barrage_general, enlist, [self()]),
+    {reply, ok, State};
+
+handle_call(disconnect, _From, State) when 
+        State#state.executing == false ->
+    [{_, General}] = ets:lookup(barrage, general),
+    rpc:call(General, barrage_general, retire, [self()]),
+    {reply, ok, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -240,14 +291,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-create_gunner(GunnerList, 0) ->
+create_gunners(GunnerList, 0) ->
     GunnerList;
 
-create_gunner(GunnerList, Count) ->
+create_gunners(GunnerList, Count) ->
     {ok, GunnerPID} = barrage_gunner:start(),
     ListName = "s_" ++ integer_to_list(Count),
     AtomName = list_to_atom(ListName),
     barrage_gunner:set_httpc_profile(GunnerPID, AtomName),
     NewList = [GunnerPID | GunnerList],
-    create_gunner(NewList, Count - 1).
+    create_gunners(NewList, Count - 1).
 
+destroy_gunners(Gunners) ->
+    DestoryFun = fun(Pid) ->
+        barrage_gunner:stop(Pid) 
+    end,
+    %Have all the gunners sight in the target
+    lists:foreach(DestoryFun, Gunners).
