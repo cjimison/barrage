@@ -133,7 +133,6 @@ process_sys_data(Configs) when true =:= is_list(Configs) ->
 process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
     {Config} = TheConfig,
     Type     = proplists:get_value(<<"type">>, Config),
-    ets:insert(barrage, {type, Type}),
     Args     = get_args_block(Config),
     
     case Type of
