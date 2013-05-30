@@ -37,6 +37,7 @@
 -export([enlist/1]).                %<<- Adds a commander to the pool 
 -export([retire/1]).                %<<- Removes a commander from the pool
 -export([get_commanders_info/0]).   %<<- Get info about all commanders
+-export([change_cookie/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -105,6 +106,9 @@ report_results(CommanderPid, Results)->
 
 get_commanders_info() ->
     gen_server:call(?MODULE, {get_commanders_info}).
+
+change_cookie(Cookie) ->
+    gen_server:call(?MODULE, {change_cookie, Cookie}).
 
 
 %%--------------------------------------------------------------------
@@ -201,12 +205,21 @@ handle_call({get_commanders_info}, _From, State) ->
     CommanderInfo = get_commanders_names(Commanders, []),
     {reply, CommanderInfo, State};
 
+
+handle_call({change_cookie, Cookie}, _From, State) when
+    State#state.blocked == [] ->
+    DisFun = fun(Pid) -> 
+        barrage_commander:disconnect(Pid) 
+    end,
+    lists:foreach(DisFun, State#state.commanders),
+    true = erlang:set_cookie(node(), Cookie),
+    {reply, ok, State};
+
 %%%%------------------------------------------------------------------
 %%%% UNKNOWN COMMAND
 %%%%------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, ok, State}.
 
 %%--------------------------------------------------------------------
 %% @private

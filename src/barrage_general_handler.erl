@@ -69,6 +69,7 @@ handle(Req, State) ->
 routes() ->
     Routes = [
         {"/general/status",             barrage_general_handler, []},
+        {"/general/set_network",        barrage_general_handler, []},
         {"/general/orders",             barrage_general_handler, []},
         {"/general/commanders",         barrage_general_handler, []},
         {"/general/issue_order",        barrage_general_handler, []},
@@ -91,8 +92,41 @@ terminate(_Reason, _Req, _State) ->
 %%% Internal functions
 %%%===================================================================
 handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
-    JSON = jiffy:encode({[{<<"staus">>, <<"allgood">>}]}),
-    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
+    Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
+    Node    = erlang:atom_to_binary(erlang:node(), utf8),
+    JSON    = <<"{\"network\":\"",
+                Cookie/binary,"\",\"general\":\"",
+                Node/binary,"\"}">>,
+    JSONStr = jiffy:encode(JSON),
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSONStr, Req);
+
+handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
+            {Plans}                     = jiffy:decode(Data),
+            case proplists:get_value(<<"network">>, Plans) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"no network name set\"}">>,
+                                    Req2);
+                CookieB ->
+                    Cookie  = erlang:binary_to_atom(CookieB, utf8),
+                    case barrage_general:change_cookie(Cookie) of
+                        ok ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                            <<"{\"error\":\"none\"}">>,
+                                            Req2);
+                        queued ->
+                            cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
+                            Req2)
+                    end
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
 
 handle_named_request(<<"GET">>, <<"/general/orders">>, Req) ->
     [{table_keys, Keys}] = ets:lookup(plans, table_keys),

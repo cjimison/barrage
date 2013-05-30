@@ -40,6 +40,7 @@
          change_general/1,
          connect/0,
          disconnect/0,
+         disconnect/1,
          is_connected/0,
          change_gunner_count/1,
          order_complete/2]).
@@ -110,6 +111,9 @@ change_gunner_count(Count) ->
 
 disconnect() ->
     gen_server:call(?MODULE, disconnect).
+
+disconnect(Pid) ->
+    gen_server:call(Pid, disconnect).
 
 connect() ->
     gen_server:call(?MODULE, connect).
