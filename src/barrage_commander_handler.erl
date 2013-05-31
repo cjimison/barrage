@@ -89,13 +89,15 @@ routes() ->
 %%--------------------------------------------------------------------
 terminate(_Reason, _Req, _State) ->
     ok.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
     Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
     Node    = erlang:atom_to_binary(erlang:node(), utf8),
-    Count   = list_to_binary(integer_to_list(barrage_commander:gunner_count())),
+    Count   = list_to_binary(
+                integer_to_list(barrage_commander:gunner_count())),
     [{_, GeneralA}] = ets:lookup(barrage, general),
     General = erlang:atom_to_binary(GeneralA, utf8),
     Status  = get_commander_state(),
@@ -182,7 +184,9 @@ handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
                         queued ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
-                            Req2)
+                            Req2);
+                        R ->
+                            io:format("WTF ~p~n", [R])
                     end
             end;
         false ->

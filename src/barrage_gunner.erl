@@ -147,7 +147,8 @@ handle_call({set_httpc_profile, Profile}, _From, State) ->
     {reply, ok, NewState};
 
 handle_call(stop, _From, State) ->
-    {stop, normal, State};
+    inets:stop(httpc, State#state.inets_pid),
+    {stop, normal, ok, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -178,6 +179,7 @@ handle_cast({follow_order, Order}, State) ->
         barrage_commander:order_complete(self(), dict:new()),
         {noreply, State}
     end;
+
 
 handle_cast(_Msg, State) ->
     io:format("Why did I hit?~n~p~n", [_Msg]),

@@ -192,7 +192,7 @@ handle_call({change_general, General}, _From, State) when
 
 handle_call({change_gunners, Count}, _From, State) when 
         State#state.executing == false ->
-    destroy_gunners(State#state.gunners),
+    _Rez = destroy_gunners(State#state.gunners),
     NewState = #state{gunners = create_gunners([], Count)},
     {reply, ok, NewState};
 
@@ -343,7 +343,8 @@ create_gunners(GunnerList, Count) ->
 
 destroy_gunners(Gunners) ->
     DestoryFun = fun(Pid) ->
-        barrage_gunner:stop(Pid) 
+        barrage_gunner:stop(Pid),
+        ok
     end,
     %Have all the gunners sight in the target
     lists:foreach(DestoryFun, Gunners).
