@@ -107,7 +107,7 @@ http.createServer(function (req, res)
             res.write(JSON.stringify(KVS));
             res.end();
         }
-        if('/print_state' == url_parts.pathname)
+        else if('/print_state' == url_parts.pathname)
         {
             console.log("Username = " + query.username + ", State = " + query.state);
             res.end();

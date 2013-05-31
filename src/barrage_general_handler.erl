@@ -97,8 +97,7 @@ handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
     JSON    = <<"{\"network\":\"",
                 Cookie/binary,"\",\"general\":\"",
                 Node/binary,"\"}">>,
-    JSONStr = jiffy:encode(JSON),
-    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSONStr, Req);
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
 
 handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
     case cowboy_req:has_body(Req) of
