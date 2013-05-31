@@ -221,7 +221,7 @@ handle_call({report_results, CPID, Results}, _From, State) ->
 %%%%------------------------------------------------------------------
 handle_call({get_commanders_info}, _From, State) ->
     Commanders = dict:fetch_keys(State#state.commanders),
-    CommanderInfo = get_commanders_names(Commanders, []),
+    CommanderInfo = get_commanders_info(Commanders, []),
     {reply, CommanderInfo, State};
 
 
@@ -314,14 +314,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-get_commanders_names([], CommanderData) ->
+get_commanders_info([], CommanderData) ->
     CommanderData;
 
-get_commanders_names(Commanders, CommanderData) ->
+get_commanders_info(Commanders, CommanderData) ->
     [CommanderPid | OtherCommanders] = Commanders,
     CommanderName = atom_to_binary(node(CommanderPid), utf8),
-    get_commanders_names(OtherCommanders, 
-                        [CommanderName | CommanderData]).
+    Count = barrage_commander:gunner_count(CommanderPid),
+    get_commanders_info(OtherCommanders, 
+        [{[{<<"name">>, CommanderName}, {<<"count">>, Count}]} | CommanderData]).
 
 process_results([], MergedDict) ->
     MergedDict;

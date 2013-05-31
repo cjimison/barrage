@@ -89,10 +89,10 @@ start_link() ->
 %%% gen_server callbacks
 %%%===================================================================
 gunner_count() ->
-    gen_server:call(?MODULE, {gunner_count}).
+    gen_server:call(?MODULE, {gunner_count}, infinity).
 
 gunner_count(Pid) ->
-    gen_server:call(Pid, {gunner_count}).
+    gen_server:call(Pid, {gunner_count}, infinity).
 
 set_data(Pid, Plans, Actions) ->
     gen_server:cast(Pid, {set_data, {Plans, Actions}}).
@@ -104,25 +104,25 @@ order_complete(GunnerPid, Results) ->
     gen_server:cast(?MODULE, {orders_complete, GunnerPid, Results}).
 
 change_cookie(Cookie) ->
-    gen_server:call(?MODULE, {change_cookie, Cookie}).
+    gen_server:call(?MODULE, {change_cookie, Cookie}, infinity).
 
 change_general(General) ->
-    gen_server:call(?MODULE, {change_general, General}).
+    gen_server:call(?MODULE, {change_general, General}, infinity).
 
 change_gunner_count(Count) ->
-    gen_server:call(?MODULE, {change_gunners, Count}).
+    gen_server:call(?MODULE, {change_gunners, Count}, infinity).
 
 disconnect() ->
-    gen_server:call(?MODULE, disconnect).
+    gen_server:call(?MODULE, disconnect, infinity).
 
 disconnect(Pid) ->
-    gen_server:call(Pid, disconnect).
+    gen_server:call(Pid, disconnect, infinity).
 
 connect() ->
-    gen_server:call(?MODULE, connect).
+    gen_server:call(?MODULE, connect, infinity).
 
 is_connected() ->
-    gen_server:call(?MODULE, is_connected).
+    gen_server:call(?MODULE, is_connected, infinity).
 
 log_results(GunnerPID, ActionName, Time) ->
     gen_server:cast(?MODULE, {log_results, GunnerPID, ActionName, Time}).
@@ -187,13 +187,14 @@ handle_call({change_general, General}, _From, State) when
     %[{_, OldGeneral}] = ets:lookup(barrage, general),
     %rpc:call(OldGeneral, barrage_general, retire, [self()]),
     ets:insert(barrage, {general, General}),
+    NewState = State#state{general=General},
     %rpc:call(General, barrage_general, enlist, [self()]),
-    {reply, ok, State};
+    {reply, ok, NewState};
 
 handle_call({change_gunners, Count}, _From, State) when 
         State#state.executing == false ->
     _Rez = destroy_gunners(State#state.gunners),
-    NewState = #state{gunners = create_gunners([], Count)},
+    NewState = State#state{gunners = create_gunners([], Count)},
     {reply, ok, NewState};
 
 
@@ -266,7 +267,7 @@ handle_cast({execute, {_Order, _TargetURL}}, State) when
 
 handle_cast({orders_complete, _GunnerPid, Results}, State) when 
         State#state.wait_count == 1 ->
-    rpc:call(   State#state.general, 
+    _Rez = rpc:call(   State#state.general, 
                 barrage_general, 
                 report_results, 
                 [self(), [Results | State#state.reports]]),

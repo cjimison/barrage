@@ -67,7 +67,7 @@ start() ->
     gen_server:start(?MODULE, [], []).
 
 stop(GunnerPid) ->
-    gen_server:call(GunnerPid, stop).
+    gen_server:call(GunnerPid, stop, infinity).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -92,10 +92,10 @@ follow_order(GunnerPid, Order) ->
     gen_server:cast(GunnerPid, {follow_order, Order}).
 
 set_server_info(GunnerPid, Server, Port) ->
-    gen_server:call(GunnerPid, {set_server_info, Server, Port}).
+    gen_server:call(GunnerPid, {set_server_info, Server, Port}, infinity).
 
 set_httpc_profile(GunnerPid, Profile) ->
-    gen_server:call(GunnerPid, {set_httpc_profile, Profile}).
+    gen_server:call(GunnerPid, {set_httpc_profile, Profile}, infinity).
 
 %%%===================================================================
 %%% gen_server callbacks

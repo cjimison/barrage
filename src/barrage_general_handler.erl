@@ -92,11 +92,19 @@ terminate(_Reason, _Req, _State) ->
 %%% Internal functions
 %%%===================================================================
 handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
-    Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
-    Node    = erlang:atom_to_binary(erlang:node(), utf8),
+    Cookie      = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
+    Node        = erlang:atom_to_binary(erlang:node(), utf8),
+    Comms       = barrage_general:get_commanders_info(), 
+    CommStr     = jiffy:encode(Comms),
+    [{_, TS}]   = ets:lookup(barrage, server),
+    [{_, TPI}]  = ets:lookup(barrage, port),
+    TP          = list_to_binary(integer_to_list(TPI)),
     JSON    = <<"{\"network\":\"",
                 Cookie/binary,"\",\"general\":\"",
-                Node/binary,"\"}">>,
+                Node/binary,"\",\"target_server\":\"",
+                TS/binary,"\",\"target_port\":\"",
+                TP/binary,"\",\"commanders\":",
+                CommStr/binary,"}">>,
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
 
 handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
