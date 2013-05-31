@@ -174,7 +174,7 @@ handle_cast({follow_order, Order}, State) ->
         barrage_commander:order_complete(self(), State3#state.results),
         {noreply, State}
     catch Exception:Reason -> 
-        io:format("Gunner Exception.  Bail out of this Tree~nException: ~p ~nReason: ~p ~nStacktrace: ~p ~n", [Exception, Reason, erlang:get_stacktrace()] ), 
+        io:format("Gunner Exception.  Bail out of this Tree~nException: ~p ~nReason: ~p ~nStacktrace: ~p ~n", [Exception,Reason,erlang:get_stacktrace()]), 
         barrage_commander:order_complete(self(), dict:new()),
         {noreply, State}
     end;

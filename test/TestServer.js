@@ -39,10 +39,11 @@ http.createServer(function (req, res)
             console.log("I got a login request");
             if(query.username === 'foo' && query.password === 'bar')
             {
-                res.write('8379283747838');
+                res.write(querystring.stringify({ rez: '8379283747838' }));
             }
             else
             {
+                res.write(querystring.stringify({ error: 'failed' }));
                 res.write('failed');
             }   
             res.end();

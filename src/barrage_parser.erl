@@ -159,8 +159,10 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
             ets:insert(barrage, {enable_general, true}),
             Server  = get_server_ip(Args),
             Port    = get_port_val(Args),
+            AdminP  = get_admin_port_val(Args),
             ets:insert(barrage, {server, Server}),
             ets:insert(barrage, {port, Port}),
+            ets:insert(barrage, {admin_port, AdminP}),
             ok;
         <<"commander">> ->
             ets:insert(barrage, {enable_commander, true}),
@@ -172,9 +174,9 @@ process_sys_data(TheConfig) when true =:= is_tuple(TheConfig) ->
             ets:insert(barrage, {connect_on_launch, Connect}),
             %% If the port is already set by the general then
             %% just use it.  It is an override
-            case ets:lookup(barrage, port) of
+            case ets:lookup(barrage, admin_port) of
                 [] ->
-                    ets:insert(barrage, {port, get_port_val(Args)});
+                    ets:insert(barrage, {admin_port, get_port_val(Args)});
                 _ ->
                     ok
             end,
@@ -204,6 +206,14 @@ get_args_block(Config) ->
 
 get_port_val(Args) ->
     case proplists:get_value(<<"port">>, Args) of
+        undefined ->
+            8080;
+        Port ->
+            Port
+    end.
+
+get_admin_port_val(Args) ->
+    case proplists:get_value(<<"admin_port">>, Args) of
         undefined ->
             8080;
         Port ->

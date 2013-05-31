@@ -56,7 +56,7 @@
 start(_StartType, _StartArgs) ->
     case loadConfigTable() of
         ok ->
-            [{_, Port}] = ets:lookup(barrage, port),
+            [{_, Port}] = ets:lookup(barrage, admin_port),
             [{_, General}] = ets:lookup(barrage, enable_general),
             [{_, Commander}] = ets:lookup(barrage, enable_commander),
             case {General, Commander} of
