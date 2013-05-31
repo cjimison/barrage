@@ -41,7 +41,12 @@ function PostData(inputId) {
 	var url = POSTCOMMANDURLS[inputId].url
 	
 	var data = {};
-	data[key] = $("#"+inputId).val();
+	if(key === "gunners") {
+		data[key] = parseInt($("#"+inputId).val());
+	}
+	else {
+		data[key] = $("#"+inputId).val();
+	}
 	
 	PostInfo(url, data, function(response) {
 		window.location.reload(true);
