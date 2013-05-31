@@ -324,12 +324,30 @@ get_commanders_info(Commanders, CommanderData) ->
     get_commanders_info(OtherCommanders, 
         [{[{<<"name">>, CommanderName}, {<<"count">>, Count}]} | CommanderData]).
 
+list_merge([], [], Rez)->
+    Rez;
+
+list_merge(L1, [], Rez)->
+    Rez ++ L1;
+
+list_merge([], L2, Rez)->
+    Rez ++ L2;
+
+list_merge(L1, L2, Rez)->
+    [L1A | L1Others] = L1,
+    [L2A | L2Others] = L2,
+    NewRez = Rez ++ [L1A, L2A],
+    list_merge(L1Others, L2Others, NewRez).
+
 process_results([], MergedDict) ->
     MergedDict;
 
 process_results(Results, MergedDict) ->
     [Result | OtherResults] = Results,
-    Fun = fun(_Key, Value1, Value2) -> Value1 ++ Value2 end,
+    Fun = fun(_Key, Value1, Value2) -> 
+            list_merge(Value1, Value2, [])
+            %Value1 ++ Value2 
+    end,
     NewDict = dict:merge(Fun, MergedDict, Result),
     process_results(OtherResults, NewDict).
 
