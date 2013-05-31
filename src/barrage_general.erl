@@ -181,7 +181,7 @@ handle_call({enlist, PID}, _From, State) ->
     Ref = erlang:monitor(process, PID),
     PidDict = dict:store(PID, Ref, State#state.commanders),
     NewState = State#state{commanders = PidDict}, 
-    {reply, ok, NewState};
+    {reply, {ok, self()}, NewState};
 
 %%%%------------------------------------------------------------------
 %%%% retire

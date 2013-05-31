@@ -60,6 +60,8 @@
 -record(state,
     {
         general             = null,
+        gen_pid             = null,
+        gen_ref             = null,
         gunners             = [],
         executing           = false,
         wait_count          = 0,
@@ -144,11 +146,14 @@ init([]) ->
     [{_, GunnerCount}] = ets:lookup(barrage, gunners),
     case Connect of
         true ->
-            State = #state{ general     = General, 
-                            gunners     = create_gunners([], GunnerCount),
-                            connected   = true
+            {ok, GPID}  = rpc:call(General, barrage_general, enlist, [self()]),
+            Ref         = erlang:monitor(process, GPID),
+            State       = #state{   general     = General,
+                                    gen_pid     = GPID,
+                                    gen_ref     = Ref,
+                                    gunners     = create_gunners([], GunnerCount),
+                                    connected   = true
                         },
-            rpc:call(General, barrage_general, enlist, [self()]),
             {ok, State};
         _ ->
             State = #state{ general     = General, 
@@ -200,16 +205,18 @@ handle_call({change_gunners, Count}, _From, State) when
 
 handle_call(connect, _From, State) when 
         State#state.executing == false ->
-    [{_, General}] = ets:lookup(barrage, general),
-    rpc:call(General, barrage_general, enlist, [self()]),
-    NewState = State#state{connected=true},
+    [{_, General}]  = ets:lookup(barrage, general),
+    {ok, GPID}      = rpc:call(General, barrage_general, enlist, [self()]),
+    Ref             = erlang:monitor(process, GPID),
+    NewState        = State#state{connected=true, gen_pid=GPID, gen_ref=Ref},
     {reply, ok, NewState};
 
 handle_call(disconnect, _From, State) when 
         State#state.executing == false ->
     [{_, General}] = ets:lookup(barrage, general),
-    rpc:call(General, barrage_general, retire, [self()]),
-    NewState = State#state{connected=false},
+    ok = rpc:call(General, barrage_general, retire, [self()]),
+    erlang:demonitor(State#state.gen_ref),
+    NewState = State#state{connected=false, gen_pid=null, gen_ref=null},
     {reply, ok, NewState};
 
 handle_call(is_connected, _From, State) ->
@@ -265,12 +272,14 @@ handle_cast({execute, {_Order, _TargetURL}}, State) when
         State#state.executing == true ->
     {noreply, State};
 
-handle_cast({orders_complete, _GunnerPid, Results}, State) when 
-        State#state.wait_count == 1 ->
-    _Rez = rpc:call(   State#state.general, 
-                barrage_general, 
-                report_results, 
-                [self(), [Results | State#state.reports]]),
+handle_cast({orders_complete, _GunnerPid, Results}, State) when State#state.wait_count == 1 ->
+    case State#state.connected of
+        true ->
+            rpc:call(State#state.general, barrage_general, report_results, 
+                        [self(), [Results | State#state.reports]]);
+        _ ->
+            ok
+    end,
     NewState    = State#state{ executing = false },
     {noreply, NewState};
 
@@ -300,8 +309,12 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_info({'DOWN', _Ref, process, _General, _Reason}, State) ->
+    NewState = State#state{connected=false, gen_pid=null, gen_ref=null},
+    {noreply, NewState};
+
 handle_info(_Info, State) ->
-        {noreply, State}.
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -315,7 +328,7 @@ handle_info(_Info, State) ->
 %% @end
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
-        ok.
+    ok.
 
 %%--------------------------------------------------------------------
 %% @private
