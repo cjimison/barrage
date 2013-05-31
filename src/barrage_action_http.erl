@@ -172,6 +172,7 @@ replace_one_key(Key, Value, Text) ->
 %% @end
 %%--------------------------------------------------------------------
 store_action_results(ActionName, Time, State) ->
+    barrage_commander:log_results(self(), ActionName, Time),
     case dict:is_key(ActionName, State#state.results) of
         true ->
             State#state{results=dict:append(ActionName, 
@@ -215,6 +216,19 @@ process_action_results(_, undefined, _, _, State) ->
 
 process_action_results(_, _, undefined, _, State) ->
     State;
+
+process_action_results(Result, <<"query_str">>, Results, URL, State) ->
+    {_, {_,Info, QData}} = Result,
+    httpc:store_cookies(Info, 
+                        URL, 
+                        State#state.profile),
+
+    Data = cowboy_http:x_www_form_urlencoded(list_to_binary(QData)),
+    {TheResults}    = Results,
+    Keys            = proplists:get_keys(TheResults),
+    Store           = State#state.keystore,
+    NKS             = process_keydata(TheResults, Data, Keys, Store),
+    State#state{keystore=NKS};
 
 process_action_results(Result, <<"json">>, Results, URL, State) ->
     {_, {_,Info, JsonData}} = Result,

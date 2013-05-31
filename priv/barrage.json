@@ -4,7 +4,8 @@
         "args" : 
         { 
             "server"            : "127.0.0.1",
-            "port"              : 8080 
+            "port"              : 1337,
+            "admin_port"        : 8080
         }
     },
     {
@@ -13,7 +14,7 @@
         {
             "general"           : "general@127.0.0.1",
             "gunners"           : 1,
-            "port"              : 8080,
+            "admin_port"        : 8080,
             "connect_on_launch" : true 
         }
     }

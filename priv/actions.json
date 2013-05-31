@@ -2,7 +2,7 @@
     {
         "name"          : "login",
         "url"           : "/login",
-        "type"          : "post",
+        "type"          : "get",
         "args"          :
         {
             "username"  : "foo",
@@ -10,7 +10,7 @@
         },
         "results"       : { "session" : "$SESSION" },
         "args_type"     : "http",
-        "results_type"  : "json"
+        "results_type"  : "query_str"
     },
     {
         "name"          : "named_login",

@@ -43,7 +43,9 @@
          disconnect/1,
          is_connected/0,
          change_gunner_count/1,
-         order_complete/2]).
+         order_complete/2,
+         log_results/3
+     ]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -57,12 +59,13 @@
 
 -record(state,
     {
-        general=null,
-        gunners=[],
-        executing=false,
-        wait_count=0,
-        connected=false,
-        reports
+        general             = null,
+        gunners             = [],
+        executing           = false,
+        wait_count          = 0,
+        connected           = false,
+        reports             = [],
+        streaming_reports   = []
     }).
 
 %%%===================================================================
@@ -120,6 +123,10 @@ connect() ->
 
 is_connected() ->
     gen_server:call(?MODULE, is_connected).
+
+log_results(GunnerPID, ActionName, Time) ->
+    gen_server:cast(?MODULE, {log_results, GunnerPID, ActionName, Time}).
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -271,6 +278,12 @@ handle_cast({orders_complete, _GunnerPid, Results}, State) ->
                             wait_count = State#state.wait_count -1,
                             reports = [Results | State#state.reports]
                           }, 
+    {noreply, NewState};
+
+handle_cast({log_results, ActionName, Time}, State) ->
+    NewState = State#state{streaming_reports =
+        [{ActionName, Time}] ++ State#state.streaming_reports},
+    io:format("Results = ~p~n", [NewState#state.streaming_reports]),
     {noreply, NewState};
 
 handle_cast(_Msg, State) ->
