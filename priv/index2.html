@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Barrage</title>
+		<style type="text/css" title="currentStyle">
+			@import "dist/jquery.jqplot.min.css";
+			@import "css/smoothness/jquery-ui-1.10.2.css";
+			
+			html {
+				font-family: Calibri, Arial, Helvetica, sans-serif;
+			}
+			.jqplot-target {
+				margin-bottom: 50px;
+			}
+			
+			table {
+				font-family:Arial, Helvetica, sans-serif;
+				color:#666;
+				font-size:12px;
+				text-shadow: 1px 1px 0px #fff;
+				background:#eaebec;
+				margin:20px;
+				border:#ccc 1px solid;
+				border-spacing: 0;
+			
+				-moz-border-radius:3px;
+				-webkit-border-radius:3px;
+				border-radius:3px;
+			
+				-moz-box-shadow: 0 1px 2px #d1d1d1;
+				-webkit-box-shadow: 0 1px 2px #d1d1d1;
+				box-shadow: 0 1px 2px #d1d1d1;
+			}
+			table th {
+				padding:11px 15px 12px 15px;
+				border-top:1px solid #fafafa;
+				border-bottom:1px solid #e0e0e0;
+			
+				background: #ededed;
+				background: -webkit-gradient(linear, left top, left bottom, from(#ededed), to(#ebebeb));
+				background: -moz-linear-gradient(top,  #ededed,  #ebebeb);
+			}
+			table tr{
+				text-align: center;
+				padding-left:20px;
+			}
+			table tr td {
+				padding:8px;
+				border-top: 1px solid #ffffff;
+				border-bottom:1px solid #e0e0e0;
+				border-left: 1px solid #e0e0e0;
+				
+				background: #fafafa;
+				background: -webkit-gradient(linear, left top, left bottom, from(#fbfbfb), to(#fafafa));
+				background: -moz-linear-gradient(top,  #fbfbfb,  #fafafa);
+			}
+			
+		</style>
+		
+		<script type="text/javascript" src="dist/jquery.min.js"></script>
+		<script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.canvasOverlay.min.js"></script>
+		<script type="text/javascript" src="dist/plugins/jqplot.highlighter.min.js"></script>
+		
+		<script type="text/javascript" src="js/main2.js"></script>
+		<script type="text/javascript" src="js/jquery.blockUI.js"></script>
+		<script type="text/javascript" src="js/jq.stopwatch.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.10.2.js"></script>
+		<script type="text/javascript" src="js/fartscroll.js"></script>
+		
+	</head>
+	
+	<body id=main>
+		<div id="Post_Data">
+			<input id="fileChoser" type="file" onchange="pd_showUploadButtons()" style="float:left;" />
+		</div>
+		<div style="clear:both;"></div>
+	</body>
+
+</html>

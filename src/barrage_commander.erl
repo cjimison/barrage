@@ -44,7 +44,7 @@
          is_connected/0,
          change_gunner_count/1,
          order_complete/2,
-         log_results/3
+         log_results/2
      ]).
 
 %% gen_server callbacks
@@ -126,8 +126,8 @@ connect() ->
 is_connected() ->
     gen_server:call(?MODULE, is_connected, infinity).
 
-log_results(GunnerPID, ActionName, Time) ->
-    gen_server:cast(?MODULE, {log_results, GunnerPID, ActionName, Time}).
+log_results(ActionName, Time) ->
+    gen_server:call(?MODULE, {log_results, ActionName, Time}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -222,6 +222,17 @@ handle_call(disconnect, _From, State) when
 handle_call(is_connected, _From, State) ->
     {reply, State#state.connected, State};
 
+handle_call({log_results, ActionName, Time}, _From, State) ->
+    io:format("I am getting logged~n"),
+    rpc:call(State#state.general, barrage_general, stream_results, 
+        [{[{name, ActionName}, {time, Time}]}]),
+
+    %NewState = State#state{streaming_reports =
+    %    [{ActionName, Time}] ++ State#state.streaming_reports},
+    %io:format("Results = ~p~n", [NewState#state.streaming_reports]),
+    %{noreply, NewState};
+    {reply, ok, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -290,11 +301,6 @@ handle_cast({orders_complete, _GunnerPid, Results}, State) ->
                           }, 
     {noreply, NewState};
 
-handle_cast({log_results, ActionName, Time}, State) ->
-    NewState = State#state{streaming_reports =
-        [{ActionName, Time}] ++ State#state.streaming_reports},
-    io:format("Results = ~p~n", [NewState#state.streaming_reports]),
-    {noreply, NewState};
 
 handle_cast(_Msg, State) ->
         {noreply, State}.

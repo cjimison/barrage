@@ -63,6 +63,7 @@ start(_StartType, _StartArgs) ->
                 {true, true} ->
                     Routes = barrage_general_handler:routes() ++
                              barrage_commander_handler:routes() ++
+                             barrage_general_ws_handler:routes() ++
                              [{"/[...]", cowboy_static, [
                                     {directory, {priv_dir, barrage, []}},
                                     {mimetypes, 
@@ -75,6 +76,7 @@ start(_StartType, _StartArgs) ->
                     ]);
                 {true, false} ->
                     Routes = barrage_general_handler:routes() ++
+                             barrage_general_ws_handler:routes() ++
                              [{"/[...]", cowboy_static, [
                                     {directory, {priv_dir, barrage, []}},
                                     {mimetypes, 

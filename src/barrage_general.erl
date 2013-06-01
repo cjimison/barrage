@@ -34,10 +34,14 @@
 -export([issue_order/1]).           %<<- Tells the commanders to attack
 -export([issue_http_order/2]).      %<<- Tells the commanders to attack
 -export([report_results/2]).        %<<- callback by commander when done
+-export([stream_results/1]).        %<<- A streamed log coming in from a commander
 -export([enlist/1]).                %<<- Adds a commander to the pool 
 -export([retire/1]).                %<<- Removes a commander from the pool
 -export([get_commanders_info/0]).   %<<- Get info about all commanders
 -export([change_cookie/1]).
+
+-export([reg_stream/1]).
+-export([unreg_stream/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -54,6 +58,7 @@
         blocked         = [],
         waiting_pid     = [],
         commanders      = dict:new(),
+        streams         = [],
         results
     }).
 
@@ -89,6 +94,12 @@ start_link() ->
 init([]) ->
     {ok, #state{}}.
 
+reg_stream(StreamID) ->
+    gen_server:call(?MODULE, {reg_stream, StreamID}).
+
+unreg_stream(StreamID) ->
+    gen_server:call(?MODULE, {unreg_stream, StreamID}).
+
 enlist(CommanderPid) ->
     gen_server:call(?MODULE, {enlist, CommanderPid}).
 
@@ -103,6 +114,9 @@ issue_http_order(Order, Pid) ->
 
 report_results(CommanderPid, Results)->
     gen_server:call(?MODULE, {report_results, CommanderPid, Results}).
+
+stream_results(Results)->
+    gen_server:call(?MODULE, {stream_results, Results}).
 
 get_commanders_info() ->
     gen_server:call(?MODULE, {get_commanders_info}).
@@ -167,6 +181,21 @@ handle_call({issue_order, OrderName}, _From, State) ->
     end;
 
 %%%%------------------------------------------------------------------
+%%%% reg_stream
+%%%%------------------------------------------------------------------
+handle_call({reg_stream, Pid}, _From, State) ->
+    NewState = State#state{streams= State#state.streams ++ [Pid]},
+    {reply, ok, NewState};
+
+%%%%------------------------------------------------------------------
+%%%% unreg_stream
+%%%%------------------------------------------------------------------
+handle_call({unreg_stream, Pid}, _From, State) ->
+    Streams = lists:delete(Pid, State#state.streams),
+    NewState= State#state{streams=Streams},
+    {reply, ok, NewState};
+
+%%%%------------------------------------------------------------------
 %%%% issue_http_order
 %%%%------------------------------------------------------------------
 handle_call({issue_http_order, OrderName, Pid}, _From, State) ->
@@ -197,6 +226,11 @@ handle_call({retire, PID}, _From, State) ->
 %%%% report_results
 %%%%------------------------------------------------------------------
 handle_call({report_results, CPID, Results}, _From, State) ->
+    SendFunc = fun(Pid) ->
+            barrage_general_ws_handler:send(Pid, {[{cmd,exit}]})
+    end,
+    lists:foreach(SendFunc, State#state.streams),
+
     Result              = process_results(  Results, 
                                             State#state.results),
     Commanders          = State#state.blocked,
@@ -207,14 +241,23 @@ handle_call({report_results, CPID, Results}, _From, State) ->
             lists:foreach(Fun, State#state.waiting_pid),
             {reply, ok, State#state{
                                         waiting_pid = [],
-                                        blocked     = [], 
+                                        blocked     = [],
+                                        streams     = [],
                                         results     = dict:new()
                                     }};
         _ ->
             {reply, ok, State#state{
                                         blocked     = ActiveCommanders,
+                                        streams     = [],
                                         results     = Result}}
     end;
+
+handle_call({stream_results, Results}, _From, State) ->
+    SendFunc = fun(Pid) ->
+        barrage_general_ws_handler:send(Pid, Results)
+    end,
+    lists:foreach(SendFunc, State#state.streams),
+    {reply, ok, State};
 
 %%%%------------------------------------------------------------------
 %%%% get_commanders_info

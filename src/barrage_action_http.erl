@@ -172,7 +172,7 @@ replace_one_key(Key, Value, Text) ->
 %% @end
 %%--------------------------------------------------------------------
 store_action_results(ActionName, Time, State) ->
-    barrage_commander:log_results(self(), ActionName, Time),
+    barrage_commander:log_results(ActionName, Time),
     case dict:is_key(ActionName, State#state.results) of
         true ->
             State#state{results=dict:append(ActionName, 
