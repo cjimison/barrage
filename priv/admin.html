@@ -21,17 +21,30 @@
 	</head>
 	
 	<body>
-		<div class="WORKINPROGRESS">
+		<div id="dialog-confirm" title="Set Network" style="font-size:12px;">
+			<p>Changing the Network Name will disconnect all Commanders linked to this General.</p>
+			<p>Do you wish to continue?</p>
+		</div>
+		<div class="WORKINPROGRESSz">
 		<div style="line-height:30px">
 			<div>
 				<label>General Name:</label>
 				<span id="GeneralName"></span>
 			</div>
 			<div>
+				<label for="input_TargetServer">Target Server:</label>
+				<span id="TargetServer" class="toggle"></span>
+				<input id="input_TargetServer" class="toggle" type="text"/>
+			</div>
+			<div>
+				<label for="input_TargetPort">Target Port:</label>
+				<span id="TargetPort" class="toggle"></span>
+				<input id="input_TargetPort" class="toggle" type="text"/>
+			</div>
+			<div>
 				<label for="input_NetworkName">Network Name:</label>
 				<span id="NetworkName" class="toggle"></span>
 				<input id="input_NetworkName" class="toggle" type="text"/>
-				<input type="button" class="toggle" value="set" onclick='PostData("input_NetworkName");'/>
 			</div>
 		</div>
 		
@@ -44,6 +57,13 @@
 			<tbody style="line-height:30px">
 			</tbody>
 		</table>
+		
+		<div style="width: 300px; text-align: right;">
+			<input type="button" class="toggle showfirst" value="Modify" onclick='toggleInputs()'/>
+			<input type="button" class="toggle" value="Save" onclick='SaveChanges()'/>
+			<input type="button" class="toggle" value="Cancel" onclick='SetInfo()'/>
+		</div>
+		
 		</div>
 		
 		<div id="Post_Data">

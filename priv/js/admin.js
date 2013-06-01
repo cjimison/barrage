@@ -1,6 +1,8 @@
 var POSTURLS = ['upload_behaviors', 'upload_actions'];
 
 var POSTGENERALURLS = {
+						'input_TargetServer'	:		{'url' : '/general/set_target_server', 'key' : 'target_server'},
+						'input_TargetPort'		:		{'url' : '/general/set_target_port', 'key' : 'target_port'},
 						'input_NetworkName'		:		{'url' : '/general/set_network', 'key' : 'network'},
 						'input_NumOfGunners'	:		{'url' : '/general/set_gunners', 'key' : 'gunners'},
 						'connect'				:		{'url' : '/general/connect'},
@@ -11,34 +13,54 @@ $(document).ready(function() {
 	SetInfo();
 	
 	$("input[type=button]").button();		//Apply jquery-ui for buttons
+	//Apply jquery-ui for confirmation dialog
+	$( "#dialog-confirm" ).dialog({
+		autoOpen: false,
+		resizable: false,
+		modal: true,
+		buttons: {
+			"OK": function() {
+				$( this ).dialog( "close" );
+				PostDataAll();
+				SetInfo();
+			},
+			Cancel: function() {
+				$( this ).dialog( "close" );
+				$("#input_NetworkName").val($("#NetworkName").text());
+			}
+		}
+	});
 });
 
 
-function SetInfo()
-{
-	$("#GeneralName").text("GENERALDUMMY@127.0.0.1");
-	$("#NetworkName").text("TESTDUMMY");
-	$("#input_NetworkName").val("TESTDUMMY");
-	$('#GeneralCommanders > tbody:last').append('<tr>\
-													<td><a href="/commander.html">commanderDUMMY@127.0.0.1</a></td>\
-													<td>\
-														<span id="NumOfGunners" class="toggle">100</span>\
-														<input id="input_NumOfGunners" class="toggle" type="text" style="width:50px;" value="100"/>\
-														<input type="button" class="toggle" value="set" onclick=\'PostData("input_NumOfGunners");\'/>\
-													</td>\
-												</tr>\
-												<tr>\
-													<td><a href="/commander.html">kommanderDUMMY2@127.0.0.1</a></td>\
-													<td>\
-														<span id="NumOfGunners" class="toggle">50</span>\
-														<input id="input_NumOfGunners" class="toggle" type="text" style="width:50px;" value="50"/>\
-														<input type="button" class="toggle" value="set" onclick=\'PostData("input_NumOfGunners");\'/>\
-													</td>\
-												 </tr>');
-	
-	$("span.toggle").show();
-	$("input.toggle").hide();
-	$("input.showfirst").show();
+function SetInfo() {
+	RequestInfo("./general/status", function(data) {
+		$("#GeneralName").text(data.general);
+		$("#TargetServer").text(data.target_server);
+		$("#input_TargetServer").val(data.target_server);
+		$("#TargetPort").text(data.target_port);
+		$("#input_TargetPort").val(data.target_port);
+		$("#NetworkName").text(data.network);
+		$("#input_NetworkName").val(data.network);
+		
+		$('#GeneralCommanders > tbody').empty();	//Clear the commanders first so you won't get duplicates
+		var commanders = data.commanders;
+		for (var i=0; i < commanders.length; ++i)
+		{
+			$('#GeneralCommanders > tbody:last').append('<tr>\
+															<td><a href="/commander.html">'+ commanders[i].name +'</a></td>\
+															<td>\
+																<span id="NumOfGunners" class="toggle">'+ commanders[i].count +'</span>\
+																<input id="input_NumOfGunners" class="toggle" type="text" style="width:100px;text-align:center;" value="'+ commanders[i].count +'"/>\
+															</td>\
+														</tr>');
+		}
+		
+		$("input[type=button]").button();		//Apply jquery-ui for buttons  //Needs to reapply because of the RequestInfo		
+		$("span.toggle").show();
+		$("input.toggle").hide();
+		$("input.showfirst").show();
+	});
 }
 
 function PostData(inputId) {
@@ -47,27 +69,35 @@ function PostData(inputId) {
 	
 	var data = {};
 	data[key] = $("#"+inputId).val();
-	
-	PostInfo(url, data, function(response) {
-		window.location.reload(true);
-	});
+	console.log(url);	console.log(data);
+	//PostInfo(url, data, function(response) {
+		//window.location.reload(true);
+	//});
 }
 
-function GeneralAction(action)
-{
+function PostDataAll() {
+	for (var input in POSTGENERALURLS) {
+		if (input.indexOf("input") == 0) {
+			PostData(input);
+		}
+	}
+}
+
+function SaveChanges() {
+	//NEED CONFIRMATION IF NETWORK NAME CHANGES
+	if ($("#input_NetworkName").val() !== $("#NetworkName").text()) {
+		$("#dialog-confirm").dialog("open");
+	}
+	else {
+		PostDataAll();
+		SetInfo();
+	}
+}
+
+function GeneralAction(action) {
 	$.get(POSTGENERALURLS[action].url);
 	SetInfo();
 }
-
-
-
-
-
-
-
-
-
-
 
 
 

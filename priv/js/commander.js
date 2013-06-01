@@ -12,8 +12,7 @@ $(document).ready(function() {
 	$("input[type=button]").button();		//Apply jquery-ui for buttons
 });
 
-function SetInfo()
-{
+function SetInfo() {
 	RequestInfo("./commander/status", function(data) {
 		$("#CommanderName").text(data.commander);
 		$("#GeneralName").text(data.general);
@@ -49,12 +48,11 @@ function PostData(inputId) {
 	}
 	
 	PostInfo(url, data, function(response) {
-		window.location.reload(true);
+		//window.location.reload(true);
 	});
 }
 
-function GeneralAction(action)
-{
+function GeneralAction(action) {
 	$.get(POSTCOMMANDURLS[action].url);
 	SetInfo();
 }
