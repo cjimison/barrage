@@ -1,9 +1,9 @@
-var gPlotInfo = {};
 var gHideProgressOverlay = true;
 
 var POSTURLS = ['upload_behaviors', 'upload_actions'];
 var CONVERTTO = {'milliseconds' : 1/1000};
 
+var MICRO_TO_MILLI = 1/1000;
 var DEFAULTPROPERTIES =
 {
     title: "",
@@ -13,9 +13,9 @@ var DEFAULTPROPERTIES =
     },
     axesDefaults:
     {
-        pad: 0,
-        labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-        tickRenderer:  $.jqplot.CanvasAxisTickRenderer
+        //pad: 0,
+        //labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+        //tickRenderer:  $.jqplot.CanvasAxisTickRenderer
     },
     axes:
     {
@@ -47,7 +47,7 @@ var DEFAULTPROPERTIES =
 
 $(document).ready(function()
 {
-    fartscroll();
+    //fartscroll();
     RequestInfo("general/orders", function(orders)
     {
         if (!$.isEmptyObject(orders))
@@ -64,6 +64,8 @@ $(document).ready(function()
             $("input[type=button]").button(); //Apply jquery-ui for buttons
         }
     });
+    
+
 });
 
 function RequestInfo(url, callback)
@@ -100,9 +102,12 @@ function RequestInfo(url, callback)
     });
 }
 var g_websocket = null;
+var gPlotInfo = null;
+var gPlotNameMap = null;
 
 function rp_IssueOrder(name)
 {
+
     gHideProgressOverlay = false;
     var wsHost ="ws://"+
                 window.location.hostname+":"+
@@ -112,12 +117,16 @@ function rp_IssueOrder(name)
     // Remove any custom graphoptions
     $('#Chart_Options').remove();
     // Clear the old graphs out
-    for (chartName in gPlotInfo)
+    for (var oldName in gPlotInfo)
     {
-        var arr = chartName.split('_');
+        var arr = oldName.split('_');
         $('#'+arr[0]).remove();
     }
-    if(g_websocket && g_websocket.readyState === websocket.OPEN)
+    
+    gPlotInfo = {_idx : -1};
+    gPlotNameMap = {};
+
+    if(g_websocket && g_websocket.readyState === WebSocket.OPEN)
     {
         g_websocket.close();
     }
@@ -126,21 +135,140 @@ function rp_IssueOrder(name)
     g_websocket.onopen = function(evt)
     {
         // Send off the request
-        // This is kind of stupid.  I should be using
-        console.log("**** Starting Command: " + name);
         var msg = { cmd : "order", behavior : name };
         g_websocket.send(JSON.stringify(msg));
     }; 
     g_websocket.onclose = function(evt)
     { 
-        // End of the results stream 
-        console.log("**** Connection Close");
     }; 
     g_websocket.onmessage = function(evt)
     { 
         // Data to add to the grapha
-        console.log(evt.data);
-        
+        var obj = JSON.parse(evt.data);
+        if(obj.name)
+        {
+            obj.time *= MICRO_TO_MILLI;
+            var idx = 0;
+            // Is this name Mapped?
+            if(undefined !== gPlotNameMap[obj.name])
+            {
+                idx = gPlotNameMap[obj.name];
+            }
+            else
+            {
+                gPlotInfo._idx++;
+                gPlotNameMap[obj.name] = gPlotInfo._idx;
+                idx = gPlotInfo._idx;
+            }
+
+            var section = 'IDX'+idx;
+            var chartName = section+'_Chart';
+            if(gPlotInfo[chartName])
+            {
+                var graph = gPlotInfo[chartName];
+                if( obj.time > graph.ymax)
+                {
+                    graph.ymax = obj.time;
+                    graph.line.Set('ymax', graph.ymax);
+                    //graph.line.Set('background.hbars', [[0,obj.time,'#efefef']]);
+                }
+
+                graph.data.push(obj.time);
+                var lenstore = graph.data.length;
+                if(graph.maxstore !== -1 && lenstore > graph.maxstore)
+                {
+                    graph.data = graph.data.splice(graph.droprate - 1);
+                }
+                if(!graph.refreshing)
+                {
+                    graph.refreshing = true;
+                    setTimeout(function(){
+                        gPlotInfo[chartName].refreshing = false;
+                        var displayData = null;
+                        var len = gPlotInfo[chartName].data.length;
+
+                        if(len > gPlotInfo[chartName].maxdisplay)
+                        {
+                            var idx = len - gPlotInfo[chartName].maxdisplay;
+                            displayData = gPlotInfo[chartName].data.slice(idx-1);
+                        }
+                        else
+                        {
+                            displayData = gPlotInfo[chartName].data;
+                        }
+                        RGraph.Clear(gPlotInfo[chartName].canvas);
+                        gPlotInfo[chartName].line.original_data[0] = displayData;
+                        gPlotInfo[chartName].line.Draw();
+                        updateSummary(obj.name, chartName);
+                    }, 200);
+                }
+            }
+            else
+            {
+                $("#main").append('<div id="'+section+'">');
+                $("#"+section).append('<canvas id="'+chartName+'" width="1000" height="250">[No canvas support]</canvas>');
+                
+                var graphr =
+                {
+                    canvas      : document.getElementById(chartName),
+                    cname       : chartName,
+                    line        : null, 
+                    data        : [obj.time, obj.time],
+                    ymax        : obj.time,
+                    refreshing  : false,
+                    maxdisplay  : 100,
+                    maxstore    : 100000,
+                    droprate    : 10000,
+                    properties  : {}
+                };
+    
+                RGraph.Clear(graphr.canvas);
+                graphr.line = new RGraph.Line(graphr.cname, []).
+                    Set('xticks', 100).
+                    Set('background.barcolor1', 'white').
+                    Set('background.barcolor2', 'white').
+                    Set('title.xaxis', '').
+                    Set('title.yaxis', 'Time (ms)').
+                    Set('title.vpos', 0.5).
+                    Set('title', obj.name).
+                    Set('title.yaxis.pos', 0.5).
+                    Set('title.xaxis.pos', 0.5).
+                    Set('colors', ['black']).
+                    Set('linewidth',1.01).
+                    Set('yaxispos', 'right').
+                    Set('ymax', graphr.ymax).
+                    Set('xticks', 25).
+                    Set('chart.shadow', true).
+                    Set('chart.resizable', true).
+                    Set('chart.contextmenu', [
+                                    ['Clear annotations', function ()
+                                                          {
+                                                            RGraph.ClearAnnotations(graphr.line.canvas);
+                                                            RGraph.Clear(graphr.line.canvas);
+                                                            graphr.line.Draw();
+                                                           }],
+                                    ['Zoom in', RGraph.Zoom]
+                                   ]).
+                    Set('chart.annotatable', true).
+                    Set('filled', true);
+                    
+                var grad = graphr.line.context.createLinearGradient(0,0,0,250);
+                //grad.addColorStop(0, '#efefef');
+                grad.addColorStop(0.0, '#00FF00');
+                grad.addColorStop(0.9, '#003300');
+                //grad.addColorStop(0.9, 'rgba(0,0,0,0)');
+                graphr.line.Set('chart.fillstyle', [grad]);
+                graphr.line.original_data[0] = graphr.data;
+                graphr.line.Draw();
+               
+                // Pull out the temp data for drawing
+                graphr.data = [obj.time];
+
+                gPlotInfo[chartName] = graphr;
+
+                $("#"+section).append(getSummary(obj.name, chartName));
+            }
+        }
     }; 
     g_websocket.onerror = function(evt)
     { 
@@ -337,15 +465,31 @@ function getSummary(plotName, chartName)
     summaryhtml +=  '<th>Median<\/th>';
     summaryhtml += '<\/tr><\/thead>';
     summaryhtml += '<tbody><tr>';
-    summaryhtml +=  '<td>'+ numOfRequests +'<\/td>';
-    summaryhtml +=  '<td>'+ max +'<\/td>';
-    summaryhtml +=  '<td>'+ min +'<\/td>';
-    summaryhtml +=  '<td>'+ mean +'<\/td>';
-    summaryhtml +=  '<td>'+ median +'<\/td>';
+    summaryhtml +=  '<td id="numOfRequest_'+chartName+'">'+ numOfRequests +'<\/td>';
+    summaryhtml +=  '<td id="max_'+chartName+'">'+ max +'<\/td>';
+    summaryhtml +=  '<td id="min_'+chartName+'">'+ min +'<\/td>';
+    summaryhtml +=  '<td id="mean_'+chartName+'">'+ mean +'<\/td>';
+    summaryhtml +=  '<td id="median_'+chartName+'">'+ median +'<\/td>';
     summaryhtml += '<\/tr><\/tbody>';
     summaryhtml += '<\/table>';
     
     return summaryhtml;
+}
+
+function updateSummary(plotName, chartName)
+{
+    var data = gPlotInfo[chartName].data;
+    var numOfRequests = data.length;
+    var max = roundTo(Math.max.apply(null, data), 1000) + ' ms';
+    var min = roundTo(Math.min.apply(null, data), 1000) + ' ms';
+    var mean = roundTo(calcMean(data), 1000) + ' ms';
+    var median = roundTo(calcMedian(data), 1000) + ' ms';
+
+    $("#numOfRequest_"+chartName).text("" + numOfRequests);
+    $("#max_"+chartName).text("" + max);
+    $("#min_"+chartName).text("" + min);
+    $("#mean_"+chartName).text("" + mean);
+    $("#median_"+chartName).text("" + median);
 }
 
 function co_ToggleMarkers()
