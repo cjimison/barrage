@@ -171,8 +171,10 @@ replace_one_key(Key, Value, Text) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
-store_action_results(ActionName, Time, State) ->
-    barrage_commander:log_results(ActionName, Time),
+store_action_results(ActionName, Time, Result, State) ->
+
+    {ok, {{_, Code, Msg}, _, _}} = Result,
+    barrage_commander:log_results(ActionName, Time, Code, Msg),
     case dict:is_key(ActionName, State#state.results) of
         true ->
             State#state{results=dict:append(ActionName, 
@@ -322,7 +324,7 @@ execute(Action, State) when
                                                 Results,
                                                 URL,
                                                 State),
-            store_action_results(ActionName, Time, NewState);
+            store_action_results(ActionName, Time, Result, NewState);
 
         <<"post">> ->
             Type            = "application/x-www-form-urlencoded",
@@ -341,7 +343,7 @@ execute(Action, State) when
                                                 Results,
                                                 URL,
                                                 State),
-            store_action_results(ActionName, Time, NewState);
+            store_action_results(ActionName, Time, Result, NewState);
 
         <<"post_json">> ->
             Type            = "application/json",
@@ -364,7 +366,7 @@ execute(Action, State) when
                                                 Results,
                                                 URL,
                                                 State),
-            store_action_results(ActionName, Time, NewState);
+            store_action_results(ActionName, Time, Result, NewState);
 
         <<"post_multipart">> ->
             State;

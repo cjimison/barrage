@@ -52,7 +52,6 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @end
 %%--------------------------------------------------------------------
 websocket_handle({text, Msg}, Req, State) ->
-    io:format("Text ~p~n", [Msg]),
     {Rez} = jiffy:decode(Msg), 
     case proplists:get_value(<<"cmd">>, Rez) of
         <<"order">> ->

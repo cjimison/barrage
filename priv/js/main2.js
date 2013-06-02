@@ -172,6 +172,15 @@ function rp_IssueOrder(name)
                     graph.line.Set('ymax', graph.ymax);
                     //graph.line.Set('background.hbars', [[0,obj.time,'#efefef']]);
                 }
+                
+                if(undefined == graph.codes[''+obj.code])
+                {
+                    graph.codes[''+obj.code]= 1;
+                }
+                else
+                {
+                    graph.codes[''+obj.code]++;
+                }
 
                 graph.data.push(obj.time);
                 var lenstore = graph.data.length;
@@ -219,9 +228,10 @@ function rp_IssueOrder(name)
                     maxdisplay  : 100,
                     maxstore    : 100000,
                     droprate    : 10000,
-                    properties  : {}
+                    properties  : {},
+                    codes       : {}
                 };
-    
+                graphr.codes[''+obj.code] = 1;
                 RGraph.Clear(graphr.canvas);
                 graphr.line = new RGraph.Line(graphr.cname, []).
                     Set('xticks', 100).
@@ -448,7 +458,8 @@ function roundTo(number, to)
 
 function getSummary(plotName, chartName)
 {
-    var data = gPlotInfo[chartName].data;
+    var graph = gPlotInfo[chartName];
+    var data = graph.data;
     var numOfRequests = data.length;
     var max = roundTo(Math.max.apply(null, data) * CONVERTTO.milliseconds, 1000) + ' ms';
     var min = roundTo(Math.min.apply(null, data) * CONVERTTO.milliseconds, 1000) + ' ms';
@@ -457,28 +468,38 @@ function getSummary(plotName, chartName)
     
     var summaryhtml = '<table class=\"ChartInfo\">';
     summaryhtml += '<caption>'+ plotName +'<\/caption>';
-    summaryhtml += '<thead><tr>';
+    summaryhtml += '<thead><tr id="lable_row_'+chartName+'">';
     summaryhtml +=  '<th>Total Requests<\/th>';
     summaryhtml +=  '<th>High<\/th>';
     summaryhtml +=  '<th>Low<\/th>';
     summaryhtml +=  '<th>Mean<\/th>';
     summaryhtml +=  '<th>Median<\/th>';
+    for(var code in graph.codes)
+    {
+        summaryhtml +=  '<th>HTTP Code: '+code+'<\/th>';
+    }
     summaryhtml += '<\/tr><\/thead>';
-    summaryhtml += '<tbody><tr>';
+    summaryhtml += '<tbody><tr id="info_row_'+chartName+'">';
     summaryhtml +=  '<td id="numOfRequest_'+chartName+'">'+ numOfRequests +'<\/td>';
     summaryhtml +=  '<td id="max_'+chartName+'">'+ max +'<\/td>';
     summaryhtml +=  '<td id="min_'+chartName+'">'+ min +'<\/td>';
     summaryhtml +=  '<td id="mean_'+chartName+'">'+ mean +'<\/td>';
     summaryhtml +=  '<td id="median_'+chartName+'">'+ median +'<\/td>';
+    for(var code2 in graph.codes)
+    {
+        summaryhtml +=  '<td id="code_value_'+chartName+'_'+code2+'">'+graph.codes[code2]+'<\/td>';
+    }
     summaryhtml += '<\/tr><\/tbody>';
     summaryhtml += '<\/table>';
-    
+   
+
     return summaryhtml;
 }
 
 function updateSummary(plotName, chartName)
 {
-    var data = gPlotInfo[chartName].data;
+    var graph = gPlotInfo[chartName];
+    var data = graph.data;
     var numOfRequests = data.length;
     var max = roundTo(Math.max.apply(null, data), 1000) + ' ms';
     var min = roundTo(Math.min.apply(null, data), 1000) + ' ms';
@@ -490,6 +511,20 @@ function updateSummary(plotName, chartName)
     $("#min_"+chartName).text("" + min);
     $("#mean_"+chartName).text("" + mean);
     $("#median_"+chartName).text("" + median);
+
+    for(var code in graph.codes)
+    {
+        var jqObj = $("#code_value_"+chartName+"_"+code);
+        if(window.document.getElementById("code_value_"+chartName+"_"+code))
+        {
+            jqObj.text(""+graph.codes[code]);
+        }
+        else
+        {
+            $("#lable_row_"+chartName).append('<th>HTTP Code: '+code+'<\/th>');
+            $("#info_row_"+chartName).append('<td id="code_value_'+chartName+'_'+code+'">'+graph.codes[code]+'</td>');
+        }
+    }
 }
 
 function co_ToggleMarkers()
