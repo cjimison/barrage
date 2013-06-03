@@ -52,7 +52,7 @@ function PostData(inputId) {
 	});
 }
 
-function GeneralAction(action) {
+function CommanderAction(action) {
 	$.get(POSTCOMMANDURLS[action].url);
 	SetInfo();
 }

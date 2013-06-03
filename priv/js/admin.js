@@ -3,10 +3,7 @@ var POSTURLS = ['upload_behaviors', 'upload_actions'];
 var POSTGENERALURLS = {
 						'input_TargetServer'	:		{'url' : '/general/set_target_server', 'key' : 'target_server'},
 						'input_TargetPort'		:		{'url' : '/general/set_target_port', 'key' : 'target_port'},
-						'input_NetworkName'		:		{'url' : '/general/set_network', 'key' : 'network'},
-						'input_NumOfGunners'	:		{'url' : '/general/set_gunners', 'key' : 'gunners'},
-						'connect'				:		{'url' : '/general/connect'},
-						'disconnect'			:		{'url' : '/general/disconnect'}
+						'input_NetworkName'		:		{'url' : '/general/set_network', 'key' : 'network'}
 					  };
 $(document).ready(function() {
 	fartscroll();
@@ -48,11 +45,8 @@ function SetInfo() {
 		for (var i=0; i < commanders.length; ++i)
 		{
 			$('#GeneralCommanders > tbody:last').append('<tr>\
-															<td><a href="/commander.html">'+ commanders[i].name +'</a></td>\
-															<td>\
-																<span id="NumOfGunners" class="toggle">'+ commanders[i].count +'</span>\
-																<input id="input_NumOfGunners" class="toggle" type="text" style="width:100px;text-align:center;" value="'+ commanders[i].count +'"/>\
-															</td>\
+															<td>'+ commanders[i].name +'</td>\
+															<td><span id="NumOfGunners">'+ commanders[i].count +'</span></td>\
 														</tr>');
 		}
 		
@@ -69,10 +63,10 @@ function PostData(inputId) {
 	
 	var data = {};
 	data[key] = $("#"+inputId).val();
-	console.log(url);	console.log(data);
-	//PostInfo(url, data, function(response) {
+	
+	PostInfo(url, data, function(response) {
 		//window.location.reload(true);
-	//});
+	});
 }
 
 function PostDataAll() {
@@ -81,6 +75,11 @@ function PostDataAll() {
 			PostData(input);
 		}
 	}
+}
+
+function GeneralAction(action) {
+	$.get(POSTGENERALURLS[action].url);
+	SetInfo();
 }
 
 function SaveChanges() {
@@ -92,11 +91,6 @@ function SaveChanges() {
 		PostDataAll();
 		SetInfo();
 	}
-}
-
-function GeneralAction(action) {
-	$.get(POSTGENERALURLS[action].url);
-	SetInfo();
 }
 
 

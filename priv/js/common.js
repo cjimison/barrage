@@ -1,8 +1,3 @@
-function toggleInputs()
-{
-	$(".toggle").toggle();
-}
-
 function PostInfo(url, data, callback)
 {
 	$.ajax({
