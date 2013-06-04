@@ -18,7 +18,7 @@ $(document).ready(function() {
 		buttons: {
 			"OK": function() {
 				$( this ).dialog( "close" );
-				PostDataAll();
+				PostDataChangedOnly();
 				SetInfo();
 			},
 			Cancel: function() {
@@ -77,6 +77,17 @@ function PostDataAll() {
 	}
 }
 
+function PostDataChangedOnly() {
+	for (var input in POSTGENERALURLS) {
+		var splitinput = input.split("_");
+		if (splitinput[0] === "input") {
+			if ($("#"+input).val() !== $("#"+splitinput[1]).text()) {
+				PostData(input);
+			}
+		}
+	}
+}
+
 function GeneralAction(action) {
 	$.get(POSTGENERALURLS[action].url);
 	SetInfo();
@@ -88,7 +99,7 @@ function SaveChanges() {
 		$("#dialog-confirm").dialog("open");
 	}
 	else {
-		PostDataAll();
+		PostDataChangedOnly();
 		SetInfo();
 	}
 }
