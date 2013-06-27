@@ -347,14 +347,21 @@ do_action(<<"random">>, undefined, Children, State) ->
     do_random_count(Children, 1, State);
 
 do_action(<<"random">>, {Args}, Children, State) ->
-    Count = proplists:get_value(<<"count">>, Args),
-    case Count of
+    case proplists:get_value(<<"count">>, Args) of
         undefined ->
-            Time = proplists:get_value(<<"min_time">>, Args),
+            Time    = proplists:get_value(<<"min_time">>, Args),
             TimeEnd = now_micro() + (Time * 1000),
             do_random_timed(Children, TimeEnd, State);
-        _ ->
-            do_random_count(Children, Count, State)
+        Count when is_integer(Count) ->
+            do_random_count(Children, Count, State);
+        Count when is_binary(Count) ->
+            <<Tag:1/binary, Name/binary>> = Count,
+            case Tag of
+                <<"$">> ->
+                    Value = dict:fetch(Name, State#state.keystore),
+                    % Lets pull this guy out of the KVS
+                    do_random_count(Children, Value, State)
+            end
     end;
 
 %%%%------------------------------------------------------------------
@@ -364,14 +371,23 @@ do_action(<<"ordered">>, undefined, Children, State) ->
     do_ordered_count(Children, 1, 1, State);
 
 do_action(<<"ordered">>, {Args}, Children, State) ->
-    Count = proplists:get_value(<<"count">>, Args),
-    case Count of
+    case proplists:get_value(<<"count">>, Args) of
         undefined ->
-            Time = proplists:get_value(<<"min_time">>, Args),
+            Time    = proplists:get_value(<<"min_time">>, Args),
             TimeEnd = now_micro() + (Time * 1000),
             do_ordered_timed(Children, 1, TimeEnd, State);
-        _ ->
-            do_ordered_count(Children, 1, Count, State)
+        Count when is_integer(Count) ->
+            do_ordered_count(Children, 1, Count, State);
+        Count when is_binary(Count) ->
+            io:format("Pulling out the Count baby~n"),
+            <<Tag:1/binary, Name/binary>> = Count,
+            case Tag of
+                <<"$">> ->
+                    Value = dict:fetch(Name, State#state.keystore),
+                    io:format("Doing this shit ~p times ~n", [Value]),
+                    % Lets pull this guy out of the KVS
+                    do_ordered_count(Children, 1, Value, State)
+            end
     end;
 
 %%%%------------------------------------------------------------------
@@ -405,6 +421,42 @@ do_action(<<"set_variable">>, {Args}, _Children, State) ->
     Value   = proplists:get_value(<<"value">>, Args),
     NewDict = dict:store(Key, Value, State#state.keystore),
     State#state{keystore=NewDict};
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"inc_variable">>
+%%%%------------------------------------------------------------------
+do_action(<<"inc_variable">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"inc_variable">>, {Args}, _Children, State) ->
+    Key     = proplists:get_value(<<"key">>, Args),
+    Value   = dict:fetch(Key, State#state.keystore),
+    NewDict = dict:store(Key, Value + 1, State#state.keystore),
+    State#state{keystore=NewDict};
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"dec_variable">>
+%%%%------------------------------------------------------------------
+do_action(<<"dec_variable">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"dec_variable">>, {Args}, _Children, State) ->
+    Key     = proplists:get_value(<<"key">>, Args),
+    Value   = dict:fetch(Key, State#state.keystore),
+    NewDict = dict:store(Key, Value - 1, State#state.keystore),
+    State#state{keystore=NewDict};
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"print_variable">>
+%%%%------------------------------------------------------------------
+do_action(<<"print_variable">>, undefined, _Children, State) ->
+    State;
+
+do_action(<<"print_variable">>, {Args}, _Children, State) ->
+    Key     = proplists:get_value(<<"key">>, Args),
+    Value   = dict:fetch(Key, State#state.keystore),
+    io:format("Variable ~p = ~p~n", [Key, Value]),
+    State;
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"load_kv_store">>
@@ -649,6 +701,14 @@ do_action(<<"conditional">>, {Args}, Children, State) ->
         _->
             State 
     end;
+
+%%%%------------------------------------------------------------------
+%%%% Action: <<"print_state">>  This is a debugging action
+%%%%------------------------------------------------------------------
+do_action(<<"print_state">>, undefined, undefined, State) ->
+    io:format("State of the gunner: SOME USEFUL INFO...~n"),
+    State;
+
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined

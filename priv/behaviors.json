@@ -36,6 +36,55 @@
         }
     },
     {
+        "name" : "KVS Loop test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1},
+            "children"  : [
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "LOOP_COUNT", 
+                        "value" : 10 
+                    }
+                },
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "LOOP_IDX", 
+                        "value" : 0 
+                    }
+                },
+                {
+                    "action"    : "ordered",
+                    "args"      : { "count" : "$LOOP_COUNT"},
+                    "children"  : [
+                        { 
+                            "action"    : "inc_variable",
+                            "args"      : { "key" : "LOOP_IDX" }
+                        },
+                        { 
+                            "action"    : "print_variable",
+                            "args"      : { "key" : "LOOP_IDX" }
+                        }
+                    ]
+                },
+                { 
+                    "action"    : "dec_variable",
+                    "args"      : { "key" : "LOOP_IDX" }
+                },
+                { 
+                    "action"    : "print_variable",
+                    "args"      : { "key" : "LOOP_IDX" }
+                }
+            ]
+        }
+
+    },
+    {
         "name" : "KVS Load Test",
         "tree" : 
         { 

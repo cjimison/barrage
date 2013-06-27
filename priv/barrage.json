@@ -13,7 +13,7 @@
         "args" : 
         {
             "general"           : "general@127.0.0.1",
-            "gunners"           : 10,
+            "gunners"           : 1,
             "admin_port"        : 8080,
             "connect_on_launch" : true 
         }
