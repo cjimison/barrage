@@ -575,10 +575,10 @@ function pd_showUploadButtons(hide)
         $("#Post_Data").append('<div id="Upload_Buttons">');
         $("#Upload_Buttons").append('<input type=\"button\"\
                                             value=\"Upload Behaviors\"\
-                                            onclick=\"pd_PostTo(\'upload_behaviors\')\" >');
+                                            onclick=\"pd_PostTo(\'general/upload_behaviors\')\" >');
         $("#Upload_Buttons").append('<input type=\"button\"\
                                             value=\"Upload Actions\"\
-                                            onclick=\"pd_PostTo(\'upload_actions\')\" >');
+                                            onclick=\"pd_PostTo(\'general/upload_actions\')\" >');
         //Apply jquery-ui for buttons
         $("input[type=button]").button(); 
     }

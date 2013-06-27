@@ -287,8 +287,8 @@ function pd_showUploadButtons(hide) {
 	if (!hide)
 	{
 		$("#Post_Data").append('<div id="Upload_Buttons">');
-		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Behaviors\" onclick=\"pd_PostTo(\'upload_behaviors\')\" >');
-		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Actions\" onclick=\"pd_PostTo(\'upload_actions\')\" >');
+		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Behaviors\" onclick=\"pd_PostTo(\'general/upload_behaviors\')\" >');
+		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Actions\" onclick=\"pd_PostTo(\'general/upload_actions\')\" >');
 		$("input[type=button]").button();		//Apply jquery-ui for buttons
 	}
 }
