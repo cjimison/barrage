@@ -27,7 +27,7 @@
 %%%-------------------------------------------------------------------
 
 %% @doc GET echo handler.
--module(barrage_general_handler).
+-module(handler_http_general).
 
 -export([init/3]).
 -export([handle/2]).
@@ -68,13 +68,13 @@ handle(Req, State) ->
 %%--------------------------------------------------------------------
 routes() ->
     Routes = [
-        {"/general/status",             barrage_general_handler, []},
-        {"/general/set_network",        barrage_general_handler, []},
-        {"/general/orders",             barrage_general_handler, []},
-        {"/general/commanders",         barrage_general_handler, []},
-        {"/general/issue_order",        barrage_general_handler, []},
-        {"/general/upload_behaviors",   barrage_general_handler, []},
-        {"/general/upload_actions",     barrage_general_handler, []}
+        {"/general/status",             handler_http_general, []},
+        {"/general/set_network",        handler_http_general, []},
+        {"/general/orders",             handler_http_general, []},
+        {"/general/commanders",         handler_http_general, []},
+        {"/general/issue_order",        handler_http_general, []},
+        {"/general/upload_behaviors",   handler_http_general, []},
+        {"/general/upload_actions",     handler_http_general, []}
     ],
     Routes.
 
@@ -94,17 +94,18 @@ terminate(_Reason, _Req, _State) ->
 handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
     Cookie      = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
     Node        = erlang:atom_to_binary(erlang:node(), utf8),
-    Comms       = barrage_general:get_commanders_info(), 
+    Comms       = general_server:get_commanders_info(), 
     CommStr     = jiffy:encode(Comms),
-    [{_, TS}]   = ets:lookup(barrage, server),
-    [{_, TPI}]  = ets:lookup(barrage, port),
+    {ok, TSL}   = application:get_env(general, target_ip),
+    {ok, TPI}   = application:get_env(general, target_port),
+    TS          = list_to_binary(TSL),
     TP          = list_to_binary(integer_to_list(TPI)),
-    JSON    = <<"{\"network\":\"",
-                Cookie/binary,"\",\"general\":\"",
-                Node/binary,"\",\"target_server\":\"",
-                TS/binary,"\",\"target_port\":\"",
-                TP/binary,"\",\"commanders\":",
-                CommStr/binary,"}">>,
+    JSON        = <<"{\"network\":\"",
+                    Cookie/binary,"\",\"general\":\"",
+                    Node/binary,"\",\"target_server\":\"",
+                    TS/binary,"\",\"target_port\":\"",
+                    TP/binary,"\",\"commanders\":",
+                    CommStr/binary,"}">>,
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
 
 handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
@@ -119,7 +120,7 @@ handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
                                     Req2);
                 CookieB ->
                     Cookie  = erlang:binary_to_atom(CookieB, utf8),
-                    case barrage_general:change_cookie(Cookie) of
+                    case general_server:change_cookie(Cookie) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -141,14 +142,14 @@ handle_named_request(<<"GET">>, <<"/general/orders">>, Req) ->
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
 
 handle_named_request(<<"GET">>, <<"/general/commanders">>, Req) ->
-    Commanders = barrage_general:get_commanders_info(), 
+    Commanders = general_server:get_commanders_info(), 
     JSON = jiffy:encode(Commanders),
     cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
 
 handle_named_request(<<"GET">>, <<"/general/issue_order">>, Req) ->
     {Order, Req2} = cowboy_req:qs_val(<<"order">>, Req), 
     Req3 = cowboy_req:compact(Req2),
-    barrage_general:issue_http_order(Order, self()),
+    general_server:issue_http_order(Order, self()),
     blocker_loop(Req3);
 
 handle_named_request(<<"POST">>,<<"/general/upload_behaviors">>,Req) ->

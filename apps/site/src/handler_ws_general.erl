@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 2013-05-31 12:47:31.011998
 %%%-------------------------------------------------------------------
--module(barrage_general_ws_handler).
+-module(handler_ws_general).
 
 -behaviour(cowboy_websocket_handler).
 
@@ -25,7 +25,7 @@
 %%%===================================================================
 
 routes() ->
-    [{"/general/streaming", barrage_general_ws_handler, []}].
+    [{"/general/streaming", handler_ws_general, []}].
 
 send(PID, Data) ->
     erlang:start_timer(0, PID, jiffy:encode(Data)).
@@ -41,7 +41,7 @@ init({tcp, http}, _Req, _Opts) ->
     {upgrade, protocol, cowboy_websocket}.
 
 websocket_init(_TransportName, Req, _Opts) ->
-    barrage_general:reg_stream(self()),
+    general_server:reg_stream(self()),
     {ok, Req, undefined_state}.
 
 %%--------------------------------------------------------------------
@@ -56,7 +56,7 @@ websocket_handle({text, Msg}, Req, State) ->
     case proplists:get_value(<<"cmd">>, Rez) of
         <<"order">> ->
             Order = proplists:get_value(<<"behavior">>, Rez),
-            barrage_general:issue_order(Order),
+            general_server:issue_order(Order),
             {reply, {text, <<"{\"error\":\"none\"}">>}, Req, State};
         _ ->
             {reply, {text, <<"{\"error\":\"unknown command\"}">>}, Req, State}
@@ -85,7 +85,7 @@ websocket_info(_Info, Req, State) ->
 %% @end
 %%--------------------------------------------------------------------
 websocket_terminate(_Reason, _Req, _State) ->
-    barrage_general:unreg_stream(self()),
+    general_server:unreg_stream(self()),
     ok.
 
 %%%===================================================================

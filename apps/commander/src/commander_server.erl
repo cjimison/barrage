@@ -25,7 +25,7 @@
 %%% @end
 %%% Created : 2013-04-03 14:34:25.679330
 %%%-------------------------------------------------------------------
--module(barrage_commander).
+-module(commander_server).
 
 -behaviour(gen_server).
 
@@ -142,23 +142,24 @@ is_connected() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    [{_, Connect}] = ets:lookup(barrage, connect_on_launch),
-    [{_, General}] = ets:lookup(barrage, general),
-    [{_, GunnerCount}] = ets:lookup(barrage, gunners),
+    {ok, Connect} = application:get_env(commander, auto_connect),
+    {ok, General} = application:get_env(commander, general),
+    {ok, Gunners} = application:get_env(commander, gunners),
+
     case Connect of
         true ->
-            {ok, GPID}  = rpc:call(General, barrage_general, enlist, [self()]),
+            {ok, GPID}  = rpc:call(General, general_server, enlist, [self()]),
             Ref         = erlang:monitor(process, GPID),
             State       = #state{   general     = General,
                                     gen_pid     = GPID,
                                     gen_ref     = Ref,
-                                    gunners     = create_gunners([], GunnerCount),
+                                    gunners     = create_gunners([], Gunners),
                                     connected   = true
                         },
             {ok, State};
         _ ->
             State = #state{ general     = General, 
-                            gunners     = create_gunners([], GunnerCount),
+                            gunners     = create_gunners([], Gunners),
                             connected   = false
                         },
             {ok, State}
@@ -203,16 +204,16 @@ handle_call({change_gunners, Count}, _From, State) when
 
 handle_call(connect, _From, State) when 
         State#state.executing == false ->
-    [{_, General}]  = ets:lookup(barrage, general),
-    {ok, GPID}      = rpc:call(General, barrage_general, enlist, [self()]),
+    {ok, General} = application:get_env(commander, general),
+    {ok, GPID}      = rpc:call(General, general_server, enlist, [self()]),
     Ref             = erlang:monitor(process, GPID),
     NewState        = State#state{connected=true, gen_pid=GPID, gen_ref=Ref},
     {reply, ok, NewState};
 
 handle_call(disconnect, _From, State) when 
         State#state.executing == false ->
-    [{_, General}] = ets:lookup(barrage, general),
-    ok = rpc:call(General, barrage_general, retire, [self()]),
+    {ok, General} = application:get_env(commander, general),
+    ok = rpc:call(General, general_server, retire, [self()]),
     erlang:demonitor(State#state.gen_ref),
     NewState = State#state{connected=false, gen_pid=null, gen_ref=null},
     {reply, ok, NewState};
@@ -248,11 +249,11 @@ handle_cast({execute, {Order, Server, Port}}, State) when
     %      REFACTOR: Have the follow_order take a
     %      target URL as well.
     FunTarget = fun(Pid) -> 
-            barrage_gunner:set_server_info(Pid, Server, Port)
+            gunner:set_server_info(Pid, Server, Port)
     end,
 
     FunFire = fun(Pid) ->
-            barrage_gunner:follow_order(Pid, Order) 
+            gunner:follow_order(Pid, Order) 
     end,
 
     %Have all the gunners sight in the target
@@ -273,7 +274,7 @@ handle_cast({execute, {_Order, _TargetURL}}, State) when
 handle_cast({orders_complete, _GunnerPid, Results}, State) when State#state.wait_count == 1 ->
     case State#state.connected of
         true ->
-            rpc:call(State#state.general, barrage_general, report_results, 
+            rpc:call(State#state.general, general_server, report_results, 
                         [self(), [Results | State#state.reports]]);
         _ ->
             ok
@@ -289,7 +290,7 @@ handle_cast({orders_complete, _GunnerPid, Results}, State) ->
     {noreply, NewState};
 
 handle_cast({log_results, ActionName, Time, Code, Msg}, State) ->
-    rpc:call(State#state.general, barrage_general, stream_results, 
+    rpc:call(State#state.general, general_server, stream_results, 
         [{[{name, ActionName}, {time, Time}, {code, Code}, {msg, Msg}]}]),
     {noreply, State};
 
@@ -345,16 +346,16 @@ create_gunners(GunnerList, 0) ->
     GunnerList;
 
 create_gunners(GunnerList, Count) ->
-    {ok, GunnerPID} = barrage_gunner:start(),
+    {ok, GunnerPID} = gunner:start(),
     ListName = "s_" ++ integer_to_list(Count),
     AtomName = list_to_atom(ListName),
-    barrage_gunner:set_httpc_profile(GunnerPID, AtomName),
+    gunner:set_httpc_profile(GunnerPID, AtomName),
     NewList = [GunnerPID | GunnerList],
     create_gunners(NewList, Count - 1).
 
 destroy_gunners(Gunners) ->
     DestoryFun = fun(Pid) ->
-        barrage_gunner:stop(Pid),
+        gunner:stop(Pid),
         ok
     end,
     %Have all the gunners sight in the target

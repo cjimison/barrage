@@ -26,7 +26,7 @@
 %%% @end
 %%% Created : 2013-04-02 11:47:46.533194
 %%%-------------------------------------------------------------------
--module(barrage_gunner).
+-module(gunner).
 
 -behaviour(gen_server).
 
@@ -49,7 +49,7 @@
 
 -define(SERVER, ?MODULE).
 
--include("barrage_gunner.hrl").
+-include("gunner.hrl").
 
 %%%===================================================================
 %%% API
@@ -172,11 +172,11 @@ handle_cast({follow_order, Order}, State) ->
         httpc:set_options([{cookies, enabled}], State#state.profile),
         State2 = State#state{results=dict:new(), keystore=dict:new()},
         State3 = process_set([Order], State2),
-        barrage_commander:order_complete(self(), State3#state.results),
+        commander_server:order_complete(self(), State3#state.results),
         {noreply, State}
     catch Exception:Reason -> 
         io:format("Gunner Exception.  Bail out of this Tree~nException: ~p ~nReason: ~p ~nStacktrace: ~p ~n", [Exception,Reason,erlang:get_stacktrace()]), 
-        barrage_commander:order_complete(self(), dict:new()),
+        commander_server:order_complete(self(), dict:new()),
         {noreply, State}
     end;
 
@@ -467,7 +467,7 @@ do_action(<<"load_kv_store">>, undefined, _Children, State) ->
 do_action(<<"load_kv_store">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"kv_store">>, Args),
     File    = proplists:get_value(<<"file">>, Args),
-    barrage_action_kvs:load(Profile, File, State);
+    action_kvs:load(Profile, File, State);
 
 
 %%%%------------------------------------------------------------------
@@ -479,7 +479,7 @@ do_action(<<"load_array_store">>, undefined, _Children, State) ->
 do_action(<<"load_array_store">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"array_store">>, Args),
     File    = proplists:get_value(<<"file">>, Args),
-    barrage_action_kvs:load_array(Profile, File, State);
+    action_kvs:load_array(Profile, File, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"read_random_kv">>
@@ -491,7 +491,7 @@ do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"kv_store">>, Args),
     Key     = proplists:get_value(<<"key">>, Args),
     Value   = proplists:get_value(<<"value">>, Args),
-    barrage_action_kvs:read_random(Profile, Key, Value, State);  
+    action_kvs:read_random(Profile, Key, Value, State);  
 
 
 %%%%------------------------------------------------------------------
@@ -526,7 +526,7 @@ do_action(<<"read_named_kv">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"kv_store">>, Args),
     Key     = proplists:get_value(<<"key">>, Args),
     Variable= proplists:get_value(<<"variable">>, Args),
-    barrage_action_kvs:read_name(Profile, Key, Variable, State);
+    action_kvs:read_name(Profile, Key, Variable, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"store_to_kv">>
@@ -538,7 +538,7 @@ do_action(<<"store_to_kv">>, {Args}, _Children, State) ->
     Profile = proplists:get_value(<<"kv_store">>, Args),
     Variable= proplists:get_value(<<"variable">>, Args),
     Key     = proplists:get_value(<<"key">>, Args),
-    barrage_action_kvs:read_name(Variable, Profile, Key, State);
+    action_kvs:read_name(Variable, Profile, Key, State);
 
 %%%%------------------------------------------------------------------
 %%%% Action: <<"read_array_idx">>
@@ -724,7 +724,7 @@ do_action(ActionName, _Args, Children, State) ->
             State;
         _ ->
             [{_, Action}]   = TableData,
-            NewState = barrage_action_http:execute(Action, State),
+            NewState = action_http:execute(Action, State),
             process_set(Children, NewState)
     end.
 

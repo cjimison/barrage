@@ -26,7 +26,7 @@
 %%% @end
 %%% Created : 2013-05-29 11:26:24.741667
 %%%-------------------------------------------------------------------
--module(barrage_commander_handler).
+-module(handler_http_commander).
 
 %% Module callbacks
 -export([init/3]).
@@ -72,12 +72,12 @@ handle(Req, State) ->
 %%--------------------------------------------------------------------
 routes() ->
     [
-        {"/commander/status",       barrage_commander_handler, []},
-        {"/commander/set_network",  barrage_commander_handler, []},
-        {"/commander/set_general",  barrage_commander_handler, []},
-        {"/commander/set_gunners",  barrage_commander_handler, []},
-        {"/commander/connect",      barrage_commander_handler, []},
-        {"/commander/disconnect",   barrage_commander_handler, []}
+        {"/commander/status",       handler_http_commander, []},
+        {"/commander/set_network",  handler_http_commander, []},
+        {"/commander/set_general",  handler_http_commander, []},
+        {"/commander/set_gunners",  handler_http_commander, []},
+        {"/commander/connect",      handler_http_commander, []},
+        {"/commander/disconnect",   handler_http_commander, []}
     ].
 
 %%--------------------------------------------------------------------
@@ -97,7 +97,7 @@ handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
     Cookie  = erlang:atom_to_binary(erlang:get_cookie(), utf8), 
     Node    = erlang:atom_to_binary(erlang:node(), utf8),
     Count   = list_to_binary(
-                integer_to_list(barrage_commander:gunner_count())),
+                integer_to_list(commander_server:gunner_count())),
     [{_, GeneralA}] = ets:lookup(barrage, general),
     General = erlang:atom_to_binary(GeneralA, utf8),
     Status  = get_commander_state(),
@@ -121,7 +121,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
                                     Req2);
                 CookieB ->
                     Cookie  = erlang:binary_to_atom(CookieB, utf8),
-                    case barrage_commander:change_cookie(Cookie) of
+                    case commander_server:change_cookie(Cookie) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -149,7 +149,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
                                     Req2);
                 GeneralL ->
                     General = erlang:binary_to_atom(GeneralL, utf8),
-                    case barrage_commander:change_general(General) of
+                    case commander_server:change_general(General) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -176,7 +176,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
                                     <<"{\"error\":\"No gunners set\"}">>,
                                     Req2);
                 Gunners ->
-                    case barrage_commander:change_gunner_count(Gunners) of
+                    case commander_server:change_gunner_count(Gunners) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
@@ -195,7 +195,7 @@ handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
     end;
 
 handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
-    case barrage_commander:connect() of
+    case commander_server:connect() of
         ok ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,
@@ -207,7 +207,7 @@ handle_named_request(<<"GET">>, <<"/commander/connect">>, Req) ->
     end;
 
 handle_named_request(<<"GET">>, <<"/commander/disconnect">>, Req) ->
-    case barrage_commander:disconnect() of
+    case commander_server:disconnect() of
         ok ->
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,
@@ -226,7 +226,7 @@ handle_named_request(_, _, _Req) ->
     ok.
 
 get_commander_state() ->
-    case barrage_commander:is_connected() of
+    case commander_server:is_connected() of
         true ->
             <<"connected">>;
         false ->

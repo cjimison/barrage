@@ -24,7 +24,7 @@
 %%% @end
 %%% Created : 2013-04-23 15:23:23.698042
 %%%-------------------------------------------------------------------
--module(barrage_action_kvs).
+-module(action_kvs).
 
 %% API
 -export([load/3]).
@@ -33,7 +33,7 @@
 -export([read_name/4]).
 -export([store_key/4]).
 
--include("barrage_gunner.hrl").
+-include("gunner.hrl").
 
 -define (is_dict (D), is_tuple (D) andalso element (1, D) =:= dict).
 
