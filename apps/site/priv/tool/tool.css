@@ -152,16 +152,16 @@ DIV.IDIV {
 }
 
 	DIV.IDIV_down {
-		background:url(../dist/toolimages/down.gif);
+		background:url(/tool/images/down.gif);
 	}
 	DIV.IDIV_up {
-		background:url(../dist/toolimages/up.gif);
+		background:url(/tool/images/up.gif);
 	}
 	DIV.IDIV_copy {
-		background:url(../dist/toolimages/copy.gif);
+		background:url(/tool/images/copy.gif);
 	}
 	DIV.IDIV_close {
-		background:url(../dist/toolimages/close.gif);
+		background:url(/tool/images/close.gif);
 	}
 
 
@@ -173,16 +173,16 @@ DIV.lIDIV {
 }
 
 	DIV.lIDIV_blank {
-		background:url(../dist/toolimages/blank.gif);
+		background:url(/tool/images/blank.gif);
 	}
 
 
 	DIV.xcIDIV {
-		background:url(../dist/toolimages/collapse.gif);
+		background:url(/tool/images/collapse.gif);
 	}
 
 	DIV.xcIDIV_collapsed {
-		background:url(../dist/toolimages/expand.gif);
+		background:url(/tool/images/expand.gif);
 	}
 
 

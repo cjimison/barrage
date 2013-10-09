@@ -149,20 +149,20 @@ johnsonRod= {
 		if (!a) a= "";
 		var html_str= "";
 
-		if (b) html_str+= "<img src='../dist/toolimages/collapse.gif' class='clickable expandCollapseIMG' data-a='x' title='Expand/Collapse Node'> ";
-		else html_str+= "<img src='../dist/toolimages/blank.gif'> ";
+		if (b) html_str+= "<img src='/tool/images/collapse.gif' class='clickable expandCollapseIMG' data-a='x' title='Expand/Collapse Node'> ";
+		else html_str+= "<img src='/tool/images/blank.gif'> ";
 
 		if (!jR.xml_flag || a.indexOf("arrayIndex")>=0) {
-			html_str+= "<img src='../dist/toolimages/up.gif' class='clickable' data-a='u' title='Move Node Up'>"
-			+" <img src='../dist/toolimages/down.gif' class='clickable' data-a='d' title='Move Node Down'>"
-			+" <img src='../dist/toolimages/copy.gif' class='clickable' data-a='c' title='Copy Node'>"
-			+" <img src='../dist/toolimages/close.gif' class='clickable' data-a='r' title='Delete Node (Safe)'> ";
+			html_str+= "<img src='/tool/images/up.gif' class='clickable' data-a='u' title='Move Node Up'>"
+			+" <img src='/tool/images/down.gif' class='clickable' data-a='d' title='Move Node Down'>"
+			+" <img src='/tool/images/copy.gif' class='clickable' data-a='c' title='Copy Node'>"
+			+" <img src='/tool/images/close.gif' class='clickable' data-a='r' title='Delete Node (Safe)'> ";
 		}
 		return html_str;
 	},
 	textarea_html: function(str) {
 		if (!str) str= "";
-		return "<img src='../dist/toolimages/expand2.gif' class='clickable expandCollapse2IMG' data-a='t' title='Expand/Collapse Textarea'>"
+		return "<img src='/tool/images/expand2.gif' class='clickable expandCollapse2IMG' data-a='t' title='Expand/Collapse Textarea'>"
 			+"<textarea class='rightTEXTAREA'>" +str +"</textarea>"
 		;
 	},
@@ -200,7 +200,7 @@ johnsonRod= {
 				}
 			}
 		}
-		if (d) d+= " <img src='../dist/toolimages/paste.gif' class='clickable pasteIMG" +c +"' data-a='p' title='Paste'>";
+		if (d) d+= " <img src='/tool/images/paste.gif' class='clickable pasteIMG" +c +"' data-a='p' title='Paste'>";
 		return d;
 	},
 
@@ -279,7 +279,7 @@ johnsonRod= {
 			var el= img_JQ[0];
 			if (flag==undefined) flag= el.src.indexOf("collapse")<0;
 			ol_JQ.displayer(flag);
-			el.src = "../dist/toolimages/" +(flag ? "collapse": "expand") +".gif";
+			el.src = "/tool/images/" +(flag ? "collapse": "expand") +".gif";
 		}
 	},
 	expandCollapseTextarea: function(img_JQ) {
@@ -288,7 +288,7 @@ johnsonRod= {
 			var el= img_JQ[0];
 			var flag= el.src.indexOf("collapse")<0;
 			ta_JQ.classer("expandedTEXTAREA", flag);
-			el.src= "../dist/toolimages/" +(flag ? "collapse": "expand") +"2.gif"
+			el.src= "/tool/images/" +(flag ? "collapse": "expand") +"2.gif"
 		}
 	},
 	deleteFormItem: function(img_JQ) {
@@ -683,7 +683,7 @@ johnsonRod= {
 		if (fade_sec==undefined) fade_sec= 2;
 		if (fade_sec>0) jR.message_timer= window.setTimeout(delayedClose, fade_sec *1000);
 		jR.messageDiv_JQ.classer("messageAutoCloseDIV", fade_sec>0);
-		jR.messageClose_img_el.src= "../dist/toolimages/" +(fade_sec>0 ? "countdown": "popupClose") +".gif";
+		jR.messageClose_img_el.src= "/tool/images/" +(fade_sec>0 ? "countdown": "popupClose") +".gif";
 
 		function delayedClose() {
 			if (jR.messageDiv_JQ.is(":visible")) jR.messageDiv_JQ.fadeOut();
