@@ -74,7 +74,9 @@ routes() ->
         {"/general/commanders",         handler_http_general, []},
         {"/general/issue_order",        handler_http_general, []},
         {"/general/upload_behaviors",   handler_http_general, []},
-        {"/general/upload_actions",     handler_http_general, []}
+        {"/general/upload_actions",     handler_http_general, []},
+        {"/general/behaviors",          handler_http_general, []},
+        {"/general/actions",            handler_http_general, []}
     ],
     Routes.
 
@@ -152,11 +154,17 @@ handle_named_request(<<"GET">>, <<"/general/issue_order">>, Req) ->
     general_server:issue_http_order(Order, self()),
     blocker_loop(Req3);
 
+handle_named_request(<<"GET">>, <<"/general/behaviors">>, Req) ->
+    {ok, Behaviors} = application:get_env(general, behaviors),
+    JSON = jiffy:encode(Behaviors),
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
+
 handle_named_request(<<"POST">>,<<"/general/upload_behaviors">>,Req) ->
     case cowboy_req:has_body(Req) of
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
             Plans   = jiffy:decode(Data),
+            application:set_env(general, behaviors, Plans),
             ok      = barrage_parser:load_behavior_data(Plans),
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,Req2);
@@ -165,11 +173,17 @@ handle_named_request(<<"POST">>,<<"/general/upload_behaviors">>,Req) ->
                             <<"{\"error\":\"No Body\"}">>,Req)
     end;
 
+handle_named_request(<<"GET">>, <<"/general/actions">>, Req) ->
+    {ok, Actions} = application:get_env(general, actions),
+    JSON = jiffy:encode(Actions),
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
+
 handle_named_request(<<"POST">>, <<"/general/upload_actions">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
             Actions = jiffy:decode(Data),
+            application:set_env(general, actions, Actions),
             ok      = barrage_parser:load_action_data(Actions),
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,Req2);
