@@ -98,7 +98,7 @@ handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
     Node    = erlang:atom_to_binary(erlang:node(), utf8),
     Count   = list_to_binary(
                 integer_to_list(commander_server:gunner_count())),
-    [{_, GeneralA}] = ets:lookup(barrage, general),
+    GeneralA= commander_server:general(),
     General = erlang:atom_to_binary(GeneralA, utf8),
     Status  = get_commander_state(),
     JSON    = <<"{\"network\":\"",
