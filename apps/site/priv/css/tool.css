@@ -1,0 +1,213 @@
+IMG.pasteIMG {
+	display:none;
+}
+	IMG.pasteAttributesIMG {
+		display:none;
+	}
+
+	IMG.pasteChildnodesIMG {
+		display:none;
+	}
+
+* {
+	font-size:10px; color:#666; font-family:Verdana,Arial,Helvetica,sans-serif;
+}
+
+
+.red {
+	color:red;
+}
+
+.blue {
+	color:blue;
+}
+
+.gray {
+	color:gray;
+}
+
+
+
+.clickable {
+	color:#748FB2;
+	cursor:pointer;
+}
+	.clickable:hover {
+		background:#ddd;
+	}
+
+
+SPAN.sampleSPAN {
+	display:none;
+}
+
+DIV#jsonFormDataDIV {
+	border:1px solid #000;
+}
+
+OL {
+	padding:2px;
+	margin:2px;
+	color:#999;
+}
+	OL.arrayOL {
+	}
+
+		LI {
+			margin-left:22px; /*numbers inside*/
+			border:1px solid #ddd;
+			padding:2px;
+			color:#999;
+			background:#fff;
+		}
+			LI.arrayLI {
+				background:#eee;
+				border-color:#fff;
+			}
+			LI.deleted {
+				background:pink;
+				color:red;
+			}
+			LI * {
+				vertical-align:top;
+				color:#999;
+			}
+
+TEXTAREA {
+	color:#000;
+}
+
+	TEXTAREA.rightTEXTAREA {
+		height:16px;
+		margin:0;
+		border:1px solid #748FB2;
+		width:200px;
+	}
+		TEXTAREA.expandedTEXTAREA {
+			height:180px;
+			width:360px;
+		}
+
+INPUT {	
+	border:1px solid #748FB2;
+	margin-bottom:2px;
+	color:#000;
+}
+	INPUT.buttonINPUT {
+		color:#748FB2;
+		cursor:pointer;
+	}
+
+	INPUT.checkbox {	
+		border:none;
+	}
+	INPUT.objectNameINPUT {
+	}
+	INPUT.readonlyINPUT {
+		color:#999;
+	}
+
+LI.activeLI {
+	border:1px solid orange;
+}
+
+
+
+DIV#messageDIV {
+	position:absolute;
+	width:200px;
+	padding:12px;
+}
+	DIV.messageCloseDIV {
+		background:#000;
+	}
+	DIV.messageAutoCloseDIV {
+		background:#999;
+	}
+		DIV#messageDIV IMG#messageCloseIMG {
+			float:right;
+			cursor:pointer;
+		}
+
+		DIV#messageContentDIV,
+		DIV#messageContentDIV B {
+			color:#fff;
+		}
+
+	INPUT#removeAllDeletedINPUT {
+		background:red;
+		color:#fff;
+	}
+
+
+
+
+
+
+DIV.IDIV {
+	width:11px;
+	height:11px;
+	float:left;
+	margin:1px;
+}
+
+	DIV.IDIV_down {
+		background:url(../dist/toolimages/down.gif);
+	}
+	DIV.IDIV_up {
+		background:url(../dist/toolimages/up.gif);
+	}
+	DIV.IDIV_copy {
+		background:url(../dist/toolimages/copy.gif);
+	}
+	DIV.IDIV_close {
+		background:url(../dist/toolimages/close.gif);
+	}
+
+
+DIV.lIDIV {
+	width:13px;
+	height:12px;
+	float:left;
+	margin:1px;
+}
+
+	DIV.lIDIV_blank {
+		background:url(../dist/toolimages/blank.gif);
+	}
+
+
+	DIV.xcIDIV {
+		background:url(../dist/toolimages/collapse.gif);
+	}
+
+	DIV.xcIDIV_collapsed {
+		background:url(../dist/toolimages/expand.gif);
+	}
+
+
+
+
+
+
+/*ftp_json*/
+DIV#fj_DIV {border:1px solid #ccc; padding: 4px;}
+
+DIV#fj_files_DIV P.dir,
+DIV#fj_files_DIV P.file
+{cursor:pointer; padding:2px; margin:0; min-width:100px; color:#748FB2; }
+
+DIV#fj_files_DIV P.dir:hover,
+DIV#fj_files_DIV P.file:hover
+{background:#ddd; }
+
+DIV#fj_files_DIV P.error {color: red; }
+
+DIV#fj_files_DIV P.dir,
+.bold
+{font-weight: bold; }
+
+/*wait_indicator*/
+.processing {
+	opacity: .25;
+}
