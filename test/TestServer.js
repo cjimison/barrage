@@ -1,3 +1,26 @@
+//-------------------------------------------------------------------
+// Copyright (c) 2013 Christopher Jimison
+//
+// Permission is hereby granted, free of charge, to any person obtaining 
+// a copy of this software and associated documentation files 
+// (the "Software"), to deal in the Software without restriction, 
+// including without limitation the rights to use, copy, modify, merge, 
+// publish, distribute, sublicense, and/or sell copies of the Software, 
+// and to permit persons to whom the Software is furnished to do so, 
+// subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be 
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//-------------------------------------------------------------------
+
 var http = require('http');
 var url = require('url');
 var util=require('util');
@@ -16,31 +39,36 @@ http.createServer(function (req, res)
             console.log("I got a login request");
             if(query.username === 'foo' && query.password === 'bar')
             {
-                res.end('8379283747838');
+                res.write(querystring.stringify({ rez: '8379283747838' }));
             }
             else
             {
-                res.end('failed');
-            }
+                res.write(querystring.stringify({ error: 'failed' }));
+                res.write('failed');
+            }   
+            res.end();
         }
         else if('/listcards' === url_parts.pathname)
         {
             console.log("I got a listcards request");
             obj.cards = [ { ID: 0, name : 'cardA'}, {ID:1, name: 'cardB'}];
             obj.deckType = 'generic';
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/get_card_details' === url_parts.pathname)
         {
             console.log("I got a get_card_details request");
             obj.card = { ID : 2, name : 'cardC'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/add_card' === url_parts.pathname)
         {
             console.log("I got a add_card request");
             obj.card = { ID : 3, name : 'cardD'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/cookie' === url_parts.pathname)
         {
@@ -51,7 +79,8 @@ http.createServer(function (req, res)
             });
             count++;
             obj.card = { ID : 4, name : 'cookie'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
         }
         else if('/cookie2' === url_parts.pathname)
         {
@@ -62,7 +91,32 @@ http.createServer(function (req, res)
             });
             count++;
             obj.card = { ID : 5, name : 'cookie2'};
-            res.end(JSON.stringify(obj));
+            res.write(JSON.stringify(obj));
+            res.end();
+        }
+        else if('/create_kvs' == url_parts.pathname)
+        {
+            console.log("Building KVS");
+            var KVS = { 
+                        address : "1234 Happy Street",
+                        email   : "foo@bar.com",
+                        userName: "foobar",
+                        data    : { state : "happy", points : 234 },
+                        data_a  : [ 123, 321, 4, "hello"]
+            };
+            res.write(JSON.stringify(KVS));
+            res.end();
+        }
+        else if('/print_state' == url_parts.pathname)
+        {
+            console.log("Username = " + query.username + ", State = " + query.state);
+            res.end();
+        }
+        else
+        {
+            console.log("Parts unknown = " + url_parts.pathname);
+            res.write("{}");
+            res.end();
         }
     }
     else

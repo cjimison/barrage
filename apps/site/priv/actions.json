@@ -1,0 +1,93 @@
+[
+    {
+        "name"          : "login",
+        "url"           : "/login",
+        "type"          : "get",
+        "args"          :
+        {
+            "username"  : "foo",
+            "password"  : "bar"
+        },
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "query_str"
+    },
+    {
+        "name"          : "named_login",
+        "url"           : "/login",
+        "type"          : "post",
+        "args"          :
+        {
+            "username"  : "$USERNAME",
+            "password"  : "$PASSWORD"
+        },
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "json"
+    },
+    {
+       "name"           : "create_kvs",
+        "url"           : "/create_kvs",
+        "type"          : "get",
+        "results"       : "KVS",
+        "results_type"  : "json_obj"
+    },
+    {
+       "name"           : "print_state",
+        "url"           : "/print_state",
+        "type"          : "get",
+        "args"          :
+        {
+            "username"  : "$USER_NAME",
+            "state"     : "$STATE"
+        },
+        "args_type"     : "http"
+    },
+    {
+        "name"          : "cookie",
+        "url"           : "/cookie",
+        "type"          : "get",
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "json"
+    },
+    {
+        "name"          : "cookie2",
+        "url"           : "/cookie2",
+        "type"          : "get",
+        "results"       : { "session" : "$SESSION" },
+        "args_type"     : "http",
+        "results_type"  : "json"
+    },
+    {
+        "name"          : "google_search",
+        "protocol"      : "https",
+        "server"        : "www.google.com",
+        "url"           : "/search",
+        "port"          : 443,
+        "type"          : "get",
+        "args"          : { "q"  : "barrage" },
+        "args_type"     : "http"
+    },
+    {
+        "name"          : "get_cards",
+        "url"           : "/listcards",
+        "type"          : "get",
+        "args"          :  { "sesionID" : "$SESSION" },
+        "args_type"     : "http"
+    },
+    {
+        "name"          : "get_card_details",
+        "url"           : "/get_card_details",
+        "type"          : "get",
+        "args"          :  { "sesionID" : "$SESSION" },
+        "args_type"     : "http"
+    },
+    {
+        "name"          : "add_card",
+        "url"           : "/add_card",
+        "type"          : "get",
+        "args"          :  { "sesionID" : "$SESSION" },
+        "args_type"     : "http"
+    }
+]

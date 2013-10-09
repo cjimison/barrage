@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Barrage - Admin</title>
+		<style type="text/css" title="currentStyle">
+			@import "dist/jquery.jqplot.min.css";
+			@import "css/smoothness/jquery-ui-1.10.2.css";
+			@import "css/common.css";
+		</style>
+		
+		<script type="text/javascript" src="dist/jquery.min.js"></script>
+		<script type="text/javascript" src="js/common.js"></script>
+		<script type="text/javascript" src="js/admin.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.10.2.js"></script>
+		<script type="text/javascript" src="js/fartscroll.js"></script>
+		
+	</head>
+	
+	<body>
+		<div id="dialog-confirm" title="Set Network" style="font-size:12px;">
+			<p>Changing the Network Name will disconnect all Commanders linked to this General.</p>
+			<p>Do you wish to continue?</p>
+		</div>
+		<div style="line-height:30px">
+			<div>
+				<label>General Name:</label>
+				<span id="GeneralName"></span>
+			</div>
+			<div>
+				<label for="input_TargetServer">Target Server:</label>
+				<span id="TargetServer" class="toggle"></span>
+				<input id="input_TargetServer" class="toggle" type="text"/>
+			</div>
+			<div>
+				<label for="input_TargetPort">Target Port:</label>
+				<span id="TargetPort" class="toggle"></span>
+				<input id="input_TargetPort" class="toggle" type="text"/>
+			</div>
+			<div>
+				<label for="input_NetworkName">Network Name:</label>
+				<span id="NetworkName" class="toggle"></span>
+				<input id="input_NetworkName" class="toggle" type="text"/>
+			</div>
+		</div>
+		
+		<table id="GeneralCommanders">
+			<thead>
+				<tr>
+					<th>Commander Name</th><th>Num. of Gunners</th>
+				</tr>
+			</thead>
+			<tbody style="line-height:30px">
+			</tbody>
+		</table>
+		
+		<div style="width: 300px; text-align: right;">
+			<input type="button" class="toggle showfirst" value="Modify" onclick='$(".toggle").toggle();'/>
+			<input type="button" class="toggle" value="Save" onclick='SaveChanges()'/>
+			<input type="button" class="toggle" value="Cancel" onclick='SetInfo()'/>
+		</div>
+		
+		<div id="Post_Data">
+			<input id="fileChoser" type="file" onchange="pd_showUploadButtons()" style="float:left;" />
+		</div>
+		<div style="clear:both;"></div>
+	</body>
+
+</html>

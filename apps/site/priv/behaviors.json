@@ -1,0 +1,209 @@
+[
+    {
+        "name" : "Simple Test",
+        "tree" : { "action":"login" }
+    },
+    {
+        "name" : "Simple behavior Test",
+        "tree" : { "behavior":"Simple Test" }
+    },
+    {
+        "name" : "Random Login Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                {
+                    "action"    : "load_kv_store",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "file"      : "user_data.json" 
+                    }
+                },
+                {
+                    "action"    : "read_random_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "$USERNAME", 
+                        "value"     : "$PASSWORD" 
+                    }
+                },
+                { "action" : "named_login"}
+            ]
+        }
+    },
+    {
+        "name" : "KVS Loop test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1},
+            "children"  : [
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "LOOP_COUNT", 
+                        "value" : 10 
+                    }
+                },
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "LOOP_IDX", 
+                        "value" : 0 
+                    }
+                },
+                {
+                    "action"    : "ordered",
+                    "args"      : { "count" : "$LOOP_COUNT"},
+                    "children"  : [
+                        { 
+                            "action"    : "inc_variable",
+                            "args"      : { "key" : "LOOP_IDX" }
+                        },
+                        { 
+                            "action"    : "print_variable",
+                            "args"      : { "key" : "LOOP_IDX" }
+                        }
+                    ]
+                },
+                { 
+                    "action"    : "dec_variable",
+                    "args"      : { "key" : "LOOP_IDX" }
+                },
+                { 
+                    "action"    : "print_variable",
+                    "args"      : { "key" : "LOOP_IDX" }
+                }
+            ]
+        }
+
+    },
+    {
+        "name" : "KVS Load Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                { "action"      : "create_kvs" },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "KVS", 
+                        "key"       : "data", 
+                        "variable"  : "$DATA_KVS" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "KVS", 
+                        "key"       : "userName", 
+                        "variable"  : "$USER_NAME" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "$DATA_KVS", 
+                        "key"       : "state", 
+                        "variable"  : "$STATE" 
+                    }
+                },
+                { "action"      : "print_state" }
+            ]
+        }
+
+    },
+    {
+        "name" : "Specific Login Test",
+        "tree" : 
+        { 
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                {
+                    "action"    : "load_kv_store",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "file"      : "user_data.json" 
+                    }
+                },
+                {
+                    "action"    : "read_named_kv",
+                    "args"      : 
+                    { 
+                        "kv_store"  : "USER_NAMES_DATA", 
+                        "key"       : "tom", 
+                        "variable"  : "$PASSWORD" 
+                    }
+                },
+                {
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "$USERNAME", 
+                        "value" : "tom" 
+                    }
+                },
+
+                { "action" : "named_login"},
+                {
+                    "action"    : "conditional",
+                    "args"      : { "$USERNAME" : "$USERNAME" },
+                    "children"  : [
+                        { "action" : "cookie"},
+                        { "action" : "cookie2"}
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "name" : "Google Test",
+        "tree" : 
+        { 
+            "action"    : "google_search" 
+        }
+    },
+    {
+        "name" : "Cookie Test",
+        "tree" : {
+            "action"    : "ordered",
+            "args"      : { "count" : 2 },
+            "children"  : [
+                { "action": "cookie" },
+                { "action": "cookie2"}
+            ]
+        }
+    },
+    {
+        "name" : "Random Commands",
+        "tree" : {
+            "action"    : "ordered",
+            "args"      : { "count" : 1 },
+            "children"  : [
+                { "action": "login" },
+                { 
+                    "action"    : "random",
+                    "children"  : [
+                        { "action" : "get_cards" },
+                        { "action" : "get_card_details" },
+                        { "action" : "add_card" }
+                    ],
+                    "args" : { "min_time" : 10000 }
+                }
+            ]
+        }
+    }
+]
