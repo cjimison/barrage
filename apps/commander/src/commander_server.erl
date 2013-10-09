@@ -37,6 +37,7 @@
          gunner_count/0,
          gunner_count/1,
          change_cookie/1,
+         general/0,
          change_general/1,
          connect/0,
          disconnect/0,
@@ -111,6 +112,9 @@ log_results(ActionName, Time, Code, Msg) ->
 change_cookie(Cookie) ->
     gen_server:call(?MODULE, {change_cookie, Cookie}, infinity).
 
+general() ->
+    gen_server:call(?MODULE, general, infinity).
+
 change_general(General) ->
     gen_server:call(?MODULE, {change_general, General}, infinity).
 
@@ -145,6 +149,22 @@ init([]) ->
     {ok, Connect} = application:get_env(commander, auto_connect),
     {ok, General} = application:get_env(commander, general),
     {ok, Gunners} = application:get_env(commander, gunners),
+
+    %% Build the needed DBs
+    case ets:info(plans) of 
+        undefined ->
+            ets:new(plans, [set, named_table, public]),
+            ets:insert(plans, {table_keys, []});
+        _ ->
+            ok
+    end,
+    
+    case ets:info(actions) of 
+        undefined ->
+            ets:new(actions, [set, named_table, public]);
+        _ ->
+            ok
+    end,
 
     case Connect of
         true ->
@@ -189,9 +209,13 @@ handle_call({change_cookie, Cookie}, _From, State) when
     true = erlang:set_cookie(node(), Cookie),
     {reply, ok, State};
 
+handle_call(general, _From, State) ->
+    {ok, General} = application:get_env(commander, general),
+    {reply, General, State};
+
 handle_call({change_general, General}, _From, State) when 
         State#state.executing == false ->
-    ets:insert(barrage, {general, General}),
+    application:set_env(commander, general, General),
     NewState = State#state{general=General},
     {reply, ok, NewState};
 

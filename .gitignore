@@ -5,3 +5,4 @@ deps
 *.plt
 ebin
 erl_crash.dump
+_rel
