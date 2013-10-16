@@ -1,231 +1,121 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE HTML>
+
+<html manifest="/cache.manifest">
 <head>
-	<!-- This source/tool was copied from http://www.alkemis.com/johnsonRod/ -->
-	<title>JSON Tool</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 
-	<link href="/tool/tool.css" type="text/css" rel="stylesheet">
+    <title>JSON Editor Online - view, edit and format JSON online</title>
 
-	<script type="text/javascript" src="/dist/jquery.min.js"></script>
-	<script language="javascript" src="/tool/tool.js" type="text/javascript"></script>
+    <!--
 
-<script>
+    @file index.html
 
-$(document).ready(function() {
-	jR.init();
+    @brief
+    JSON Editor Online is a web-based tool to view, edit, and format JSON.
+    It shows your data side by side in a clear, editable treeview and in 
+    a code editor.
 
-	//jR jsonToForm_end_hook
-	jR.jsonToForm_end_hook= function() {
-		$("DIV#fj_save_DIV").slideUp(); //hide save
-	};
+    Supported browsers: Chrome, Firefox, Safari, Opera, Internet Explorer 8+
 
-	//jR formToJson_end_hook
-	jR.formToJson_end_hook= function() {
-		if (fj.dpath_str) {
-			if (!$("SPAN#fj_file_path_SPAN").text()) fj.popFpath();
-			$("DIV#fj_save_DIV").slideDown(); //show save
-		}
-	};
+    @license
+    This json editor is open sourced with the intention to use the editor as
+    a component in your own application. Not to just copy and monetize the editor
+    as it is.
 
-});
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at
 
-</script>
+    http://www.apache.org/licenses/LICENSE-2.0
 
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+    License for the specific language governing permissions and limitations under
+    the License.
 
+    Copyright (C) 2011-2013 Jos de Jong, http://jsoneditoronline.org
+
+    @author   Jos de Jong, <wjosdejong@gmail.com>
+    @version  2.3.2
+    @date     2013-09-26
+    -->
+
+    <link rel="stylesheet" type="text/css" href="/tool/app-min.css">
+    <link rel="stylesheet" type="text/css" href="/tool/jsoneditor-min.css">
+
+    <script type="text/javascript" src="/tool/jsoneditor-min.js"></script>
+    <script type="text/javascript" src="/tool/ace-min.js"></script>
+    <script type="text/javascript" src="/tool/app-min.js"></script>
 </head>
 
 <body>
-<b style="font-size: 133%; ">JSON Viewer/Editor</b>
-<br/>
 
-<br/>
-Paste JSON (or XML) below |
-<span id="pickSampleSPAN">or try samples <span class="clickable">1</span> <span class="clickable">2</span> <span class="clickable">3</span> <span class="clickable">4</span></span>
-
-<br/>
-
-<textarea id="jsonTEXTAREA" cols="120" rows="10">{
-}</textarea>
-<br/>
-<input type="button" class="buttonINPUT" onclick="jR.jsonToForm(); " value="Convert to Form"/>
-<br/>
-<br/>
-
-<div id="jsonFormDIV">
+<div id="header">
+    <div id="menu">
+        <ul>
+            <li>
+                <a id="clear" title="Clear contents">Clear</a>
+            </li>
+            <li>
+                <a id="open" title="Open file from disk">
+                    Open
+                    <span id="openMenuButton" title="Open file from disk or url">
+                    &#x25BC;
+                    </span>
+                </a>
+                <ul id="openMenu">
+                    <li>
+                        <a id="menuOpenFile" title="Open file from disk">Open&nbsp;file</a>
+                    </li>
+                    <li>
+                        <a id="menuOpenUrl" title="Open file from url">Open&nbsp;url</a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a id="save" title="Save file to disk">Save</a>
+            </li>
+        </ul>
+    </div>
 </div>
 
+<div id="auto">
+    <div id="contents">
+        <div id="codeEditor"></div>
 
+        <div id="splitter">
+            <div id="buttons">
+                <div>
+                    <button id="toTree" class="convert" title="Copy code to tree editor">
+                        <div class="convert-right"></div>
+                    </button>
+                </div>
+                <div>
+                    <button id="toCode" class="convert" title="Copy tree to code editor">
+                        <div class="convert-left"></div>
+                    </button>
+                </div>
+            </div>
+            <div id="drag">
+            </div>
+        </div>
 
+        <div id="treeEditor"></div>
 
-<div id="fj_save_DIV" style="display:none; ">
-	<br/>
-	<span class="bold">FTP Server:</span> <span class="fj_server_SPAN"></span>
-	<br/>
-	<span class="bold">File:</span> <span id="fj_file_path_SPAN"></span>/
-	<input size="40" name="fj_filename_INPUT"/> <span class="clickable" onclick="fj.popFpath(); ">Copy current directory path</span>
-	<br/>
-	<button id="fj_save_button">Save File via FTP</button> Note: backup all your files first - this function will save or create a file, it wont give a warning if overwriting.
-	<br/>
-	<br/>
+        <script type="text/javascript">
+            app.load();
+            app.resize();
+        </script>
+
+    </div>
 </div>
 
+<script type="text/javascript">
+    app.resize();
+</script>
 
-
-
-Need to debug your JSON? Go to <a href="http://www.jslint.com" target="_blank">JSLint</a>. Think JSLint is just plain mean? Try <a href="http://www.jshint.com" target="_blank">JSHint</a>.
-<div id="messageDIV" class="messageCloseDIV " style="display:none; ">
-	<img id="messageCloseIMG" src="/tool/images/popupClose.gif" onclick="jR.messageClose(); " title="Close">
-	<div id="messageContentDIV"></div>
-</div>
-
-
-
-
-<span class="sampleSPAN" id="sample1"><!--
-{"glossary": {"title": "example glossary","GlossDiv": {"title": "S","GlossList": {"GlossEntry": {"ID": "SGML","SortAs": "SGML","GlossTerm": "Standard Generalized Markup Language","Acronym": "SGML","Abbrev": "ISO 8879:1986","GlossDef": {"para": "A meta-markup language, used to create markup languages such as DocBook.","GlossSeeAlso": ["GML", "XML"]},"GlossSee": "markup"}}}}}
---></span>
-
-<span class="sampleSPAN" id="sample2"><!--
-{"widget": {
-"debug": "on",
-"window": {
-	"title": "Sample Konfabulator Widget",
-	"name": "main_window",
-	"width": 500,
-	"height": 500
-},
-"image": {
-	"src": "Images/Sun.png",
-	"name": "sun1",
-	"hOffset": 250,
-	"vOffset": 250,
-	"alignment": "center"
-},
-"text": {
-	"data": "Click Here",
-	"size": 36,
-	"style": "bold",
-	"name": "text1",
-	"hOffset": 250,
-	"vOffset": 100,
-	"alignment": "center",
-	"onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
-}
-}}
---></span>
-
-<span class="sampleSPAN" id="sample3"><!--
-<widget>
-<debug>on</debug>
-<window title="Sample Konfabulator Widget">
-	<name>main_window</name>
-	<width>500</width>
-	<height>500</height>
-</window>
-<image src="Images/Sun.png" name="sun1">
-	<hOffset>250</hOffset>
-	<vOffset>250</vOffset>
-	<alignment>center</alignment>
-</image>
-<text data="Click Here" size="36" style="bold">
-	<name>text1</name>
-	<hOffset>250</hOffset>
-	<vOffset>100</vOffset>
-	<alignment>center</alignment>
-	<onMouseUp>
-		sun1.opacity = (sun1.opacity / 100) * 90;
-	</onMouseUp>
-</text>
-</widget>
---></span>
-
-<span class="sampleSPAN" id="sample4"><!--
-{
-"version": "1.0",
-"encoding": "UTF-8",
-"feed": {
-"xmlns": "http://www.w3.org/2005/Atom",
-"xmlns$openSearch": "http://a9.com/-/spec/opensearchrss/1.0/",
-"xmlns$gd": "http://schemas.google.com/g/2005",
-"xmlns$gCal": "http://schemas.google.com/gCal/2005",
-"id": {"$t": "..."},
-"updated": {"$t": "2006-11-12T21:25:30.000Z"},
-"title": {
-  "type": "text",
-  "$t": "Google Developer Events"
-},
-"subtitle": {
-  "type": "text",
-  "$t": "The calendar contains information about upcoming developer conferences at which Google will be speaking, along with other developer-related events."
-},
-"link": [{
-  "rel": "...",
-  "type": "application/atom+xml",
-  "href": "..."
-  },{
-  "rel": "self",
-  "type": "application/atom+xml",
-  "href": "..."
-}],
-"author": [{
-  "name": {"$t": "Google Developer Calendar"},
-  "email": {"$t": "developer-calendar@google.com"}
-}],
-"generator":{
-  "version": "1.0",
-  "uri": "http://www.google.com/calendar",
-  "$t": "Google Calendar"
-},
-"openSearch$startIndex": {"$t": "1"},
-"openSearch$itemsPerPage": {"$t": "25"},
-"gCal$timezone": {"value": "America/Los_Angeles"},
-
-"entry": [{
-  "id": {"$t": "..."},
-  "published": {"$t": "2006-11-12T21:25:30.000Z"},
-  "updated": {"$t": "2006-11-12T21:25:30.000Z"},
-  "category": [{
-	"scheme": "...",
-	"term": "..."
-  }],
-  "title":{
-	"type": "text",
-	"$t": "WebmasterWorld PubCon 2006: Google Developer Tools in General"
-  },
-  "content": {
-	"type": "text",
-	"$t": "Google is sponsoring at <a href=\"http://www.pubcon.com/\">WebmasterWorld PubCon 2006</a>.\nCome and visit us at the booth or join us for an evening demo reception where we will be talking \"5 ways to enhance your website with Google Code\".\nAfter all,\nit is Vegas, baby! See you soon."
-  },
-  "link": [{
-	"rel": "alternate",
-	"type": "text/html",
-	"href": "...",
-	"title": "alternate"
-	},{
-	"rel": "self",
-	"type": "application/atom+xml",
-	"href": "..."
-  }],
-  "author": [{
-	"name": {"$t": "Google Developer Calendar"},
-	"email": {"$t": "developer-calendar@google.com"}
-  }],
-  "gd$transparency": {"value": "http://schemas.google.com/g/2005#event.opaque"},
-  "gd$eventStatus": {"value": "http://schemas.google.com/g/2005#event.confirmed"},
-  "gd$comments": {"gd$feedLink": {"href": "..."}},
-  "gCal$sendEventNotifications": {"value": "true"},
-  "gd$when": [{
-	"startTime": "2006-11-15",
-	"endTime": "2006-11-17",
-	"gd$reminder": [{"minutes": "10"}]
-  }],
-  "gd$where": [{"valueString": "3150 Paradise Road,Las Vegas,NV 89109"}],
-}]
-}
-}
---></span>
+<script type="text/javascript" src="/tool2/jsonlint.js"></script>
 
 </body>
-
 </html>
-
