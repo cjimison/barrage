@@ -41,9 +41,14 @@
     @date     2013-09-26
     -->
 
+    <!--
+    This file has been modified to work with barrage - internal JSON tool for DeNA
+    -->
+
     <link rel="stylesheet" type="text/css" href="/tool/app-min.css">
     <link rel="stylesheet" type="text/css" href="/tool/jsoneditor-min.css">
 
+    <script type="text/javascript" src="dist/jquery.min.js"></script>
     <script type="text/javascript" src="/tool/jsoneditor-min.js"></script>
     <script type="text/javascript" src="/tool/ace-min.js"></script>
     <script type="text/javascript" src="/tool/app.js"></script>
@@ -52,12 +57,13 @@
 <body>
 
 <div id="header">
+    <div id="menu-title"></div>
     <div id="menu">
         <ul>
-            <li>
+            <li class="hide">
                 <a id="clear" title="Clear contents">Clear</a>
             </li>
-            <li>
+            <li class="hide">
                 <a id="open" title="Open file from disk">
                     Open
                     <span id="openMenuButton" title="Open file from disk or url">

@@ -1,3 +1,6 @@
+var POSTURLS = {"behaviors" : "general/upload_behaviors", "actions" : "general/upload_actions"};
+var LOADEDURL = "";
+
 function QueryParams() {}
 
 function Notify() {
@@ -377,7 +380,13 @@ app.CodeToTree = function () {
         if (window.QueryParams) {
             var t = new QueryParams,
                 i = t.getValue("url");
-            i && (e = {}, app.openUrl(i))
+            if (i)
+            {
+                e = {};
+                app.openUrl(i);
+                LOADEDURL = i.split("/").pop()
+                document.getElementById("menu-title").innerHTML = LOADEDURL;
+            }
         }
         app.lastChanged = void 0;
         var o = document.getElementById("codeEditor");
@@ -446,9 +455,16 @@ app.CodeToTree = function () {
 }, app.saveFile = function () {
     app.lastChanged == treeEditor && app.treeToCode(), app.lastChanged = void 0;
     var e = codeEditor.getText();
+    
+
+    PostInfo(POSTURLS[LOADEDURL], e, function(response) {
+        console.log("test" + response);
+        window.location.reload(true);
+    });
+    /*
     app.retriever.saveFile(e, function (e) {
         e && app.notify.showError(e)
-    })
+    })*/
 }, app.formatError = function (e) {
     var t = '<pre class="error">' + e.toString() + "</pre>";
     return "undefined" != typeof jsonlint && (t += '<a class="error" href="http://zaach.github.com/jsonlint/" target="_blank">validated by jsonlint</a>'), t
@@ -486,3 +502,18 @@ app.CodeToTree = function () {
     }
     e && (e.style.right = d ? a + (d + a) + "px" : a + "px")
 };
+
+function PostInfo(url, data, callback) {
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        async: true,
+        success: function(data) {
+            callback(JSON.parse(data));
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
+        }
+    });
+}
