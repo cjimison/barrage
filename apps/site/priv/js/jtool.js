@@ -1,4 +1,9 @@
 $(document).ready(function() {
+    hideNotification();
+    $('#notification_message').click(function(){           
+        hideNotification(true);
+    });
+
     var container_behaviors = document.getElementById('jsoneditor_behaviors');
     var container_actions = document.getElementById('jsoneditor_actions');
 
@@ -56,4 +61,44 @@ function PostInfo(url, data, callback) {
             console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
         }
     });
+}
+
+function hideNotification(animate)
+{
+    var notification = $('#notification_message');
+    var notificationHeight = $('#notification_message').outerHeight();
+    if(animate)
+    {
+        notification.animate({top: -$(this).outerHeight()}, 500);
+    }
+    else
+    {
+        notification.css({'top':-notificationHeight});
+    }
+}
+
+function showNotification(msg, type)
+{
+
+    var msgtype = {
+        'info' : {'bgcolor' : '#4ea5cd', 'bordercolor' : '#3b8eb5'},
+        'warning' : {'bgcolor' : '#eaaf51', 'bordercolor' : '#d99a36'},
+        'error' : {'bgcolor' : '#de4343', 'bordercolor' : '#c43d3d'},
+        'success' : {'bgcolor' : '#61b832', 'bordercolor' : '#55a12c'}
+    }
+    var notification = $('#notification_message');
+    
+    //default type to info
+    if (!type || !msgtype[type])
+    {
+        type = 'info';
+    }
+    var html = '<h3>'+type.toUpperCase()+'</h3>'
+    html += '<p>'+msg+'</p>'
+
+    notification.css({'background-color': msgtype[type].bgcolor,'border-color': msgtype[type].bordercolor})
+    notification.html(html);
+    notification.animate({top:"0"}, 500);
+
+    setTimeout("hideNotification(true)",3000);
 }

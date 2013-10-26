@@ -830,9 +830,13 @@ TreeEditor.prototype._createFrame = function () {
     saveJson.innerHTML = 'Save';
     saveJson.style.right = '190px';
     saveJson.onclick = function () {
-        var url = 'general/upload_'+editor.getName().toLowerCase();
+        var name = editor.getName();
+        var url = 'general/upload_'+name.toLowerCase();
         PostInfo(url, editor.getText(), function(response) {
         });
+        //The post is giving an ERROR but it is still saving
+        //Need to fix this so we can actually give an success or error notification
+        showNotification(name+' has been saved to the server.');
     };
     this.menu.appendChild(saveJson);
 
@@ -1151,9 +1155,13 @@ TextEditor.prototype._create = function (container, options, json) {
     saveJson.innerHTML = 'Save';
     saveJson.style.right = '2px';
     saveJson.onclick = function () {
-        var url = 'general/upload_'+me.getName().toLowerCase();
+        var name = me.getName();
+        var url = 'general/upload_'+name.toLowerCase();
         PostInfo(url, me.getText(), function(response) {
         });
+        //The post is giving an ERROR but it is still saving
+        //Need to fix this so we can actually give an success or error notification
+        showNotification(name+' has been saved to the server.');
     };
     this.menu.appendChild(saveJson);
 
@@ -5417,6 +5425,7 @@ SearchBox.prototype._onSearch = function (event, forceSearch) {
         this.results = this.editor.search(text);
         this._setActiveResult(undefined);
 
+        /*
         // display search results
         if (text != undefined) {
             var resultCount = this.results.length;
@@ -5429,6 +5438,7 @@ SearchBox.prototype._onSearch = function (event, forceSearch) {
         else {
             this.dom.results.innerHTML = '';
         }
+        */
     }
 };
 
