@@ -1,0 +1,47 @@
+
+
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+
+#Attack .container:first-child {
+	padding-top: 20px;
+}
+
+#Attack .container h3 {
+	display: inline-block;
+	position: relative;
+	top: -11px;
+	margin-right: 12px;
+}
+
+#Attack .nav {
+	display: inline-block;
+}
+
+.chart img {
+	display: block;
+	margin: auto;
+}
+
+#Chart_Options {
+	border: 1px solid #ddd;
+
+}
+
+#Chart_Options button {
+	width: 100%;
+	font-size: 13px;
+
+}
+
+#ChartInfo {
+	clear: both;
+	margin-top: 24px;
+	text-align: center;
+}
+
+#ChartInfo th {
+	text-align: center;
+}

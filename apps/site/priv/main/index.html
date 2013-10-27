@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
+
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <style>
+            body {
+                padding-top: 50px;
+                padding-bottom: 20px;
+            }
+        </style>
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="css/main.css">
+
+        <script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Barrage server load testing</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="#Officers" data-toggle="tab">OFFICERS (servers)</a></li>
+            <li><a href="#Orders" data-toggle="tab">ORDERS (behaviors and actions)</a></li>
+            <li class="active" ><a href="#Attack" data-toggle="tab">ATTACK (test and results)</a></li>
+          </ul>
+        </div><!--/.navbar-collapse -->
+    </div>
+
+<div class="tab-content">
+<!-- OFFICERS PAGE -->
+  <div class="tab-pane" id="Officers">
+    <div class="container">
+      <div> I am a general </div>
+      <div> I am a commander </div>
+    </div>
+  </div> <!-- end Officers page (server admin setup of generals and officers) -->
+
+
+<!-- ORDERS PAGE -->
+  <div class="tab-pane" id="Orders">
+    <div class="container">
+      <a href="http://www.jsoneditoronline.org/">Json Tool</a> goes here.
+    </div>
+  </div> <!-- end Orders page (the json tool with actions and behaviors) -->
+
+
+<!-- ATTACK PAGE -->
+  <div class="tab-pane active" id="Attack">
+    <!-- Left hand nav to run different tests -->
+    <div class="container">
+      <h3>Run Test</h3>
+     <div class="nav nav-pills">
+        <li class="active"><a href="#">Random</a></li>
+        <li><a href="#">Cookie</a></li>
+        <li><a href="#">Google</a></li>
+        <li><a href="#">Specific Login</a></li>
+        <li><a href="#">KVS Load</a></li>
+        <li><a href="#">KVS Loop</a></li>
+        <li><a href="#">Random Login</a></li>
+        <li><a href="#">Simple Behavior</a></li>
+        <li><a href="#">Simple</a></li>
+    </div>
+    </div>
+
+
+
+    <div class="container">
+
+        <div class="chart">
+          <div id="Chart_Options" class="pull-right panel panel-default">
+              <div class="panel-heading">
+                <h5>Display Options</h5>  
+              </div>
+
+              <div class="panel-body">
+              <form>
+                <div class="radio">
+                  <label>
+                    <input type="radio" name="liveChart"  value="false" checked>
+                    Static Chart
+                  </label>
+                </div>
+                
+                <div class="radio">
+                  <label>
+                    <input type="radio" name="liveChart"  value="true">
+                    Live Chart
+                  </label>
+                </div>
+
+                <div id="chartDisplay">
+                <hr>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox">Data Points
+                    </label>
+                  </div>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox">Median Line
+                    </label>
+                  </div>
+
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox">Mean Line
+                    </label>
+                  </div>
+
+                  <button class="btn btn-default btn-xs"><span class="glyphicons glyphicons-repeat"></span>Refresh Chart</button>
+                </div> <!-- end chartdisplay -->
+
+                </form>
+              </div>
+          </div>
+
+
+          <img src="img/linechart.jpg"></img>
+
+          <div id="ChartInfo">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mean</th>
+                  <th>Median</th>
+                  <th>Min</th>
+                  <th>Max</th>
+                  <th>Total Requests</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>303.232 ms</td>
+                  <td>305.234 ms</td>
+                  <td>124.355 ms</td>
+                  <td>506.234 ms</td>
+                  <td>10</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div> <!-- end ChartInfo -->
+
+    </div> <!-- /container -->
+  </div> <!-- end Attack page -->         
+</div>  <!-- end Tab-Content -->
+    <div style="padding: 0 24px">  
+    <hr>
+
+    <footer>
+      <p>&copy; DeNA 2013</p>
+    </footer>
+  </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+      <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.1.min.js"><\/script>')</script>
+      <script src="js/vendor/bootstrap.min.js"></script>
+      <script src="js/main.js"></script>
+
+      <!-- <script>
+           var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+           (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+           g.src='//www.google-analytics.com/ga.js';
+           s.parentNode.insertBefore(g,s)}(document,'script'));
+      </script> -->
+    </body>
+</html>
