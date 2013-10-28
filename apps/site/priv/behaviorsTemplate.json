@@ -1,0 +1,106 @@
+{
+    "Behavior Root - Basic" :
+    {
+        "name" : "<NODE NAME>",
+        "tree" : 
+        {
+            "<action | behavior>" : "<NAME>"
+        }
+    },
+    "Behavior Root - Ordered" :
+    {
+        "name" : "<NODE NAME>",
+        "tree" : 
+        {
+            "action": "ordered",
+            "args"  :
+            {
+                { "<count | min_time>" : "number | $VAR" }
+            }
+            "children" : []
+        }
+    },
+    
+    "Behavior Root - Random" :
+    {
+        "name" : "<NODE NAME>",
+        "tree" : 
+        {
+            "action": "random | random_ordered",
+            "args"  :
+            {
+                { "<count | min_time>" : "number | $VAR" }
+            }
+            "children" : []
+        }
+
+    },
+    
+    "Behavior Node - User Action" :
+    {
+        "action" : "<USER_ACTION_NAME>"
+    },
+
+    "Behavior Node - Conditional" :
+    {
+        "action"    : "conditional",
+        "args"      : { "<$KVS_VAL_1>" : "<$KVS_VAL_2>" },
+        "children"  : [
+            { "action" : "<VALUE_EQ_ACTION>"},
+            { "action" : "<VALUE_NEQ_ACTION>"}
+        ]
+    },
+    
+    "Behavior Node - kvs set variable" :
+    {
+
+        "action"    : "set_variable",
+        "args"      : 
+        { 
+            "key"   : "<KVS_KEY_NAME>", 
+            "value" : "string | number | $VAR"
+        }
+    },
+    
+    "Behavior Node - kvs inc variable" :
+    {
+        "action"    : "inc_variable",
+        "args"      : { "key"   : "<KVS_KEY_NAME>" }
+    },
+    
+    "Behavior Node - kvs dec variable" :
+    {
+        "action"    : "dec_variable",
+        "args"      : { "key"   : "<KVS_KEY_NAME>" }
+    },
+    "Behavior Node - kvs load file to store" :
+    {
+
+        "action"    : "load_kv_store",
+        "args"      : 
+        { 
+            "kv_store"  : "<STORE_NAME>", 
+            "file"      : "<JSON_FILE_NAME>" 
+        }
+    },
+    "Behavior Node - kvs reads value out of named kv" :
+    {
+        "action"    : "read_named_kv",
+        "args"      : 
+        { 
+            "kv_store"  : "<NAME_OF_KV_STORE>", 
+            "key"       : "<KEY_FROM_KV_STORE_TO_READ>", 
+            "variable"  : "<NAME_OF_VARIABLE_TO_SET>"
+        }
+    },
+    "Behavior Node - kvs random entry from kvs" :
+    {
+        "action"    : "read_random_kv",
+        "args"      : 
+        { 
+            "kv_store"  : "<NAME_OF_KVS>", 
+            "key"       : "<VARIABLE_TO_STORE_KEY>", 
+            "value"     : "<VARIABLE_TO_STORE_VALUE>" 
+        }
+    }
+}

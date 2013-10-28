@@ -76,7 +76,9 @@ routes() ->
         {"/general/upload_behaviors",   handler_http_general, []},
         {"/general/upload_actions",     handler_http_general, []},
         {"/general/behaviors",          handler_http_general, []},
-        {"/general/actions",            handler_http_general, []}
+        {"/general/actions",            handler_http_general, []},
+        {"/general/templates/actions",  handler_http_general, []},
+        {"/general/templates/behaviors",handler_http_general, []}
     ],
     Routes.
 
@@ -191,7 +193,16 @@ handle_named_request(<<"POST">>, <<"/general/upload_actions">>, Req) ->
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"No Body\"}">>,Req)
     end;
-    
+
+
+handle_named_request(<<"GET">>, <<"/general/templates/actions">>, Req) ->
+    {ok, JSON} = application:get_env(general, actions_template), 
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
+
+handle_named_request(<<"GET">>, <<"/general/templates/behaviors">>, Req) ->
+    {ok, JSON} = application:get_env(general, behavior_template), 
+    cowboy_req:reply(200,?HTTP_CONTENT_ENC, JSON, Req);
+
 handle_named_request(_, _, Req) ->
     cowboy_req:reply(405, Req).
 

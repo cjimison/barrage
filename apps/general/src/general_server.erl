@@ -94,15 +94,23 @@ start_link() ->
 init([]) ->
     ActFile         = code:priv_dir(site) ++ "/actions.json",
     BehFile         = code:priv_dir(site) ++ "/behaviors.json",
+    ActTemplate     = code:priv_dir(site) ++ "/actionsTemplate.json",
+    BehTemplate     = code:priv_dir(site) ++ "/behaviorsTemplate.json",
     
     {ok, ActJSON}   = file:read_file(ActFile),
     {ok, BehJSON}   = file:read_file(BehFile),
+    
+    {ok,ActTempJSON}= file:read_file(ActTemplate),
+    {ok,BehTempJSON}= file:read_file(BehTemplate),
 
     Actions         = jiffy:decode(ActJSON),
     Behaviors       = jiffy:decode(BehJSON),
 
     application:set_env(general, actions, Actions),
     application:set_env(general, behaviors, Behaviors),
+
+    application:set_env(general, actions_template,  ActTempJSON),
+    application:set_env(general, behavior_template, BehTempJSON),
 
     load_action_data(Actions),
     load_behavior_data(Behaviors),

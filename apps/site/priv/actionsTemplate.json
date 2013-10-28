@@ -1,0 +1,21 @@
+{
+    "HTTP - Args" :
+    {
+        "name"          : "<ACTION_NAME>",
+        "url"           : "/<URL_FROM_HOST>",
+        "type"          : "<get | post>",
+        "args_type"     : "<http | https>",
+        "args"          : { "<KEY>" : "<VALUE"},
+        "results_type"  : "<json | query_str>",
+        "results"       : { "<RESULTS KEY>" : "<KVS_KEY>" } 
+    },
+    "KVS - Obj Store" :
+    {
+        "name"          : "<ACTION_NAME>",
+        "url"           : "/<URL_FROM_HOST>",
+        "type"          : "<get | post>",
+        "args_type"     : "<http | https>",
+        "args"          : { "<KEY>" : "<VALUE"},
+        "results_type"  : "json_obj"
+    },
+}
