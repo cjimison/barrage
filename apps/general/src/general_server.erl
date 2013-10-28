@@ -100,6 +100,10 @@ init([]) ->
 
     Actions         = jiffy:decode(ActJSON),
     Behaviors       = jiffy:decode(BehJSON),
+
+    application:set_env(general, actions, Actions),
+    application:set_env(general, behaviors, Behaviors),
+
     load_action_data(Actions),
     load_behavior_data(Behaviors),
 

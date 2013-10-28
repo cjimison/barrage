@@ -84,7 +84,8 @@ function rp_IssueOrder(name) {
 	gHideProgressOverlay = false;			
 	var url = "general/issue_order?order=" + encodeURIComponent(name);
 	
-	// Remove any custom graphoptions
+	// Remove ChartInfo and Chart_Options
+	$('.ChartInfo').remove();
 	$('#Chart_Options').remove();
 	// Clear the old graphs out
 	for (chartName in gPlotInfo) {
