@@ -17,5 +17,5 @@
         "args_type"     : "<http | https>",
         "args"          : { "<KEY>" : "<VALUE"},
         "results_type"  : "json_obj"
-    },
+    }
 }
