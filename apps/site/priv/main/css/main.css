@@ -5,6 +5,9 @@
    ========================================================================== */
 
 
+/*
+CSS for Orig Design -- To be implemented
+
 #Attack .container:first-child {
 	padding-top: 20px;
 }
@@ -27,13 +30,11 @@
 
 #Chart_Options {
 	border: 1px solid #ddd;
-
 }
 
 #Chart_Options button {
 	width: 100%;
 	font-size: 13px;
-
 }
 
 #ChartInfo {
@@ -44,4 +45,22 @@
 
 #ChartInfo th {
 	text-align: center;
+}*/
+
+
+#Chart_Toggle {
+	background-color: #f5f5f5;
+	margin-top: 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+#Attack #Chart_Toggle .panel-heading {
+	padding-bottom: 0px;
+	margin-right: 12px;
+}
+
+#Attack #Chart_Toggle > div:last-child {
+	background-color: #fff;
+	padding: 0 15px;
 }
