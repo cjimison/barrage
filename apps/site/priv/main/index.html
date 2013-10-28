@@ -67,7 +67,35 @@
 
 <!-- ATTACK PAGE -->
   <div class="tab-pane active" id="Attack">
+    <div class="container">
+      <div id="Chart_Toggle" class="pull-left">
+        <div class="pull-left panel-heading">
+          <h4>Chart Type</h4>
+        </div>
+        <div class="pull-left">
+          <div class="radio">
+            <label>
+              <input type="radio" name="liveChart" value=false checked>
+              Static 
+            </label>
+          </div>
+          <div class="radio">
+            <label>
+              <input type="radio" name="liveChart" value=true>
+              Realtime
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <iframe id="chartFrame" scrolling="no" style="height:700px;width:100%;" src="../index.html"></iframe>
+    </div>
+
+
+
+    <!-- Orig Design: To be implemented later -->
     <!-- Left hand nav to run different tests -->
+    <!-- 
     <div class="container">
       <h3>Run Test</h3>
      <div class="nav nav-pills">
@@ -129,7 +157,7 @@
                   </div>
 
                   <button class="btn btn-default btn-xs"><span class="glyphicons glyphicons-repeat"></span>Refresh Chart</button>
-                </div> <!-- end chartdisplay -->
+                </div> 
 
                 </form>
               </div>
@@ -161,17 +189,13 @@
             </table>
           </div>
         </div> <!-- end ChartInfo -->
+        <!-- END ORIGIONAL DESIGN -->
 
     </div> <!-- /container -->
+
   </div> <!-- end Attack page -->         
 </div>  <!-- end Tab-Content -->
-    <div style="padding: 0 24px">  
-    <hr>
 
-    <footer>
-      <p>&copy; DeNA 2013</p>
-    </footer>
-  </div>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
       <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.1.min.js"><\/script>')</script>
