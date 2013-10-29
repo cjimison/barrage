@@ -15,8 +15,8 @@
             "action": "ordered",
             "args"  :
             {
-                { "<count | min_time>" : "number | $VAR" }
-            }
+                "<count | min_time>" : "number | $VAR"
+            },
             "children" : []
         }
     },
@@ -29,8 +29,8 @@
             "action": "random | random_ordered",
             "args"  :
             {
-                { "<count | min_time>" : "number | $VAR" }
-            }
+                "<count | min_time>" : "number | $VAR"
+            },
             "children" : []
         }
 
