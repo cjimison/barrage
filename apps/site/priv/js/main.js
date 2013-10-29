@@ -6,18 +6,24 @@ var CONVERTTO = {'milliseconds' : 1/1000};
 
 var DEFAULTPROPERTIES =
 	{
+		seriesColors: [ "#428bca", "#d9534f", "#5cb85c", "#f0ad4e", "#5bc0de", "#dddddd" ],
 		title: "",
 		seriesDefaults: {
 			showMarker: true
 		},
 		axesDefaults: {
-			pad: 0,
+			pad: 1.1,
 			labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
 			tickRenderer:  $.jqplot.CanvasAxisTickRenderer
 		},
 		axes: {
 			xaxis: {
-				label: 'Requests'
+				label: 'Requests',
+				min: 1,
+				tickInterval: 1,
+				tickOptions: {
+					showGridline: false
+				}
 			},
 			yaxis: {
 				label: 'Time (ms)',
@@ -28,6 +34,11 @@ var DEFAULTPROPERTIES =
 								}
 				}
 			}
+		},
+		grid: {
+			drawBorder: false,
+			shadow: false,
+			background: "rgba(0,0,0,0)"
 		},
 		highlighter: {
 			show: true,
@@ -168,13 +179,15 @@ function setDefaultProperties_Calc(chartName)
 								{horizontalLine: {
 									name: 'mean',
 									y: mean,
-									show: false
+									show: false,
+									color: '#c75d5d'
 								}},
 								{horizontalLine: {
 									name: 'median',
 									y: median,
 									show: false,
-									color: 'rgb(66, 98, 144)'
+									color: '#fd9f28'
+									//color: 'rgb(66, 98, 144)'
 								}}
 							]
 						 };
