@@ -30,6 +30,14 @@
  * @version 2.3.3
  * @date    2013-10-17
  */
+
+ /*
+* This has been modified to suit the needs for :DeNA
+* Use on internal server tool, Barrage
+*
+* @editor Hsiang Wong <hwong@dena.com>
+* @date 2013-10-26
+ */
 (function () {
 
 /**
@@ -3535,6 +3543,21 @@ Node.prototype._onDuplicate = function() {
 };
 
 /**
+ * Handle insert before CUSTOM event
+ * @private
+ */
+Node.prototype._onInsertCustom = function () {
+    var node = this;
+    var type = this.editor.getName().toLowerCase();
+    RequestInfo("general/templates/"+type, function(json) {
+        if (!$.isEmptyObject(json))
+        {
+            node._onInsertBefore('', json); 
+        }
+    });
+};
+
+/**
  * Handle insert before event
  * @param {String} [field]
  * @param {*} [value]
@@ -3892,7 +3915,9 @@ Node.TYPE_TITLES = {
         'An array contains an ordered collection of values.',
     'string': 'Field type "string". ' +
         'Field type is not determined from the value, ' +
-        'but always returned as string.'
+        'but always returned as string.',
+    'custom': 'Field type "object". ' +
+        'An object contains an unordered set of key/value pairs.'
 };
 
 /**
@@ -4074,6 +4099,14 @@ Node.prototype.showContextMenu = function (anchor, onClose) {
                     'title': titles.string,
                     'click': function () {
                         node._onInsertBefore('', '', 'string');
+                    }
+                },
+                {
+                    'text': 'Custom',
+                    'className': 'type-object',
+                    'title': titles.custom,
+                    'click': function () {
+                        node._onInsertCustom();
                     }
                 }
             ]
