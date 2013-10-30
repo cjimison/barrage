@@ -46,7 +46,27 @@ CSS for Orig Design -- To be implemented
 #ChartInfo th {
 	text-align: center;
 }*/
+body {
+	padding-top: 72px;
+}
 
+h4 small,
+.navbar-inverse .navbar-brand,
+.navbar-inverse .navbar-brand:hover,
+.navbar-inverse .navbar-brand:focus {
+	color: #737373;
+	cursor: ;
+}
+
+h4.navbar-brand {
+	margin: 0 0;
+	padding-right: 50px;
+
+}
+
+.navbar-nav a {
+	text-align: center;
+}
 
 #Chart_Toggle {
 	background-color: #f5f5f5;
