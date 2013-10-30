@@ -3544,15 +3544,16 @@ Node.prototype._onDuplicate = function() {
 
 /**
  * Handle insert before CUSTOM event
+ * @param {String} [keyname]
  * @private
  */
-Node.prototype._onInsertCustom = function () {
+Node.prototype._onInsertCustom = function (keyname) {
     var node = this;
     var type = this.editor.getName().toLowerCase();
     RequestInfo("general/templates/"+type, function(json) {
         if (!$.isEmptyObject(json))
         {
-            node._onInsertBefore('', json); 
+            node._onInsertBefore('', json[keyname]); 
         }
     });
 };
@@ -3915,9 +3916,7 @@ Node.TYPE_TITLES = {
         'An array contains an ordered collection of values.',
     'string': 'Field type "string". ' +
         'Field type is not determined from the value, ' +
-        'but always returned as string.',
-    'custom': 'Field type "object". ' +
-        'An object contains an unordered set of key/value pairs.'
+        'but always returned as string.'
 };
 
 /**
@@ -4011,6 +4010,17 @@ Node.prototype.showContextMenu = function (anchor, onClose) {
             'type': 'separator'
         });
 
+        // create custom button for items at the first depth in the tree
+        var submenu = this.buildTemplateMenu();
+        if(this.getLevel() === 1 && submenu.length > 0) {
+            items.push({
+                'text': 'Custom',
+                'title': 'Insert a custom object based on the template',
+                'className': 'insert',
+                'submenu': submenu
+            });
+        }
+
         // create append button (for last child node only)
         var childs = node.parent.childs;
         if (node == childs[childs.length - 1]) {
@@ -4099,14 +4109,6 @@ Node.prototype.showContextMenu = function (anchor, onClose) {
                     'title': titles.string,
                     'click': function () {
                         node._onInsertBefore('', '', 'string');
-                    }
-                },
-                {
-                    'text': 'Custom',
-                    'className': 'type-object',
-                    'title': titles.custom,
-                    'click': function () {
-                        node._onInsertCustom();
                     }
                 }
             ]
@@ -4260,6 +4262,34 @@ Node.prototype._escapeJSON = function (text) {
     }
 
     return escaped;
+};
+
+/**
+ * Helper to create the custom menu for the custom context menu.
+ * @return {Object} menu
+ * @private
+ */
+Node.prototype.buildTemplateMenu = function () {
+    var node = this;
+    var menu = [];
+    var type = this.editor.getName().toLowerCase();
+    var properties = function(name) {
+        return {'text' : name,
+                'title': name,
+                'className': 'type-object',
+                'click': function () {
+                            node._onInsertCustom(name);
+                        }
+                }
+    };
+    RequestInfo("general/templates/"+type, function(json) {
+        if (!$.isEmptyObject(json))
+        {
+            for (name in json)
+                menu.push(properties(name));
+        }
+    });
+    return menu;
 };
 
 /**
