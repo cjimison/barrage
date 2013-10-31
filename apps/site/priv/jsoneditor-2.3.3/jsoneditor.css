@@ -496,12 +496,6 @@
 .jsoneditor .menu button.expand-all {
     background-position: 0 -120px;
 }
-.jsoneditor .menu button.saveJSON {
-    background-image: none;
-    width: 45px;
-    position: absolute;
-    /*right is set within the jsoneditor.js file */
-}
 .jsoneditor .menu button.undo {
     background-position: -24px -96px;
 }
@@ -530,6 +524,20 @@
 
 .jsoneditor .menu button.separator {
     margin-left: 10px;
+}
+
+.jsoneditor .menu .fileMenu {
+    position: absolute;
+    /*right is set within the jsoneditor.js file */
+}
+.jsoneditor .menu .fileMenu button {
+    background-image: none;
+}
+.jsoneditor .menu .fileMenu button.uploadJSON {
+    width: 55px;
+}
+.jsoneditor .menu .fileMenu button.saveJSON {
+    width: 45px;
 }
 
 .jsoneditor .menu a {

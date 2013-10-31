@@ -831,22 +831,11 @@ TreeEditor.prototype._createFrame = function () {
         this.dom.modeBox = modeBox;
     }
 
-    // create save button
-    var saveJson = document.createElement('button');
-    saveJson.className = 'saveJSON';
-    saveJson.title = 'Save JSON to server';
-    saveJson.innerHTML = 'Save';
-    saveJson.style.right = '190px';
-    saveJson.onclick = function () {
-        var name = editor.getName();
-        var url = 'general/upload_'+name.toLowerCase();
-        PostInfo(url, editor.getText(), function(response) {
-        });
-        //The post is giving an ERROR but it is still saving
-        //Need to fix this so we can actually give an success or error notification
-        showNotification(name+' has been saved to the server.');
-    };
-    this.menu.appendChild(saveJson);
+    // create file menu
+    var filemenu = createFileMenu(this);
+    filemenu.style.right = '190px';
+    this.menu.appendChild(filemenu);
+    this.dom.filemenu = filemenu;
 
     // create search box
     if (this.options.search) {
@@ -1156,22 +1145,11 @@ TextEditor.prototype._create = function (container, options, json) {
         this.dom.modeBox = modeBox;
     }
 
-    // create save button
-    var saveJson = document.createElement('button');
-    saveJson.className = 'saveJSON';
-    saveJson.title = 'Save JSON to server';
-    saveJson.innerHTML = 'Save';
-    saveJson.style.right = '2px';
-    saveJson.onclick = function () {
-        var name = me.getName();
-        var url = 'general/upload_'+name.toLowerCase();
-        PostInfo(url, me.getText(), function(response) {
-        });
-        //The post is giving an ERROR but it is still saving
-        //Need to fix this so we can actually give an success or error notification
-        showNotification(name+' has been saved to the server.');
-    };
-    this.menu.appendChild(saveJson);
+    // create file menu
+    var filemenu = createFileMenu(this);
+    filemenu.style.right = '2px';
+    this.menu.appendChild(filemenu);
+    this.dom.filemenu = filemenu;
 
     this.content = document.createElement('div');
     this.content.className = 'outer';
@@ -4010,15 +3988,32 @@ Node.prototype.showContextMenu = function (anchor, onClose) {
             'type': 'separator'
         });
 
-        // create custom button for items at the first depth in the tree
+        // Only build the submenu if there are any items in the submenu
         var submenu = this.buildTemplateMenu();
-        if(this.getLevel() === 1 && submenu.length > 0) {
-            items.push({
-                'text': 'Custom',
-                'title': 'Insert a custom object based on the template',
-                'className': 'insert',
-                'submenu': submenu
-            });
+        if (submenu.length > 0)
+        {
+            // We only want this custom menu at the first level in the ACTIONS type JSON
+            if(this.editor.getName().toLowerCase() === 'actions')
+            {
+                if(this.getLevel() === 1)
+                {
+                    items.push({
+                        'text': 'Custom',
+                        'title': 'Insert a custom object based on the template',
+                        'className': 'insert',
+                        'submenu': submenu
+                    });
+                }
+            }
+            else
+            {
+                items.push({
+                    'text': 'Custom',
+                    'title': 'Insert a custom object based on the template',
+                    'className': 'insert',
+                    'submenu': submenu
+                });
+            }
         }
 
         // create append button (for last child node only)
@@ -4266,7 +4261,7 @@ Node.prototype._escapeJSON = function (text) {
 
 /**
  * Helper to create the custom menu for the custom context menu.
- * @return {Object} menu
+ * @return [Array.{Object}] menu
  * @private
  */
 Node.prototype.buildTemplateMenu = function () {
@@ -5163,6 +5158,59 @@ History.prototype.redo = function () {
         this.onChange();
     }
 };
+
+/**
+ * create a file menu buttons to be used in the editor menu's
+ * @param {JSONEditor} editor
+ * @returns {HTMLElement} menu
+ */
+function createFileMenu(editor) {
+    var menu = document.createElement('div');
+    menu.className = 'fileMenu';
+
+    // create open button
+    var uploadJson = document.createElement('button');
+    uploadJson.className = 'uploadJSON';
+    uploadJson.title = 'Upload '+editor.getName()+' JSON to server';
+    uploadJson.innerHTML = 'Upload';
+    uploadJson.onclick = function () {
+        ClickAdjustInputFile(editor.getName().toLowerCase());
+    };
+    menu.appendChild(uploadJson);
+
+/*
+    // create dropdown save button
+    var saveDropdown = document.createElement('a');
+    saveDropdown.className = 'saveJSONDropdown';
+    saveDropdown.innerHTML = 'Save ▼';
+    menu.appendChild(saveDropdown);
+
+    var ul = document.createElement('ul');
+    ul.className = "saveSubmenu"
+    var li = document.createElement('li');
+    li.innerHTML = '<a id="SavetoDisk" title="Save file to disk">To File</a>';
+    ul.appendChild(li);
+    li.innerHTML = '<a id="SavetoServer" title="Save file to server">To Server</a>';
+    ul.appendChild(li);
+    menu.appendChild(ul);    
+*/
+    // create save button
+    var saveJson = document.createElement('button');
+    saveJson.className = 'saveJSON';
+    saveJson.title = 'Save JSON to server';
+    saveJson.innerHTML = 'Save';
+    saveJson.onclick = function () {
+        var url = 'general/upload_'+editor.getName().toLowerCase();
+        PostInfo(url, editor.getText(), function(response) {
+        });
+        //The post is giving an ERROR but it is still saving
+        //Need to fix this so we can actually give a proper success or error notification
+        showNotification(name+' has been saved to the server.');
+    };
+    menu.appendChild(saveJson);
+
+    return menu;
+}
 
 /**
  * create a mode box to be used in the editor menu's
