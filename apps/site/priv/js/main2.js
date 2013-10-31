@@ -6,6 +6,7 @@ var CONVERTTO = {'milliseconds' : 1/1000};
 var MICRO_TO_MILLI = 1/1000;
 var DEFAULTPROPERTIES =
 {
+    seriesColors: [ "#428bca", "#d9534f", "#5cb85c", "#f0ad4e", "#5bc0de", "#dddddd" ],
     title: "",
     seriesDefaults:
     {
@@ -52,14 +53,10 @@ $(document).ready(function()
     {
         if (!$.isEmptyObject(orders))
         {
-            $("#main").append('<div id="Request_Plot">');
+            $("#main").append('<div id="Request_Plot" class="nav nav-pills nav-stacked">');
             for (var i = 0; i < orders.length; ++i)
             {
-                $("#Request_Plot").append('<input type=\"button\" value=\"'+ 
-                                            orders[i] +
-                                            '\" onclick=\"rp_IssueOrder(\''+ 
-                                            orders[i] +
-                                            '\');\" >');
+                $("#Request_Plot").append('<li><a onclick=\"rp_IssueOrder(\''+ orders[i] +'\');\">'+ orders[i] +'</a></li>');
             }
             $("input[type=button]").button(); //Apply jquery-ui for buttons
         }
@@ -114,7 +111,9 @@ function rp_IssueOrder(name)
                 window.location.port+
                 "/general/streaming";
     
-    // Remove any custom graphoptions
+    // Remove any custom graphoptions and update the nav
+    $('li').removeClass('active');
+    $("a:contains('" + name + "')").parent().addClass('active');
     $('#Chart_Options').remove();
     // Clear the old graphs out
     for (var oldName in gPlotInfo)
@@ -214,7 +213,7 @@ function rp_IssueOrder(name)
             }
             else
             {
-                $("#main").append('<div id="'+section+'">');
+                $("#main").append('<div class="ChartContainer" id="'+section+'">');
                 $("#"+section).append('<canvas id="'+chartName+'" width="1000" height="250">[No canvas support]</canvas>');
                 
                 var graphr =
@@ -466,7 +465,7 @@ function getSummary(plotName, chartName)
     var mean = roundTo(calcMean(data) * CONVERTTO.milliseconds, 1000) + ' ms';
     var median = roundTo(calcMedian(data) * CONVERTTO.milliseconds, 1000) + ' ms';
     
-    var summaryhtml = '<table class=\"ChartInfo\">';
+    var summaryhtml = '<table class=\"ChartInfo table\">';
     summaryhtml += '<caption>'+ plotName +'<\/caption>';
     summaryhtml += '<thead><tr id="lable_row_'+chartName+'">';
     summaryhtml +=  '<th>Total Requests<\/th>';
