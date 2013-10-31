@@ -50,13 +50,14 @@ var DEFAULTPROPERTIES =
 
 $(document).ready(function() {
 	fartscroll();
+
 	RequestInfo("general/orders", function(orders) {
 		if (!$.isEmptyObject(orders))
 		{
-			$("#main").append('<div id="Request_Plot">');
+			$("#main").append('<div id="Request_Plot" class="nav nav-pills nav-stacked">');
 			for (var i = 0; i < orders.length; ++i)
 			{
-				$("#Request_Plot").append('<input type=\"button\" value=\"'+ orders[i] +'\" onclick=\"rp_IssueOrder(\''+ orders[i] +'\');\" >');
+				$("#Request_Plot").append('<li><a onclick=\"rp_IssueOrder(\''+ orders[i] +'\');\">'+ orders[i] +'</a></li>');
 			}
 			$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
@@ -95,7 +96,9 @@ function rp_IssueOrder(name) {
 	gHideProgressOverlay = false;			
 	var url = "general/issue_order?order=" + encodeURIComponent(name);
 	
-	// Remove ChartInfo and Chart_Options
+	// Remove ChartInfo and Chart_Options update Nav
+	$('li').removeClass('active');
+	$("a:contains('" + name + "')").parent().addClass('active');
 	$('.ChartInfo').remove();
 	$('#Chart_Options').remove();
 	// Clear the old graphs out
@@ -113,12 +116,12 @@ function rp_IssueOrder(name) {
 			{
 				var section = 'IDX'+idx;
 				var chartName = section+'_Chart';
-				$("#main").append('<div id="'+section+'">');
+				$("#main").append('<div class=\"ChartContainer\" id="'+section+'">');
 				$("#"+section).append('<div id="'+chartName+'">');
 				
 				gPlotInfo[chartName] = {"plot": null, "data" : [], "properties" : {}};
 				
-				DEFAULTPROPERTIES.title = plot;
+				//DEFAULTPROPERTIES.title = plot;
 				
 				gPlotInfo[chartName].data = data[plot];
 				gPlotInfo[chartName].properties = $.extend(true, setDefaultProperties_Calc(chartName), DEFAULTPROPERTIES);
@@ -128,13 +131,13 @@ function rp_IssueOrder(name) {
 				++idx;
 			}
 		
-			$("#main").append('<div id="Chart_Options">');
-			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\">');
-			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Mean Line\" onclick=\"co_ToggleHorizontalLine(\'mean\')\">');
-			$("#Chart_Options").append('<input type=\"button\" value=\"Toggle Median Line\" onclick=\"co_ToggleHorizontalLine(\'median\')\">');
-			$("#Chart_Options").append('<input type=\"button\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\">');
+			$("#main").prepend('<div id="Chart_Options">');
+			$("#Chart_Options").append('<input type=\"button\" class=\"btn btn-default btn-xs\" value=\"Toggle Data Points\" onclick=\"co_ToggleMarkers()\">');
+			$("#Chart_Options").append('<input type=\"button\" class=\"btn btn-default btn-xs\" value=\"Toggle Mean Line\" onclick=\"co_ToggleHorizontalLine(\'mean\')\">');
+			$("#Chart_Options").append('<input type=\"button\" class=\"btn btn-default btn-xs\" value=\"Toggle Median Line\" onclick=\"co_ToggleHorizontalLine(\'median\')\">');
+			$("#Chart_Options").append('<input type=\"button\" class=\"btn btn-default btn-xs\" value=\"Redraw Chart(s)\" onclick=\"co_RedrawCharts()\">');
 			//$("#Chart_Options").append('<input type=\"button\" value=\"Save Chart(s)\" onclick=\"co_SaveCharts()\">');
-			$("input[type=button]").button();		//Apply jquery-ui for buttons
+			//$("input[type=button]").button();		//Apply jquery-ui for buttons
 		}
 		else
 		{
@@ -242,8 +245,8 @@ function getSummary(plotName, chartName)
 	var mean = roundTo(calcMean(data) * CONVERTTO.milliseconds, 1000) + ' ms';
 	var median = roundTo(calcMedian(data) * CONVERTTO.milliseconds, 1000) + ' ms';
 	
-	var summaryhtml = '<table class=\"ChartInfo\">';
-	summaryhtml += '<caption>'+ plotName +'<\/caption>';
+	var summaryhtml = '<table class=\"ChartInfo table table-condensed\">';
+	// summaryhtml += '<caption>'+ plotName +'<\/caption>';
 	summaryhtml += '<thead><tr>';
 	summaryhtml +=  '<th>Total Requests<\/th>';
 	summaryhtml +=  '<th>High<\/th>';

@@ -1,4 +1,5 @@
-$('input:radio[name=liveChart]').change(function() {
+	$('input:radio[name=liveChart]').change(function() {
+		console.log("radio changed");
 	if ( $('input:radio[name=liveChart]:checked').val() === "true" ) {
 		$('#chartFrame').prop( 'src', "../index2.html" );
 	}
@@ -6,7 +7,6 @@ $('input:radio[name=liveChart]').change(function() {
 		$('#chartFrame').prop( 'src', "../index.html" );
 	}
 });
-
 
 
 // $(document).ready(function() {

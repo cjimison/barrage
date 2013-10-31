@@ -13,7 +13,6 @@
         <link rel="stylesheet" href="css/bootstrap.min.css">
         <style>
             body {
-                padding-top: 50px;
                 padding-bottom: 20px;
             }
             iframe {
@@ -24,12 +23,26 @@
         <link rel="stylesheet" href="css/main.css">
 
         <script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+
+        <script type="text/javascript" src="../dist/jquery.min.js"></script>
+        <script type="text/javascript" src="../dist/jquery.jqplot.min.js"></script>
+        <script type="text/javascript" src="../dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
+        <script type="text/javascript" src="../dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+        <script type="text/javascript" src="../dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+        <script type="text/javascript" src="../dist/plugins/jqplot.canvasOverlay.min.js"></script>
+        <script type="text/javascript" src="../dist/plugins/jqplot.highlighter.min.js"></script>
+        
+        <script type="text/javascript" src="../js/main.js"></script>
+        <script type="text/javascript" src="../js/jquery.blockUI.js"></script>
+        <script type="text/javascript" src="../js/jq.stopwatch.js"></script>
+        <script type="text/javascript" src="../js/jquery-ui-1.10.2.js"></script>
+        <script type="text/javascript" src="../js/fartscroll.js"></script>
     </head>
     <body>
         <!--[if lt IE 7]>
             <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
         <![endif]-->
-    <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar navbar-inverse navbar-static-top">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="icon-bar"></span>
@@ -42,7 +55,7 @@
           <ul class="nav navbar-nav">
             <li><a href="#Officers" data-toggle="tab">OFFICERS<br><small>Network Setup</small></a></li>
             <li><a href="#Orders" data-toggle="tab">ORDERS<br><small>Behaviors and Actions</small></a></li>
-            <li class="active" ><a href="#Attack" data-toggle="tab">ATTACK<br><small>Test Results</small></a></li>
+            <li class="active" ><a href="#Attack" data-toggle="tab">Execute<br><small>Test Results</small></a></li>
           </ul>
         </div><!--/.navbar-collapse -->
     </div>
@@ -67,7 +80,7 @@
 
 <!-- ATTACK PAGE -->
   <div class="tab-pane active" id="Attack">
-    <div class="container">
+    <div>
       <div id="Chart_Toggle" class="pull-left">
         <div class="pull-left panel-heading">
           <h4>Chart Type</h4>
@@ -88,9 +101,8 @@
         </div>
       </div>
 
-      <div class="container">
+
       <iframe id="chartFrame" scrolling="no" style="height:800px;width:100%;" src="../index.html"></iframe>
-       </div>
 
 
     <!-- Orig Design: To be implemented later -->

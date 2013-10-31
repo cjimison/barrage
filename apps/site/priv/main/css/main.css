@@ -46,9 +46,6 @@ CSS for Orig Design -- To be implemented
 #ChartInfo th {
 	text-align: center;
 }*/
-body {
-	padding-top: 72px;
-}
 
 h4 small,
 .navbar-inverse .navbar-brand,
@@ -65,6 +62,39 @@ h4.navbar-brand {
 }
 
 .navbar-nav a {
+	text-align: center;
+}
+
+#Attack {
+	margin: 0 20px;
+}
+
+#Request_Plot {
+	float: left;
+	width: 17%;
+}
+
+#Chart_Options {
+	float: right;
+	margin-bottom: 24px;
+}
+
+#Chart_Options .btn {
+	margin: 0 4px;
+
+}
+
+.ChartContainer {
+	float: left;
+	width: 83%;
+	padding-left: 50px;
+}
+
+.ChartInfo {
+	text-align: center;
+}
+
+.ChartInfo th{
 	text-align: center;
 }
 
