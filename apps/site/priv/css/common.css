@@ -6,15 +6,27 @@ html {
 	margin-bottom: 50px;
 }
 
+#modify {
+	width: 145px;
+	display: inline-block;
+	padding-left: 34px;
+
+}
+
+#GeneralCommanders {
+	width: 60%;
+}
+
 table {
 	font-family:Arial, Helvetica, sans-serif;
 	color:#666;
 	font-size:12px;
 	text-shadow: 1px 1px 0px #fff;
 	background:#eaebec;
-	margin:20px;
+	margin-top: 20px;
 	border:#ccc 1px solid;
 	border-spacing: 0;
+	border-collapse: initial;
 
 	-moz-border-radius:3px;
 	-webkit-border-radius:3px;
@@ -33,6 +45,7 @@ table th {
 	background: #ededed;
 	background: -webkit-gradient(linear, left top, left bottom, from(#ededed), to(#ebebeb));
 	background: -moz-linear-gradient(top,  #ededed,  #ebebeb);
+	text-align: center;
 }
 
 table tr{

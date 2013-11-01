@@ -9,7 +9,7 @@ $(document).ready(function() {
 	fartscroll();
 	SetInfo();
 	
-	$("input[type=button]").button();		//Apply jquery-ui for buttons
+	//$("input[type=button]").button();		//Apply jquery-ui for buttons
 	//Apply jquery-ui for confirmation dialog
 	$( "#dialog-confirm" ).dialog({
 		autoOpen: false,
@@ -50,7 +50,7 @@ function SetInfo() {
 														</tr>');
 		}
 		
-		$("input[type=button]").button();		//Apply jquery-ui for buttons  //Needs to reapply because of the RequestInfo		
+		//$("input[type=button]").button();		//Apply jquery-ui for buttons  //Needs to reapply because of the RequestInfo		
 		$("span.toggle").show();
 		$("input.toggle").hide();
 		$("input.showfirst").show();
@@ -115,7 +115,7 @@ function pd_showUploadButtons(show) {
 		$("#Post_Data").append('<div id="Upload_Buttons">');
 		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Behaviors\" onclick=\"pd_PostTo(\''+POSTURLS[0]+'\')\" >');
 		$("#Upload_Buttons").append('<input type=\"button\" value=\"Upload Actions\" onclick=\"pd_PostTo(\''+POSTURLS[1]+'\')\" >');
-		$("input[type=button]").button();		//Apply jquery-ui for buttons
+		//$("input[type=button]").button();		//Apply jquery-ui for buttons
 	}
 }
 

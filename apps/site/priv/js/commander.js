@@ -9,7 +9,7 @@ var POSTCOMMANDURLS = {
 $(document).ready(function() {
 	fartscroll();
 	SetInfo();
-	$("input[type=button]").button();		//Apply jquery-ui for buttons
+	//$("input[type=button]").button();		//Apply jquery-ui for buttons
 });
 
 function SetInfo() {

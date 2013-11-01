@@ -5,6 +5,7 @@
 		<style type="text/css" title="currentStyle">
 			@import "dist/jquery.jqplot.min.css";
 			@import "css/smoothness/jquery-ui-1.10.2.css";
+			@import "css/bootstrap/css/bootstrap.min.css";
 			@import "css/common.css";
 		</style>
 		
@@ -21,31 +22,30 @@
 			<div>
 				<label>Commander Name:</label>
 				<span id="CommanderName"></span>
+				<div id="modify">
+					<input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='CommanderAction("disconnect")'/>
+					<input type="button" class="btn btn-primary btn-xs toggle" value="Connect" onclick='CommanderAction("connect")'/>
+				</div>
 			</div>
 			<div>
 				<label for="input_GeneralName">General Name:</label>
 				<span id="GeneralName" class="toggle"></span>
 				<input id="input_GeneralName" class="toggle" type="text"/>
-				<input type="button" class="toggle" value="set" onclick='PostData("input_GeneralName");'/>
+				<input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostData("input_GeneralName");'/>
 			</div>
 			<div>
 				<label for="input_NetworkName">Network Name:</label>
 				<span id="NetworkName" class="toggle"></span>
 				<input id="input_NetworkName" class="toggle" type="text"/>
-				<input type="button" class="toggle" value="set" onclick='PostData("input_NetworkName");'/>
+				<input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostData("input_NetworkName");'/>
 			</div>
 			<div>
 				<label for="input_NumOfGunners">Num. of Gunners:</label>
 				<span id="NumOfGunners" class="toggle"></span>
 				<input id="input_NumOfGunners" class="toggle" type="text"/>
-				<input type="button" class="toggle" value="set" onclick='PostData("input_NumOfGunners");'/>
+				<input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostData("input_NumOfGunners");'/>
 			</div>
 		</div>
-		
-		<div style="width: 300px; text-align: right;">
-			<input type="button" class="toggle showfirst" value="Disconnect" onclick='CommanderAction("disconnect")'/>
-			<input type="button" class="toggle" value="Connect" onclick='CommanderAction("connect")'/>
-		</div>
-	</body>
+		</body>
 
 </html>
