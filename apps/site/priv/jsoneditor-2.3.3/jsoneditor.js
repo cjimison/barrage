@@ -5165,49 +5165,54 @@ History.prototype.redo = function () {
  * @returns {HTMLElement} menu
  */
 function createFileMenu(editor) {
+    var jsonName = editor.getName();
+
     var menu = document.createElement('div');
     menu.className = 'fileMenu';
 
-    // create open button
+    // create upload button
     var uploadJson = document.createElement('button');
     uploadJson.className = 'uploadJSON';
-    uploadJson.title = 'Upload '+editor.getName()+' JSON to server';
+    uploadJson.title = 'Upload '+jsonName+' JSON to server';
     uploadJson.innerHTML = 'Upload';
     uploadJson.onclick = function () {
-        ClickAdjustInputFile(editor.getName().toLowerCase());
+        ClickAdjustInputFile(jsonName.toLowerCase());
     };
     menu.appendChild(uploadJson);
 
-/*
-    // create dropdown save button
-    var saveDropdown = document.createElement('a');
-    saveDropdown.className = 'saveJSONDropdown';
-    saveDropdown.innerHTML = 'Save ▼';
-    menu.appendChild(saveDropdown);
-
-    var ul = document.createElement('ul');
-    ul.className = "saveSubmenu"
-    var li = document.createElement('li');
-    li.innerHTML = '<a id="SavetoDisk" title="Save file to disk">To File</a>';
-    ul.appendChild(li);
-    li.innerHTML = '<a id="SavetoServer" title="Save file to server">To Server</a>';
-    ul.appendChild(li);
-    menu.appendChild(ul);    
-*/
-    // create save button
-    var saveJson = document.createElement('button');
-    saveJson.className = 'saveJSON';
-    saveJson.title = 'Save JSON to server';
-    saveJson.innerHTML = 'Save';
-    saveJson.onclick = function () {
-        var url = 'general/upload_'+editor.getName().toLowerCase();
-        PostInfo(url, editor.getText(), function(response) {
-        });
-        //The post is giving an ERROR but it is still saving
-        //Need to fix this so we can actually give a proper success or error notification
-        showNotification(name+' has been saved to the server.');
+    // create save button with dropdown
+    var items = [
+        {
+            'text': 'To Local File',
+            'className': 'saveTo Disk',
+            'title': 'Save JSON to disk',
+            'click': function () {
+                saveTextAsFile(editor.getText(), jsonName+'.json');
+            }
+        },
+        {
+            'text': 'To Server',
+            'className': 'saveTo Server',
+            'title': 'Save JSON to server',
+            'click': function () {
+                var url = 'general/upload_'+jsonName.toLowerCase();
+                PostInfo(url, editor.getText(), function(response) {
+                });
+                //The post is giving an ERROR but it is still saving
+                //Need to fix this so we can actually give a proper success or error notification
+                showNotification(jsonName+' has been saved to the server.');
+            }
+        }
+    ]
+    var saveDropdown = document.createElement('button');
+    saveDropdown.className = 'saveJSON';
+    saveDropdown.title = 'Save JSON to...';
+    saveDropdown.innerHTML = 'Save &#x25BE;';
+    saveDropdown.onclick = function () {
+        var savemenu = new ContextMenu(items);
+        savemenu.show(saveDropdown);
     };
-    menu.appendChild(saveJson);
+    menu.appendChild(saveDropdown);
 
     return menu;
 }

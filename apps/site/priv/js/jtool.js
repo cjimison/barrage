@@ -118,6 +118,20 @@ function PostInfo(url, data, callback) {
     });
 }
 
+function saveTextAsFile(textToWrite, fileNameToSaveAs)
+{
+    var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+
+    var downloadLink = document.createElement("a");
+    downloadLink.download = fileNameToSaveAs;
+    downloadLink.innerHTML = "Download File";
+
+    // Chrome allows the link to be clicked without actually adding it to the DOM.
+    downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+
+    downloadLink.click();
+}
+
 function hideNotification(animate)
 {
     var notification = $('#notification_message');

@@ -447,6 +447,10 @@
     width: 6px;
 }
 
+.jsoneditor-contextmenu button.saveTo > .icon {
+    background-image: none;
+    width: 6px;
+}
 
 .jsoneditor .menu {
     width: 100%;
@@ -532,12 +536,9 @@
 }
 .jsoneditor .menu .fileMenu button {
     background-image: none;
-}
-.jsoneditor .menu .fileMenu button.uploadJSON {
-    width: 55px;
-}
-.jsoneditor .menu .fileMenu button.saveJSON {
-    width: 45px;
+    width: auto;
+    padding-left: 6px;
+    padding-right: 6px;
 }
 
 .jsoneditor .menu a {
