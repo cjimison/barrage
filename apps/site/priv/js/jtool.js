@@ -48,7 +48,7 @@ function ClickAdjustInputFile(type)
         {
             if(file.type.indexOf('json') === -1)
             {
-                showNotification('<i>'+file.name+'</i> - Only JSON files can be uploaded.');
+                showNotification('<i>'+file.name+'</i> - Only JSON files can be imported.');
             }
             else
             {

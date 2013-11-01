@@ -5170,15 +5170,15 @@ function createFileMenu(editor) {
     var menu = document.createElement('div');
     menu.className = 'fileMenu';
 
-    // create upload button
-    var uploadJson = document.createElement('button');
-    uploadJson.className = 'uploadJSON';
-    uploadJson.title = 'Upload '+jsonName+' JSON to server';
-    uploadJson.innerHTML = 'Upload';
-    uploadJson.onclick = function () {
+    // create import button
+    var importJson = document.createElement('button');
+    importJson.className = 'importJson';
+    importJson.title = 'Import '+jsonName+' JSON to server';
+    importJson.innerHTML = 'Import';
+    importJson.onclick = function () {
         ClickAdjustInputFile(jsonName.toLowerCase());
     };
-    menu.appendChild(uploadJson);
+    menu.appendChild(importJson);
 
     // create save button with dropdown
     var items = [
