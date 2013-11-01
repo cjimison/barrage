@@ -1,5 +1,5 @@
 {
-    "Behavior Root - Basic" :
+    "Root - Basic" :
     {
         "name" : "<NODE NAME>",
         "tree" : 
@@ -7,7 +7,7 @@
             "<action | behavior>" : "<NAME>"
         }
     },
-    "Behavior Root - Ordered" :
+    "Root - Ordered" :
     {
         "name" : "<NODE NAME>",
         "tree" : 
@@ -21,7 +21,7 @@
         }
     },
     
-    "Behavior Root - Random" :
+    "Root - Random" :
     {
         "name" : "<NODE NAME>",
         "tree" : 
@@ -36,12 +36,12 @@
 
     },
     
-    "Behavior Node - User Action" :
+    "Node - User Action" :
     {
         "action" : "<USER_ACTION_NAME>"
     },
 
-    "Behavior Node - Conditional" :
+    "Node - Conditional" :
     {
         "action"    : "conditional",
         "args"      : { "<$KVS_VAL_1>" : "<$KVS_VAL_2>" },
@@ -51,7 +51,7 @@
         ]
     },
     
-    "Behavior Node - kvs set variable" :
+    "Node - kvs set variable" :
     {
 
         "action"    : "set_variable",
@@ -62,18 +62,18 @@
         }
     },
     
-    "Behavior Node - kvs inc variable" :
+    "Node - kvs inc variable" :
     {
         "action"    : "inc_variable",
         "args"      : { "key"   : "<KVS_KEY_NAME>" }
     },
     
-    "Behavior Node - kvs dec variable" :
+    "Node - kvs dec variable" :
     {
         "action"    : "dec_variable",
         "args"      : { "key"   : "<KVS_KEY_NAME>" }
     },
-    "Behavior Node - kvs load file to store" :
+    "Node - kvs load file to store" :
     {
 
         "action"    : "load_kv_store",
@@ -83,7 +83,7 @@
             "file"      : "<JSON_FILE_NAME>" 
         }
     },
-    "Behavior Node - kvs reads value out of named kv" :
+    "Node - kvs reads value out of named kv" :
     {
         "action"    : "read_named_kv",
         "args"      : 
@@ -93,7 +93,7 @@
             "variable"  : "<NAME_OF_VARIABLE_TO_SET>"
         }
     },
-    "Behavior Node - kvs random entry from kvs" :
+    "Node - kvs random entry from kvs" :
     {
         "action"    : "read_random_kv",
         "args"      : 

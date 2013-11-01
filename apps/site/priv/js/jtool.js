@@ -1,3 +1,6 @@
+var JSONEDITOR_BEHAVIORS;
+var JSONEDITOR_ACTIONS;
+
 $(document).ready(function() {
     hideNotification();
     $('#notification_message').click(function(){           
@@ -30,9 +33,61 @@ $(document).ready(function() {
         }
     });
 
-    var editor_behaviors = new jsoneditor.JSONEditor(container_behaviors, $.extend(options,{name:'Behaviors'}), json_behaviors);
-    var editor_actions = new jsoneditor.JSONEditor(container_actions, $.extend(options,{name:'Actions'}), json_actions);
+    JSONEDITOR_BEHAVIORS = new jsoneditor.JSONEditor(container_behaviors, $.extend(options,{name:'Behaviors'}), json_behaviors);
+    JSONEDITOR_ACTIONS = new jsoneditor.JSONEditor(container_actions, $.extend(options,{name:'Actions'}), json_actions);
 });
+
+function ClickAdjustInputFile(type)
+{
+    var fileInput = document.getElementById('inputfile');
+    fileInput.click();
+
+    var changeaction = function() {
+        var file = fileInput.files[0];
+        if (file)
+        {
+            if(file.type.indexOf('json') === -1)
+            {
+                showNotification('<i>'+file.name+'</i> - Only JSON files can be imported.');
+            }
+            else
+            {
+                var reader = new FileReader();
+                // If we use onloadend, we need to check the readyState.
+                reader.onloadend = function(evt) {
+                    if (evt.target.readyState == FileReader.DONE) { // DONE == 2
+                        var data = evt.target.result;
+                        var url = 'general/upload_'+type.toLowerCase();
+                        PostInfo(url, data, function(response) {
+                        });
+                        //The post is giving an ERROR but it is still saving
+                        //Need to fix this so we can actually give a proper success or error notification
+                        ReloadJson(type);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+    };
+
+    fileInput.onchange = changeaction;
+    fileInput.value = "";       // This clears the file to allow the onchange to execute if the user selects the same file again
+}
+
+function ReloadJson(type)
+{
+    editor = eval('JSONEDITOR_'+type.toUpperCase());
+    RequestInfo("general/"+type, function(json) {
+        if (!$.isEmptyObject(json))
+        {
+            editor.set(json);
+            if (editor.options.mode === 'tree')
+            {
+                editor.expandAll();
+            }
+        }
+    });
+}
 
 
 function RequestInfo(url, callback) {
@@ -61,6 +116,20 @@ function PostInfo(url, data, callback) {
             console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
         }
     });
+}
+
+function saveTextAsFile(textToWrite, fileNameToSaveAs)
+{
+    var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+
+    var downloadLink = document.createElement("a");
+    downloadLink.download = fileNameToSaveAs;
+    downloadLink.innerHTML = "Download File";
+
+    // Chrome allows the link to be clicked without actually adding it to the DOM.
+    downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+
+    downloadLink.click();
 }
 
 function hideNotification(animate)
