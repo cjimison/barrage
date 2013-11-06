@@ -1,0 +1,47 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script type="text/javascript" src="../libraries/RGraph.common.core.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.common.csv.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.cornergauge.js" ></script>
+    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
+    
+    <title>A CornerGauge chart using the CSV reader</title>
+
+    <meta name="description" content="A CornerGauge chart using the CSV reader" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A CornerGauge chart using the CSV reader</h1>
+
+    <div style="background-color: #ffc; border: 2px solid #cc0; border-radius: 5px; padding: 5px;">
+        <b>Note:</b>
+        For browser security reasons the AJAX demos don't work offline. You can view the demos on the RGraph website here:
+        <a href="http://www.rgraph.net/demos/" target="_blank" rel="nofollow">http://www.rgraph.net/demos</a>
+    </div>
+    <canvas id="cvs" width="350" height="350">[No canvas support]</canvas>
+    
+    <script>
+        window.onload = function ()
+        {
+            RGraph.CSV('/sample.csv', function (csv)
+            {
+                // Fetch the first three columns to use as labels and the left/right data
+                var row = csv.getRow(0);
+                
+                var cornergauge = new RGraph.CornerGauge('cvs', 0,10,row[1])
+                    .Set('value.text.units.post', 'Kg')
+                    .Draw();
+            })
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

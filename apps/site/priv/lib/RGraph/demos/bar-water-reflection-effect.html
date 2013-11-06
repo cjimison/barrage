@@ -1,0 +1,85 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.bar.js" ></script>
+    
+    <title>A Bar charts with a reflection effect</title>
+    
+    <meta name="description" content="" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+        
+    <h1>A Bar charts with a reflection effect</h1>
+    
+    <p>
+        This demo uses two canvas tags - one for the chart and one for the reflection.
+    </p>
+
+    <canvas id="cvs1" width="600" height="250">[No canvas support]</canvas><br />
+    <canvas id="cvs2" width="600" height="250">[No canvas support]</canvas>
+
+    <script>
+        window.onload = function ()
+        {
+            function Draw(id)
+            {
+                var bar = new RGraph.Bar(id, [[45,60],[65,30],[40,80],[62,48]])
+                    .Set('labels', ['Luis', 'Kevin', 'John', 'Gregory'])
+                    .Set('ymax', 100)
+                    .Set('strokestyle', 'white')
+                    .Set('linewidth', 2)
+                    .Set('shadow', true)
+                    .Set('shadow.offsetx', 0)
+                    .Set('shadow.offsety', 0)
+                    .Set('shadow.blur', 10)
+                    .Set('hmargin.grouped', 2)
+                    .Set('units.pre', '£')
+                    .Set('gutter.bottom', 20)
+                    .Set('gutter.left', 40)
+                    .Set('gutter.right', 15)
+                    .Set('colors', ['Gradient(white:rgba(255, 176, 176, 0.5))','Gradient(white:rgba(153, 208, 249,0.5))'])
+                    .Set('background.grid.autofit.numhlines', 5)
+                    .Set('background.grid.autofit.numvlines', 4)
+                    .Draw();
+                
+                return bar;
+            }
+            
+            Draw('cvs1');
+            
+            /**
+            * Draw the reflection (after inverting the canvas)
+            */
+            var co = document.getElementById("cvs2").getContext('2d');
+            co.setTransform(1,0,0,-1,0,250);
+            
+            Draw('cvs2');
+            
+            /**
+            * Reset the transformation
+            */
+            co.setTransform(1,0,0,1,0,0);
+
+            /**
+            * Now draw a graduated white rect over the reflection
+            */
+            var grad = co.createLinearGradient(0,0,0,250)
+            grad.addColorStop(0, 'rgba(255,255,255,0.5)');
+            grad.addColorStop(0.75, 'rgba(255,255,255,1)');
+
+            co.fillStyle = grad;
+            co.fillRect(0,0,600,250)
+        }
+    </script>
+
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

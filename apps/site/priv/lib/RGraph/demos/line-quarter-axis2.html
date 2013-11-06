@@ -1,0 +1,102 @@
+<html>
+<head>
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.common.effects.js" ></script>
+    <script src="../libraries/RGraph.drawing.yaxis.js" ></script>
+    <script src="../libraries/RGraph.drawing.xaxis.js" ></script>
+    <script src="../libraries/RGraph.line.js" ></script>
+    
+    <title>A quarter axis Line chart</title>
+    
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <meta name="description" content="A demonstration of how you can combine the Line chart and drawing axis objects to produce a chart with an offset X axis" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A quarter axis Line chart</h1>
+
+    <canvas id="cvs" width="600" height="350" style="border: 1px solid gray">[No canvas support]</canvas>
+
+    <script>
+        window.onload = function ()
+        {
+            var data = [48,46,45,-5,-4,4,3];
+            var context = document.getElementById("cvs").getContext('2d');
+            
+            // Draw the background grid manually
+            context.beginPath();
+            context.strokeStyle = '#ddd';
+                for (var i=25; i<=575; i+=25) context.rect(i + 0.5, 25, 0, 300);
+                for (var i=25; i<=325; i+=25) context.rect(25, i + 0.5, 550, 0);
+            context.stroke();
+
+
+            // Draw the top Y axis
+            var top_yaxis = new RGraph.Drawing.YAxis('cvs', 25)
+                .Set('max', 50)
+                .Set('numticks', 0)
+                .Set('numlabels', 5)
+                .Set('gutter.top', 25)
+                .Set('gutter.bottom', 75)
+                .Draw();
+
+
+
+            // Draw the bottom Y axis
+            var bottom_yaxis = new RGraph.Drawing.YAxis('cvs', 25)
+                .Set('max', 10)
+                .Set('gutter.top', 275)
+                .Set('gutter.bottom', 25)
+                .Set('scale.invert', true)
+                .Set('numlabels', 1)
+                .Set('numticks', 0)
+                .Set('noendtick.top', true)
+                .Set('scale.zerostart', false)
+                .Set('units.pre', '-')
+                .Draw();
+
+            // Draw the center X axis (which has no labels)
+            var xaxis = new RGraph.Drawing.XAxis('cvs', 275)
+                .Set('labels', [])
+                .Set('numticks', 0)
+                .Set('hmargin', 25)
+                .Draw();
+
+            // Draw the bottom X axis (which is transparent but does have labels)
+            var xaxis = new RGraph.Drawing.XAxis('cvs', 325)
+                .Set('xaxispos', 'center')
+                .Set('labels', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+                .Set('labels.position', 'edge')
+                .Set('numticks', 0)
+                .Set('hmargin', 25)
+                .Set('colors', ['rgba(0,0,0,0)'])
+                .Set('text.color', '#666')
+                .Draw();
+
+
+            
+            // Draw the line chart
+            var line = new RGraph.Line('cvs', data)
+                .Set('hmargin', 25)
+                .Set('gutter.bottom', 75)
+                .Set('outofbounds', true)
+                .Set('linewidth', 1)
+                .Set('ylabels', false)
+                .Set('noaxes', true)
+                .Set('background.grid', false)
+                .Set('colors', ['gray'])
+                .Set('ymax', 50)
+                .Draw();
+
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>
+

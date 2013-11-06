@@ -1,85 +1,178 @@
-<!DOCTYPE html>
 <html>
-	<head>
-		<title>Barrage</title>
-		<style type="text/css" title="currentStyle">
-			@import "dist/jquery.jqplot.min.css";
-			@import "css/smoothness/jquery-ui-1.10.2.css";
-			/*@import "main/css/bootstrap-theme.min.css";*/
-			@import "main/css/bootstrap.min.css";
-			@import "main/css/main.css";
-			
-			html {
-				font-family: Calibri, Arial, Helvetica, sans-serif;
-			}
-			.jqplot-target {
-				margin-bottom: 50px;
-			}
-			
-/*			table {
-				font-family:Arial, Helvetica, sans-serif;
-				color:#666;
-				font-size:12px;
-				text-shadow: 1px 1px 0px #fff;
-				background:#eaebec;
-				margin:20px;
-				border:#ccc 1px solid;
-				border-spacing: 0;
-			
-				-moz-border-radius:3px;
-				-webkit-border-radius:3px;
-				border-radius:3px;
-			
-				-moz-box-shadow: 0 1px 2px #d1d1d1;
-				-webkit-box-shadow: 0 1px 2px #d1d1d1;
-				box-shadow: 0 1px 2px #d1d1d1;
-			}
-			table th {
-				padding:11px 15px 12px 15px;
-				border-top:1px solid #fafafa;
-				border-bottom:1px solid #e0e0e0;
-			
-				background: #ededed;
-				background: -webkit-gradient(linear, left top, left bottom, from(#ededed), to(#ebebeb));
-				background: -moz-linear-gradient(top,  #ededed,  #ebebeb);
-			}
-			table tr{
-				text-align: center;
-				padding-left:20px;
-			}
-			table tr td {
-				padding:8px;
-				border-top: 1px solid #ffffff;
-				border-bottom:1px solid #e0e0e0;
-				border-left: 1px solid #e0e0e0;
-				
-				background: #fafafa;
-				background: -webkit-gradient(linear, left top, left bottom, from(#fbfbfb), to(#fafafa));
-				background: -moz-linear-gradient(top,  #fbfbfb,  #fafafa);
-			}*/
-			
-		</style>
-		
-		<script type="text/javascript" src="dist/jquery.min.js"></script>
-		<script type="text/javascript" src="dist/jquery.jqplot.min.js"></script>
-		<script type="text/javascript" src="dist/plugins/jqplot.canvasTextRenderer.min.js"></script>
-		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
-		<script type="text/javascript" src="dist/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
-		<script type="text/javascript" src="dist/plugins/jqplot.canvasOverlay.min.js"></script>
-		<script type="text/javascript" src="dist/plugins/jqplot.highlighter.min.js"></script>
-		
-		<script type="text/javascript" src="js/main.js"></script>
-		<script type="text/javascript" src="js/jquery.blockUI.js"></script>
-		<script type="text/javascript" src="js/jq.stopwatch.js"></script>
-		<script type="text/javascript" src="js/jquery-ui-1.10.2.js"></script>
-		<script type="text/javascript" src="js/fartscroll.js"></script>
-		
-	</head>
-	
-	<body id='main'>
-		<div id="Post_Data">
-		</div>
-		<div style="clear:both;"></div>
-	</body>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
 
+        <link rel="stylesheet" href="lib/jsoneditor-2.3.3/jsoneditor.css">
+        <link rel="stylesheet" href="lib/bootstrap-3.0.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/main.css">
+       
+        <script type="text/javascript" src="lib/jquery/jquery-1.10.2.min.js"></script>
+        <script type="text/javascript" src="lib/jquery/jquery.blockUI.js"></script>
+
+        <script type="text/javascript" src="lib/jqplot-1.0.8/jquery.jqplot.min.js"></script>
+        <script type="text/javascript" src="lib/jqplot-1.0.8/plugins/jqplot.canvasTextRenderer.min.js"></script>
+        <script type="text/javascript" src="lib/jqplot-1.0.8/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+        <script type="text/javascript" src="lib/jqplot-1.0.8/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+        <script type="text/javascript" src="lib/jqplot-1.0.8/plugins/jqplot.canvasOverlay.min.js"></script>
+        <script type="text/javascript" src="lib/jqplot-1.0.8/plugins/jqplot.highlighter.min.js"></script>
+        
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.core.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.annotate.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.context.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.zoom.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.effects.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.resizing.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
+        <script type="text/javascript" src="lib/RGraph/libraries/RGraph.line.js" ></script>
+
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/jsoneditor.js"></script>
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/lib/ace/ace.js"></script>
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/lib/ace/mode-json.js"></script>
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/lib/ace/theme-textmate.js"></script>
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/lib/ace/theme-jsoneditor.js"></script>
+        <script type="text/javascript" src="lib/jsoneditor-2.3.3/lib/jsonlint/jsonlint.js"></script>
+
+        <script type="text/javascript" src="lib/bootstrap-3.0.1/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="lib/jq.stopwatch.js"></script>
+        <script type="text/javascript" src="lib/fartscroll.js"></script>
+        
+        <script type="text/javascript" src="js/general.js"></script>
+        <script type="text/javascript" src="js/commander.js"></script>
+        <script type="text/javascript" src="js/jtool.js"></script>
+        
+        <script type="text/javascript" src="js/index.js"></script>
+    </head>
+    <body>
+      <input id="inputfile" type="file" style="display: none;">
+      <div id="notification_message"></div>
+      <div class="navbar navbar-inverse navbar-static-top">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <h4 class="navbar-brand" href="#">Barrage<br><small>Server Load Testing</small></h4>
+          </div>
+          <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li><a href="#Officers" data-toggle="tab">OFFICERS<br><small>Network Setup</small></a></li>
+              <li><a href="#Orders" data-toggle="tab">ORDERS<br><small>Behaviors and Actions</small></a></li>
+              <li class="active" ><a href="#Execute" data-toggle="tab">EXECUTE<br><small>Test Results</small></a></li>
+            </ul>
+          </div><!--/.navbar-collapse -->
+      </div>
+
+      <div class="tab-content">
+        <!-- OFFICERS PAGE -->
+        <div class="tab-pane" id="Officers">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-6">
+                <div id="General" style="line-height:30px">
+                  <div>
+                    <label>General Name:</label>
+                    <span id="GeneralName"></span>
+                    <div id="modify">
+                      <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='$("#General .toggle").toggle();'/>
+                      <input type="button" class="btn btn-default btn-xs toggle" value="Cancel" onclick='SetGeneralInfo()'/>
+                      <input type="button" class="btn btn-primary btn-xs toggle" value="Save" onclick='SaveGeneralChanges()'/>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="input_TargetServer">Target Server:</label>
+                    <span id="TargetServer" class="toggle"></span>
+                    <input id="input_TargetServer" class="toggle" type="text"/>
+                  </div>
+                  <div>
+                    <label for="input_TargetPort">Target Port:</label>
+                    <span id="TargetPort" class="toggle"></span>
+                    <input id="input_TargetPort" class="toggle" type="text"/>
+                  </div>
+                  <div>
+                    <label for="input_NetworkName">Network Name:</label>
+                    <span id="NetworkName" class="toggle"></span>
+                    <input id="input_NetworkName" class="toggle" type="text"/>
+                  </div>
+                </div>
+                <table class="table" id="GeneralCommanders">
+                  <thead>
+                    <tr>
+                      <th>Commander Name</th><th>Num. of Gunners</th>
+                    </tr>
+                  </thead>
+                  <tbody style="line-height:30px">
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-lg-6">
+                <div id="Commander" style="line-height:30px;">
+                  <div>
+                    <label>Commander Name:</label>
+                    <span id="CommanderName"></span>
+                    <div id="modify">
+                      <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='CommanderAction("disconnect")'/>
+                      <input type="button" class="btn btn-primary btn-xs toggle" value="Connect" onclick='CommanderAction("connect")'/>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="input_GeneralName">General Name:</label>
+                    <span id="GeneralName" class="toggle"></span>
+                    <input id="input_GeneralName" class="toggle" type="text"/>
+                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_GeneralName");'/>
+                  </div>
+                  <div>
+                    <label for="input_NetworkName">Network Name:</label>
+                    <span id="NetworkName" class="toggle"></span>
+                    <input id="input_NetworkName" class="toggle" type="text"/>
+                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_NetworkName");'/>
+                  </div>
+                  <div>
+                    <label for="input_NumOfGunners">Num. of Gunners:</label>
+                    <span id="NumOfGunners" class="toggle"></span>
+                    <input id="input_NumOfGunners" class="toggle" type="text"/>
+                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_NumOfGunners");'/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- end Officers page (server admin setup of generals and officers) -->
+
+
+        <!-- ORDERS PAGE -->
+        <div class="tab-pane" id="Orders">
+          <div class="container">
+            <div id="jsoneditor_behaviors" class="jsonContainer"></div>
+            <div id="jsoneditor_actions" class="jsonContainer"></div>
+          </div>
+        </div> <!-- end Orders page (the json tool with actions and behaviors) -->
+
+
+        <!-- EXECUTE PAGE -->
+        <div class="tab-pane active" id="Execute">
+          <div class="container">
+            <div class-"row">
+              <div id="ChartOrders" class="col-lg-12"></div>
+            </div>
+            <div class="row">
+              <div id="MainChart" class="col-lg-10"></div>
+              <div class="col-lg-2">
+                <div class="panel panel-primary">
+                  <div class="panel-heading">Chart Type</div>
+                  <div class="panel-body">
+                      <input type="radio" name="liveChart" value="false" checked> Static<br/>
+                      <input type="radio" name="liveChart" value="true"> Realtime
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- end Execute page (the graphs/reports of the server) -->        
+      </div>  <!-- end Tab-Content -->
+    </body>
 </html>

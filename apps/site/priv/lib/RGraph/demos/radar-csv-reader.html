@@ -1,0 +1,47 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script type="text/javascript" src="../libraries/RGraph.common.core.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.common.csv.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.radar.js" ></script>
+    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
+    
+    <title>A Radar chart using the CSV reader</title>
+
+    <meta name="description" content="A Radar chart using the CSV reader" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A Radar chart using the CSV reader</h1>
+
+    <div style="background-color: #ffc; border: 2px solid #cc0; border-radius: 5px; padding: 5px;">
+        <b>Note:</b>
+        For browser security reasons the AJAX demos don't work offline. You can view the demos on the RGraph website here:
+        <a href="http://www.rgraph.net/demos/" target="_blank" rel="nofollow">http://www.rgraph.net/demos</a>
+    </div>
+    <canvas id="cvs" width="500" height="250">[No canvas support]</canvas>
+    
+    <script>
+        window.onload = function ()
+        {
+            RGraph.CSV('/sample.csv', function (csv)
+            {
+                // Just fetch the first row of the CSV file, starting at the second column
+                var data = csv.getRow(0, 1);
+                
+                var radar = new RGraph.Radar('cvs', data)
+                    .Set('labels', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
+                    .Draw();
+            })
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

@@ -19,14 +19,14 @@ $(document).ready(function() {
     };
 
     var json_behaviors, json_actions = {};
-    RequestInfo("general/behaviors", function(json) {
+    RequestInfoOnly("general/behaviors", function(json) {
         if (!$.isEmptyObject(json))
         {
             json_behaviors = json;
         }
     });
 
-    RequestInfo("general/actions", function(json) {
+    RequestInfoOnly("general/actions", function(json) {
         if (!$.isEmptyObject(json))
         {
             json_actions = json;
@@ -77,7 +77,7 @@ function ClickAdjustInputFile(type)
 function ReloadJson(type)
 {
     editor = eval('JSONEDITOR_'+type.toUpperCase());
-    RequestInfo("general/"+type, function(json) {
+    RequestInfoOnly("general/"+type, function(json) {
         if (!$.isEmptyObject(json))
         {
             editor.set(json);
@@ -90,9 +90,9 @@ function ReloadJson(type)
 }
 
 
-function RequestInfo(url, callback) {
+function RequestInfoOnly(url, callback) {
     $.ajax({
-        url: url,
+        url: ROOTURL+url,
         async: false,
         success: function(data) {
             callback(JSON.parse(data));            
@@ -105,7 +105,7 @@ function RequestInfo(url, callback) {
 
 function PostInfo(url, data, callback) {
     $.ajax({
-        url: url,
+        url: ROOTURL+url,
         type: 'POST',
         data: data,
         async: true,

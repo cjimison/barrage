@@ -1,0 +1,59 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script type="text/javascript" src="../libraries/RGraph.common.core.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.common.csv.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.rscatter.js" ></script>
+    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
+    
+    <title>An RScatter chart using the CSV reader</title>
+
+    <meta name="description" content="An RScatter chart using the CSV reader" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A RScatter chart using the CSV reader</h1>
+
+    <div style="background-color: #ffc; border: 2px solid #cc0; border-radius: 5px; padding: 5px;">
+        <b>Note:</b>
+        For browser security reasons the AJAX demos don't work offline. You can view the demos on the RGraph website here:
+        <a href="http://www.rgraph.net/demos/" target="_blank" rel="nofollow">http://www.rgraph.net/demos</a>
+    </div>
+    <canvas id="cvs" width="500" height="450">[No canvas support]</canvas>
+    
+    <script>
+        window.onload = function ()
+        {
+            RGraph.CSV('/sample.csv', function (csv)
+            {
+                // Just fetch the two rows of the CSV file, starting at the second column
+                var row1 = csv.getRow(0, 1); // First row
+                var row2 = csv.getRow(1, 1); // Second row
+                var data = [];
+                
+                
+                
+                /**
+                * Now make up some sample points using the data
+                */
+                for (var i=0; i<row1.length; i+=1) {
+                    data.push( [(row1[i] / 10) * 360, row2[i]]);
+                }
+
+
+                var rscatter = new RGraph.RScatter('cvs', data)
+                    .Set('labels.axes', 'n')
+                    .Draw();
+            })
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

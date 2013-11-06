@@ -1,0 +1,119 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script type="text/javascript" src="../libraries/RGraph.common.core.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.common.dynamic.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.common.effects.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.drawing.text.js" ></script>
+    <script type="text/javascript" src="../libraries/RGraph.bar.js" ></script>
+    <script type="text/javascript" src="../libraries/jquery.min.js" ></script>
+    
+    <title>A Bar chart capable of drilldown</title>
+    
+    <meta name="description" content="A Bar chart that's capable of drilldown when you click on a bar" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A Bar chart capable of drilldown</h1>
+
+    <canvas id="cvs" width="500" height="250">[No canvas support]</canvas><br />
+    
+    <button id="butBack">Show the overview chart</button>
+    
+    <script>
+        window.onload = function ()
+        {
+            var ca = document.getElementById("cvs");
+            var data           = [15,14,12,18,16,13];
+            var data_drilldown = [];
+
+            /**
+            * The drilldown data - the order corresponds to that of the labels
+            */
+            data_drilldown.push([2,3,1,2,3,1,3]);
+            data_drilldown.push([2,2,2,1,2,2,3]);
+            data_drilldown.push([1,1,1,2,3,2,2]);
+            data_drilldown.push([3,3,3,2,3,3,1]);
+            data_drilldown.push([4,3,1,1,3,2,2]);
+            data_drilldown.push([3,2,2,2,3,1,0]);
+
+            var labels = ['John','Fred','Luis','Kevin','Lola','June']
+
+            var bar = DrawMainChart();
+            
+            /**
+            * Draws the main chart
+            */
+            function DrawMainChart ()
+            {
+                RGraph.Reset(ca);
+
+                var bar = new RGraph.Bar('cvs', data)
+                    .Set('labels', labels)
+                    .Set('bevel', true)
+                    .Set('title', 'The whole teams statistics for sales of widgets')
+                    .Set('background.grid.autofit.numvlines', data.length)
+                    .Draw();
+
+
+            
+                /**
+                * When a bar is clicked show a more detailed breakdown
+                */
+                bar.onclick = function (e, shape)
+                {
+                    var obj = e.target.__object__;
+                    var ca  = obj.canvas;
+                    var idx = shape.index;
+                    
+                    /**
+                    * Slide the old bar out
+                    */
+                    RGraph.Effects.Fade.Out(obj, null, function ()
+                    {
+                        RGraph.Reset(ca);
+    
+                        var bar = new RGraph.Bar('cvs', data_drilldown[idx])
+                            .Set('labels', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
+                            .Set('bevel', true)
+                            .Set('title', 'Specific statistics for: ' + labels[idx])
+                            .Set('background.grid.autofit.numvlines', 7);
+                        
+                        RGraph.Effects.Fade.In(obj);
+                    });
+                }
+                
+                /**
+                * The onmousemove event to change the cursor
+                */
+                bar.onmousemove = function (e, shape)
+                {
+                    e.target.style.cursor = 'pointer';
+                }
+                
+                return bar;
+            }
+            
+            document.getElementById("butBack").onclick = function (e)
+            {
+                var obj = ca.__object__;
+
+                RGraph.Effects.Fade.Out(obj,null,function ()
+                {
+                    var bar = DrawMainChart();
+                    
+                    RGraph.Effects.Fade.In(bar);
+                });
+            }
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

@@ -1,0 +1,61 @@
+<html>
+<head>
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.line.js" ></script>
+    
+    <title>An adjustablerange Line chart</title>
+    
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A color-inverted line chart</h1>
+
+    <canvas id="cvs" width="600" height="250" style="background-color: black; border-radius: 10px">[No canvas support]</canvas>
+
+    <script>
+        window.onload = function ()
+        {
+            var data     = [1,4,1,2,3,5,6,4,5,1,2,3,6,6,5,4,8,7,8,6,9,5,8,9,7,8,5,6,8,9,10,12,13,14,15,16,17,17,15,16,18,19,20,18,21,20,22,24,24,23,25,26,26,25,23,27,27,28,27,29,30,31,32,33,34,31,32,31,33,35,34,36];
+            var data_low = [];
+            var data_hi  = [];
+
+            // Create the range data
+            for (var i=0; i<data.length; i+=1) data_low.push( data[i] - 5);
+            for (var i=0; i<data.length; i+=1) data_hi.push(data[i] + 5);
+
+            var l1 = new RGraph.Line('cvs', data_hi, data_low)
+                .Set('noaxes', true)
+                .Set('background.grid.color', '#999')
+                .Set('filled', true)
+                .Set('filled.range', true)
+                .Set('fillstyle', 'red')
+                .Set('colors', ['red'])
+                .Set('ymax', 50)
+                .Set('outofbounds', true)
+                .Draw();
+            
+            var l1 = new RGraph.Line('cvs', data)
+                .Set('linewidth', 5)
+                .Set('colors', ['white'])
+                .Set('shadow', true)
+                .Set('numxticks', 12)
+                .Set('background.grid', false)
+                .Set('axis.color', 'white')
+                .Set('text.color', 'white')
+                .Set('noxaxis', true)
+                .Set('noyaxis', true)
+                .Set('ymax', 50)
+                .Draw();
+        }
+    </script>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>
+

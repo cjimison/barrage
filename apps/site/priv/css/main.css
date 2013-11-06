@@ -1,0 +1,117 @@
+.jsonContainer {
+    float: left;
+    width: 49%;
+    height: 100%;
+}
+#notification_message p {
+    margin: 0px;
+}
+#notification_message h1,
+#notification_message h2,
+#notification_message h3,
+#notification_message h4,
+#notification_message h5 {
+    margin: 0 0 5px 0;
+}
+#notification_message {
+    background-size: 40px 40px;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, .05) 25%, transparent 25%,
+                    transparent 50%, rgba(255, 255, 255, .05) 50%, rgba(255, 255, 255, .05) 75%,
+                    transparent 75%, transparent);                                      
+    box-shadow: inset 0 -1px 0 rgba(255,255,255,.4);
+    width: 100%;
+    border: 1px solid;
+    color: #fff;
+    padding: 15px;
+    position: fixed;
+    _position: absolute;
+    text-shadow: 0 1px 0 rgba(0,0,0,.5);
+    z-index: 9999;
+    -webkit-animation: animate-bg 5s linear infinite; /* Safari and Chrome */
+    animation: animate-bg 5s linear infinite;
+}
+
+@-webkit-keyframes animate-bg  /* Safari and Chrome */{
+    from {
+        background-position: 0 0;
+    }
+    to {
+       background-position: -80px 0;
+    }
+}
+@keyframes animate-bg {
+    from {
+        background-position: 0 0;
+    }
+    to {
+       background-position: -80px 0;
+    }
+}
+
+.jqplot-target {
+    margin-bottom: 50px;
+}
+
+#Officers #modify {
+    width: 145px;
+    display: inline-block;
+    padding-left: 34px;
+
+}
+
+#Officers #GeneralCommanders {
+    width: 60%;
+}
+
+#Officers table {
+    font-family:Arial, Helvetica, sans-serif;
+    color:#666;
+    font-size:12px;
+    text-shadow: 1px 1px 0px #fff;
+    background:#eaebec;
+    margin-top: 20px;
+    border:#ccc 1px solid;
+    border-spacing: 0;
+    border-collapse: initial;
+
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+    border-radius:3px;
+
+    -moz-box-shadow: 0 1px 2px #d1d1d1;
+    -webkit-box-shadow: 0 1px 2px #d1d1d1;
+    box-shadow: 0 1px 2px #d1d1d1;
+}
+
+#Officers table th {
+    padding:11px 15px 12px 15px;
+    border-top:1px solid #fafafa;
+    border-bottom:1px solid #e0e0e0;
+
+    background: #ededed;
+    background: -webkit-gradient(linear, left top, left bottom, from(#ededed), to(#ebebeb));
+    background: -moz-linear-gradient(top,  #ededed,  #ebebeb);
+    text-align: center;
+}
+
+#Officers table tr{
+    text-align: center;
+    padding-left:20px;
+}
+
+#Officers table tr td {
+    padding:8px;
+    border-top: 1px solid #ffffff;
+    border-bottom:1px solid #e0e0e0;
+    border-left: 1px solid #e0e0e0;
+    
+    background: #fafafa;
+    background: -webkit-gradient(linear, left top, left bottom, from(#fbfbfb), to(#fafafa));
+    background: -moz-linear-gradient(top,  #fbfbfb,  #fafafa);
+}
+
+#Officers label {
+    clear: left;
+    float: left;
+    width: 10em;
+}

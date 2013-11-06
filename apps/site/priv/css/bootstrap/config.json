@@ -1,8 +1,0 @@
-{
-  "vars": {},
-  "css": [
-    "buttons.less",
-    "button-groups.less"
-  ],
-  "js": []
-}

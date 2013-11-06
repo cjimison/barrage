@@ -7,35 +7,33 @@ var POSTCOMMANDURLS = {
 					  };
 
 $(document).ready(function() {
-	fartscroll();
-	SetInfo();
-	//$("input[type=button]").button();		//Apply jquery-ui for buttons
+	SetCommanderInfo();
 });
 
-function SetInfo() {
-	RequestInfo("./commander/status", function(data) {
-		$("#CommanderName").text(data.commander);
-		$("#GeneralName").text(data.general);
-		$("#input_GeneralName").val(data.general);
-		$("#NetworkName").text(data.network);
-		$("#input_NetworkName").val(data.network);
-		$("#NumOfGunners").text(data.gunners);
-		$("#input_NumOfGunners").val(data.gunners);
+function SetCommanderInfo() {
+	RequestInfo("commander/status", function(data) {
+		$("#Commander #CommanderName").text(data.commander);
+		$("#Commander #GeneralName").text(data.general);
+		$("#Commander #input_GeneralName").val(data.general);
+		$("#Commander #NetworkName").text(data.network);
+		$("#Commander #input_NetworkName").val(data.network);
+		$("#Commander #NumOfGunners").text(data.gunners);
+		$("#Commander #input_NumOfGunners").val(data.gunners);
 		
 		if (data.state === "connected") {
-			$("span.toggle").show();
-			$("input.toggle").hide();
-			$("input.showfirst").show();
+			$("#Commander span.toggle").show();
+			$("#Commander input.toggle").hide();
+			$("#Commander input.showfirst").show();
 		}
 		else {
-			$("span.toggle").hide();
-			$("input.toggle").show();
-			$("input.showfirst").hide();
+			$("#Commander span.toggle").hide();
+			$("#Commander input.toggle").show();
+			$("#Commander input.showfirst").hide();
 		}
 	});
 }
 
-function PostData(inputId) {
+function PostCommanderData(inputId) {
 	var key = POSTCOMMANDURLS[inputId].key
 	var url = POSTCOMMANDURLS[inputId].url
 	
@@ -54,5 +52,5 @@ function PostData(inputId) {
 
 function CommanderAction(action) {
 	$.get(POSTCOMMANDURLS[action].url);
-	SetInfo();
+	SetCommanderInfo();
 }

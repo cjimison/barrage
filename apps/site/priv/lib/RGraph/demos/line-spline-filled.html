@@ -1,0 +1,60 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.common.dynamic.js" ></script>
+    <script src="../libraries/RGraph.common.tooltips.js" ></script>
+    <script src="../libraries/RGraph.common.effects.js" ></script>
+    <script src="../libraries/RGraph.line.js" ></script>
+    <script src="../libraries/jquery.min.js" ></script>
+    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
+    
+    <title>A filled spline Line chart</title>
+    
+    <meta name="description" content="A filled spline Line chart" />
+    <meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+
+    <h1>A filled spline Line chart</h1>
+    
+    <p>
+        Filled accumulative spline charts may not be perfect as they're a recent addition - be cautious!
+    </p>
+
+    <canvas id="cvs" width="600" height="250">[No canvas support]</canvas>
+    
+    <script>
+        var accumulative = true;
+
+        window.onload = function ()
+        {
+            // A global on purpose
+            line = new RGraph.Line('cvs', [4,5,1,6,3,8,2], [4,8,6,3,5,2,4])
+                .Set('spline', !ISOLD)
+                .Set('background.grid', false)
+                .Set('tickmarks', 'circle')
+                .Set('linewidth', 5)
+                .Set('hmargin', 5)
+                .Set('labels', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+                .Set('filled', true)
+                .Set('filled.accumulative', accumulative)
+                .Set('fillstyle', ['rgba(255,0,0,0.3)', 'rgba(0,255,0,0.3)','rgba(0,0,255,0.3)'])
+                .Set('tooltips', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+                .Draw();
+
+        }
+    </script>
+
+    <BR />
+
+    <button onclick="accumulative = !accumulative; line.Set('filled.accumulative', accumulative); RGraph.Redraw();"> Toggle accumulative</button>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>
