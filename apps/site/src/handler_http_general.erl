@@ -115,8 +115,8 @@ handle_named_request(<<"GET">>, <<"/general/status">>, Req) ->
 handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
-            {Plans}                     = jiffy:decode(Data),
+
+            {ok, Plans, Req2}           = cowboy_req:body_qs(Req),
             case proplists:get_value(<<"network">>, Plans) of
                 undefined ->
                     cowboy_req:reply(200, ?HTTP_CONTENT_ENC,

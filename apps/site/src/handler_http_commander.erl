@@ -112,8 +112,8 @@ handle_named_request(<<"GET">>, <<"/commander/status">>, Req) ->
 handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
-            {Plans}                     = jiffy:decode(Data),
+
+            {ok, Plans, Req2}           = cowboy_req:body_qs(Req),
             case proplists:get_value(<<"network">>, Plans) of
                 undefined ->
                     cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
@@ -140,8 +140,8 @@ handle_named_request(<<"POST">>, <<"/commander/set_network">>, Req) ->
 handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
-            {Cmd}                       = jiffy:decode(Data),
+
+            {ok, Cmd, Req2} = cowboy_req:body_qs(Req),
             case proplists:get_value(<<"general">>, Cmd) of
                 undefined ->
                     cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
@@ -168,15 +168,20 @@ handle_named_request(<<"POST">>, <<"/commander/set_general">>, Req) ->
 handle_named_request(<<"POST">>, <<"/commander/set_gunners">>, Req) ->
     case cowboy_req:has_body(Req) of
         true ->
-            {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
-            {Cmd}                       = jiffy:decode(Data),
+            {ok, Cmd, Req2}  = cowboy_req:body_qs(Req),
             case proplists:get_value(<<"gunners">>, Cmd) of
                 undefined ->
                     cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                     <<"{\"error\":\"No gunners set\"}">>,
                                     Req2);
                 Gunners ->
-                    case commander_server:change_gunner_count(Gunners) of
+                    Val = 
+                    case Gunners of 
+                        Gunners when is_integer(Gunners) -> Gunners;
+                        Gunners when is_binary(Gunners) -> erlang:binary_to_integer(Gunners)
+                    end,
+
+                    case commander_server:change_gunner_count(Val) of
                         ok ->
                             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                                             <<"{\"error\":\"none\"}">>,
