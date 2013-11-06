@@ -70,6 +70,8 @@ routes() ->
     Routes = [
         {"/general/status",             handler_http_general, []},
         {"/general/set_network",        handler_http_general, []},
+        {"/general/set_target_server",  handler_http_general, []},
+        {"/general/set_target_port",    handler_http_general, []},
         {"/general/orders",             handler_http_general, []},
         {"/general/commanders",         handler_http_general, []},
         {"/general/issue_order",        handler_http_general, []},
@@ -134,6 +136,48 @@ handle_named_request(<<"POST">>, <<"/general/set_network">>, Req) ->
                             <<"{\"error\":\"none\", \"status\":\"queued\"}">>,
                             Req2)
                     end
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
+
+handle_named_request(<<"POST">>, <<"/general/set_target_server">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+
+            {ok, Cmd, Req2}           = cowboy_req:body_qs(Req),
+            case proplists:get_value(<<"target_server">>, Cmd) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"no target_server name set\"}">>,
+                                    Req2);
+                ServerIP ->
+                    application:set_env(general, target_ip, binary_to_list(ServerIP)),
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"none\"}">>,
+                                    Req2)
+            end;
+        false ->
+            cowboy_req:reply(200,?HTTP_CONTENT_ENC,
+                            <<"{\"error\":\"No Body\"}">>,Req)
+    end;
+
+handle_named_request(<<"POST">>, <<"/general/set_target_port">>, Req) ->
+    case cowboy_req:has_body(Req) of
+        true ->
+
+            {ok, Cmd, Req2}           = cowboy_req:body_qs(Req),
+            case proplists:get_value(<<"target_port">>, Cmd) of
+                undefined ->
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"no target_server name set\"}">>,
+                                    Req2);
+                ServerPort ->
+                    application:set_env(general, target_port, binary_to_integer(ServerPort)),
+                    cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
+                                    <<"{\"error\":\"none\"}">>,
+                                    Req2)
             end;
         false ->
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
