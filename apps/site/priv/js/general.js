@@ -1,8 +1,6 @@
-
 $(document).ready(function() {
 	SetGeneralInfo();
 });
-
 
 function SetGeneralInfo() {
 	RequestInfoOnly("general/status", function(data) {
@@ -31,30 +29,22 @@ function SetGeneralInfo() {
 }
 
 function PostGeneralData(inputId) {
-	var key = POSTGENERALURLS[inputId].key
-	var url = POSTGENERALURLS[inputId].url
+	var key = POSTURLS[inputId].key
+	var url = POSTURLS[inputId].url
 	
 	var data = {};
-	data[key] = $("#"+inputId).val();
+	data[key] = $("#General #"+inputId).val();
 	
 	PostInfo(url, data, function(response) {
 		//window.location.reload(true);
 	});
 }
 
-function PostGeneralDataAll() {
-	for (var input in POSTGENERALURLS) {
-		if (input.indexOf("input") == 0) {
-			PostGeneralData(input);
-		}
-	}
-}
-
 function PostGeneralDataChangedOnly() {
-	for (var input in POSTGENERALURLS) {
+	for (var input in POSTURLS) {
 		var splitinput = input.split("_");
 		if (splitinput[0] === "input") {
-			if ($("#"+input).val() !== $("#"+splitinput[1]).text()) {
+			if ($("#General #"+input).val() !== $("#General #"+splitinput[1]).text()) {
 				PostGeneralData(input);
 			}
 		}
@@ -62,7 +52,7 @@ function PostGeneralDataChangedOnly() {
 }
 
 function GeneralAction(action) {
-	$.get(POSTGENERALURLS[action].url);
+	$.get(POSTURLS[action].url);
 	SetGeneralInfo();
 }
 
