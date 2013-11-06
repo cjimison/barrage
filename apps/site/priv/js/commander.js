@@ -1,11 +1,3 @@
-var POSTCOMMANDURLS = {
-						'input_GeneralName'		:		{'url' : '/commander/set_general', 'key' : 'general'},
-						'input_NetworkName'		:		{'url' : '/commander/set_network', 'key' : 'network'},
-						'input_NumOfGunners'	:		{'url' : '/commander/set_gunners', 'key' : 'gunners'},
-						'connect'				:		{'url' : '/commander/connect'},
-						'disconnect'			:		{'url' : '/commander/disconnect'}
-					  };
-
 $(document).ready(function() {
 	SetCommanderInfo();
 });
@@ -34,15 +26,15 @@ function SetCommanderInfo() {
 }
 
 function PostCommanderData(inputId) {
-	var key = POSTCOMMANDURLS[inputId].key
-	var url = POSTCOMMANDURLS[inputId].url
+	var key = POSTURLS[inputId].key
+	var url = POSTURLS[inputId].url
 	
 	var data = {};
 	if(key === "gunners") {
-		data[key] = parseInt($("#"+inputId).val());
+		data[key] = parseInt($("#Commander #"+inputId).val());
 	}
 	else {
-		data[key] = $("#"+inputId).val();
+		data[key] = $("#Commander #"+inputId).val();
 	}
 	
 	PostInfo(url, data, function(response) {
@@ -51,6 +43,6 @@ function PostCommanderData(inputId) {
 }
 
 function CommanderAction(action) {
-	$.get(POSTCOMMANDURLS[action].url);
+	$.get(POSTURLS[action].url);
 	SetCommanderInfo();
 }

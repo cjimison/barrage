@@ -3,19 +3,18 @@ var gPlotInfo = {};
 var gHideProgressOverlay = true;
 
 var ROOTURL = location.protocol + '//' + location.host + '/';
-var POSTURLS = ['upload_behaviors', 'upload_actions'];
-var POSTGENERALURLS = {
-						'input_TargetServer'	:		{'url' : 'general/set_target_server', 'key' : 'target_server'},
-						'input_TargetPort'		:		{'url' : 'general/set_target_port', 'key' : 'target_port'},
-						'input_NetworkName'		:		{'url' : 'general/set_network', 'key' : 'network'}
-					  };
-var POSTCOMMANDURLS = {
-						'input_GeneralName'		:		{'url' : 'commander/set_general', 'key' : 'general'},
-						'input_NetworkName'		:		{'url' : 'commander/set_network', 'key' : 'network'},
-						'input_NumOfGunners'	:		{'url' : 'commander/set_gunners', 'key' : 'gunners'},
-						'connect'				:		{'url' : 'commander/connect'},
-						'disconnect'			:		{'url' : 'commander/disconnect'}
-					  };
+var POSTURLS = {
+				'actions'				:	{'url' : 'upload_actions'},
+				'behaviors'				:	{'url' : 'upload_behaviors'},
+				'input_TargetServer'	:	{'url' : 'general/set_target_server', 'key' : 'target_server'},
+				'input_TargetPort'		:	{'url' : 'general/set_target_port', 'key' : 'target_port'},
+				'input_NetworkName'		:	{'url' : 'general/set_network', 'key' : 'network'},
+				'input_GeneralName'		:	{'url' : 'commander/set_general', 'key' : 'general'},
+				'input_NetworkName'		:	{'url' : 'commander/set_network', 'key' : 'network'},
+				'input_NumOfGunners'	:	{'url' : 'commander/set_gunners', 'key' : 'gunners'},
+				'connect'				:	{'url' : 'commander/connect'},
+				'disconnect'			:	{'url' : 'commander/disconnect'}
+			  };
 
 var CONVERTTO = {'milliseconds' : 1/1000};
 
