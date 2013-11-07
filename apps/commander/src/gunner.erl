@@ -174,11 +174,16 @@ handle_cast({follow_order, Order}, State) ->
         State3 = process_set([Order], State2),
         commander_server:order_complete(self(), State3#state.results),
         {noreply, State}
-    catch Exception:Reason -> 
-        io:format("Gunner Exception.  Bail out of this Tree~nException: ~p ~nReason: ~p ~nStacktrace: ~p ~n", [Exception,Reason,erlang:get_stacktrace()]), 
-        commander_server:order_complete(self(), dict:new()),
-        {noreply, State}
-    end;
+    catch 
+        throw:{assert_action, Msg} ->
+            commander_server:log_results(<<"<Assert> ", Msg/binary>>, 0, <<"error">>, Msg),
+            Dic = dict:new(),
+            commander_server:order_complete(self(), dict:append(<<"<Assert> ", Msg/binary>>, 0, Dic));
+        Exception:Reason -> 
+            io:format("Gunner Exception.  Bail out of this Tree~nException: ~p ~nReason: ~p ~nStacktrace: ~p ~n", [Exception,Reason,erlang:get_stacktrace()]), 
+            commander_server:order_complete(self(), dict:new())
+    end,
+    {noreply, State};
 
 
 handle_cast(_Msg, State) ->
@@ -715,29 +720,29 @@ do_action(<<"print_state">>, undefined, undefined, State) ->
     io:format("State of the gunner: SOME USEFUL INFO...~n"),
     State;
 
-do_action(<<"assert">>, undefined, _Children, State) ->
-    io:format("<ASSERT>~n"),
-    throw(assert_action),
+do_action(<<"assert">>, {Args}, _Children, State) ->
+    [{<<"msg">>, Value}] = Args,
+    throw({assert_action, Value}),
     State;
 
-do_action(<<"assert_equal">>, Args, _Children, State)  ->
-    [A , B]  = Args,
-    ActualA = get_stored_value(A, State),
-    ActualB = get_stored_value(B, State),
-    case ActualA of
-        ActualB ->
+do_action(<<"assert_equal">>, {Args}, _Children, State)  ->
+    A   = get_stored_value(proplists:get_value(<<"val_1">>, Args), State),
+    B   = get_stored_value(proplists:get_value(<<"val_2">>, Args), State),
+    Msg = proplists:get_value(<<"msg">>, Args),
+    case A of
+        B ->
             State;
         _ ->
-            throw(assert_equal)
+            throw({assert_action, Msg})
     end;
 
-do_action(<<"assert_not_equal">>, Args, _Children, State) ->
-    [A , B]  = Args,
-    ActualA = get_stored_value(A, State),
-    ActualB = get_stored_value(B, State),
-    case ActualA of
-        ActualB ->
-            throw(assert_not_equal);
+do_action(<<"assert_not_equal">>, {Args}, _Children, State) ->
+    A   = get_stored_value(proplists:get_value(<<"val_1">>, Args), State),
+    B   = get_stored_value(proplists:get_value(<<"val_2">>, Args), State),
+    Msg = proplists:get_value(<<"msg">>, Args),
+    case A of
+        B ->
+            throw({assert_action, Msg});
         _ ->
             State
     end;

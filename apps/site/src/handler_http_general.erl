@@ -197,7 +197,7 @@ handle_named_request(<<"GET">>, <<"/general/commanders">>, Req) ->
 handle_named_request(<<"GET">>, <<"/general/issue_order">>, Req) ->
     {Order, Req2} = cowboy_req:qs_val(<<"order">>, Req), 
     Req3 = cowboy_req:compact(Req2),
-    general_server:issue_http_order(Order, self()),
+    ok = general_server:issue_http_order(Order, self()),
     blocker_loop(Req3);
 
 handle_named_request(<<"GET">>, <<"/general/behaviors">>, Req) ->
@@ -210,8 +210,7 @@ handle_named_request(<<"POST">>,<<"/general/upload_behaviors">>,Req) ->
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
             Plans   = jiffy:decode(Data),
-            application:set_env(general, behaviors, Plans),
-            ok      = barrage_parser:load_behavior_data(Plans),
+            general_server:load_behaviors(Plans),
             cowboy_req:reply(200, ?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,Req2);
         false ->
@@ -229,8 +228,7 @@ handle_named_request(<<"POST">>, <<"/general/upload_actions">>, Req) ->
         true ->
             {ok, [{Data, true}], Req2}  = cowboy_req:body_qs(Req),
             Actions = jiffy:decode(Data),
-            application:set_env(general, actions, Actions),
-            ok      = barrage_parser:load_action_data(Actions),
+            general_server:load_actions(Actions),
             cowboy_req:reply(200,?HTTP_CONTENT_ENC,
                             <<"{\"error\":\"none\"}">>,Req2);
         false ->

@@ -43,6 +43,9 @@
 -export([reg_stream/1]).
 -export([unreg_stream/1]).
 
+-export([load_actions/1]).
+-export([load_behaviors/1]).
+
 %% gen_server callbacks
 -export([init/1,
          handle_call/3,
@@ -147,6 +150,11 @@ get_commanders_info() ->
 change_cookie(Cookie) ->
     gen_server:call(?MODULE, {change_cookie, Cookie}).
 
+load_actions(Actions) ->
+    gen_server:call(?MODULE, {load_actions, Actions}).
+
+load_behaviors(Behaviors) ->
+    gen_server:call(?MODULE, {load_behaviors, Behaviors}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -166,12 +174,21 @@ change_cookie(Cookie) ->
 %%%%------------------------------------------------------------------
 %%%% issue_order
 %%%%------------------------------------------------------------------
+handle_call({load_actions, Actions}, _From, State) ->
+    application:set_env(general, actions, Actions),
+    load_action_data(Actions),
+    {reply, ok, State};
+
+handle_call({load_behaviors, Behaviors}, _From, State) ->
+    application:set_env(general, behaviors, Behaviors),
+    load_behavior_data(Behaviors),
+    {reply, ok, State};
+
 handle_call({issue_order, OrderName}, _From, State) ->
-    [{_, Order}] = ets:lookup(plans, OrderName),
-    case Order of 
+    case ets:lookup(plans, OrderName) of 
         [] ->
-            {reply, error_no_match, State};
-        _ ->
+            {reply, {error, order_not_found}, State};
+        [{_, Order}] ->
             case State#state.blocked of
                 [] ->
                     Pids = dict:fetch_keys(State#state.commanders),
@@ -196,7 +213,9 @@ handle_call({issue_order, OrderName}, _From, State) ->
                 _->
                     %No test is going to be run.
                     {reply, ok, State}
-            end
+            end;
+        _ ->
+            {reply, {error, unknown_error}, State}
     end;
 
 %%%%------------------------------------------------------------------
@@ -218,9 +237,14 @@ handle_call({unreg_stream, Pid}, _From, State) ->
 %%%% issue_http_order
 %%%%------------------------------------------------------------------
 handle_call({issue_http_order, OrderName, Pid}, _From, State) ->
-    Pids = State#state.waiting_pid,
-    NewState = State#state{waiting_pid = [Pid| Pids]},
-    handle_call({issue_order, OrderName}, _From, NewState);
+    case ets:lookup(plans, OrderName) of
+        [] ->
+            {reply, {error, order_not_found}, State};
+        _ ->
+            Pids = State#state.waiting_pid,
+            NewState = State#state{waiting_pid = [Pid| Pids]},
+            handle_call({issue_order, OrderName}, _From, NewState)
+    end;
 
 %%%%------------------------------------------------------------------
 %%%% enlist

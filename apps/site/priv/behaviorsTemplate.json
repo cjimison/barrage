@@ -106,10 +106,26 @@
     "Node - Assert" :
     {
         "action" : "assert"
+        "args"   : {"msg", "<MESSAGE>"}
     },
     "Node - Assert Equal" :
     {
-        "action" : "assert",
-        "args"   : ["<NAME_OF_VAR or VALUE>", "<NAME_OF_VAR or VALUE>"]
+        "action" : "assert_equal",
+        "args"   :
+        {
+            "val_1" : "<NAME_OF_VAR or VALUE>", 
+            "val_2" : "<NAME_OF_VAR or VALUE>",
+            "msg"   : "<MESSAGE>"
+        }
+    }
+    "Node - Assert Not Equal" :
+    {
+        "action" : "assert_not_equal",
+        "args"   :
+        {
+            "val_1" : "<NAME_OF_VAR or VALUE>", 
+            "val_2" : "<NAME_OF_VAR or VALUE>",
+            "msg"   : "<MESSAGE>"
+        }
     }
 }
