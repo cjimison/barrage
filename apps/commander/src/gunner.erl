@@ -272,7 +272,7 @@ now_micro() ->
 %%%%------------------------------------------------------------------
 do_ordered_count(_Children, _Idx, 0, State) ->
     State;
-do_ordered_count(Children, Idx, Count, State) ->
+do_ordered_count(Children, Idx, Count, State) when is_number(Count) ->
     NewState    = process_set([lists:nth(Idx, Children)], State),
     NewIdx      = Idx + 1,
     case NewIdx > length(Children) of
@@ -280,6 +280,15 @@ do_ordered_count(Children, Idx, Count, State) ->
             do_ordered_count(Children, 1, Count - 1, NewState);
         _ ->
             do_ordered_count(Children, NewIdx, Count, NewState)
+    end;
+
+do_ordered_count(Children, Idx, Count, State)  ->
+    Val = get_stored_value(Count, State),
+    case Val of
+        Val when is_number(Val) ->
+            do_ordered_count(Children, Idx, Val, State);
+        Val ->
+            State
     end.
 
 %%%%------------------------------------------------------------------
@@ -305,11 +314,20 @@ do_ordered_timed(Children, Idx, TimeEnd, State) ->
 %%%%------------------------------------------------------------------
 do_random_count(_Children, 0, State) ->
     State;
-do_random_count(Children, Count, State) ->
+do_random_count(Children, Count, State) when is_number(Count) ->
     Idx         = random:uniform(length(Children)),
     Child       = lists:nth(Idx, Children),
     NewState    = process_set([Child], State),
-    do_random_count(Children, Count -1, NewState).
+    do_random_count(Children, Count -1, NewState);
+
+do_random_count(Children, Count, State)  ->
+    Val = get_stored_value(Count, State),
+    case Val of
+        Val when is_number(Val) ->
+            do_random_count(Children, Val, State);
+        Val ->
+            State
+    end.
 
 %%%%------------------------------------------------------------------
 %%%% do_random_timed
@@ -355,13 +373,8 @@ do_action(<<"random">>, {Args}, Children, State) ->
         Count when is_integer(Count) ->
             do_random_count(Children, Count, State);
         Count when is_binary(Count) ->
-            <<Tag:1/binary, Name/binary>> = Count,
-            case Tag of
-                <<"$">> ->
-                    Value = dict:fetch(Name, State#state.keystore),
-                    % Lets pull this guy out of the KVS
-                    do_random_count(Children, Value, State)
-            end
+            Val = get_stored_value(Count, State),
+            do_random_count(Children, Val, State)
     end;
 
 %%%%------------------------------------------------------------------
@@ -379,15 +392,8 @@ do_action(<<"ordered">>, {Args}, Children, State) ->
         Count when is_integer(Count) ->
             do_ordered_count(Children, 1, Count, State);
         Count when is_binary(Count) ->
-            io:format("Pulling out the Count baby~n"),
-            <<Tag:1/binary, Name/binary>> = Count,
-            case Tag of
-                <<"$">> ->
-                    Value = dict:fetch(Name, State#state.keystore),
-                    io:format("Doing this shit ~p times ~n", [Value]),
-                    % Lets pull this guy out of the KVS
-                    do_ordered_count(Children, 1, Value, State)
-            end
+            Val = get_stored_value(Count, State),
+            do_ordered_count(Children, 1, Val, State)
     end;
 
 %%%%------------------------------------------------------------------
@@ -417,8 +423,8 @@ do_action(<<"set_variable">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"set_variable">>, {Args}, _Children, State) ->
-    Key     = proplists:get_value(<<"key">>, Args),
-    Value   = proplists:get_value(<<"value">>, Args),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Value   = get_stored_value(proplists:get_value(<<"value">>, Args), State),
     NewDict = dict:store(Key, Value, State#state.keystore),
     State#state{keystore=NewDict};
 
@@ -429,7 +435,7 @@ do_action(<<"inc_variable">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"inc_variable">>, {Args}, _Children, State) ->
-    Key     = proplists:get_value(<<"key">>, Args),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
     Value   = dict:fetch(Key, State#state.keystore),
     NewDict = dict:store(Key, Value + 1, State#state.keystore),
     State#state{keystore=NewDict};
@@ -441,7 +447,7 @@ do_action(<<"dec_variable">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"dec_variable">>, {Args}, _Children, State) ->
-    Key     = proplists:get_value(<<"key">>, Args),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
     Value   = dict:fetch(Key, State#state.keystore),
     NewDict = dict:store(Key, Value - 1, State#state.keystore),
     State#state{keystore=NewDict};
@@ -453,7 +459,7 @@ do_action(<<"print_variable">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"print_variable">>, {Args}, _Children, State) ->
-    Key     = proplists:get_value(<<"key">>, Args),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
     Value   = dict:fetch(Key, State#state.keystore),
     io:format("Variable ~p = ~p~n", [Key, Value]),
     State;
@@ -465,8 +471,8 @@ do_action(<<"load_kv_store">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"load_kv_store">>, {Args}, _Children, State) ->
-    Profile = proplists:get_value(<<"kv_store">>, Args),
-    File    = proplists:get_value(<<"file">>, Args),
+    Profile = get_stored_value(proplists:get_value(<<"kv_store">>, Args), State),
+    File    = get_stored_value(proplists:get_value(<<"file">>, Args), State),
     action_kvs:load(Profile, File, State);
 
 
@@ -477,8 +483,8 @@ do_action(<<"load_array_store">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"load_array_store">>, {Args}, _Children, State) ->
-    Profile = proplists:get_value(<<"array_store">>, Args),
-    File    = proplists:get_value(<<"file">>, Args),
+    Profile = get_stored_value(proplists:get_value(<<"array_store">>, Args), State),
+    File    = get_stored_value(proplists:get_value(<<"file">>, Args), State),
     action_kvs:load_array(Profile, File, State);
 
 %%%%------------------------------------------------------------------
@@ -488,9 +494,9 @@ do_action(<<"read_random_kv">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"read_random_kv">>, {Args}, _Children, State) ->
-    Profile = proplists:get_value(<<"kv_store">>, Args),
-    Key     = proplists:get_value(<<"key">>, Args),
-    Value   = proplists:get_value(<<"value">>, Args),
+    Profile = get_stored_value(proplists:get_value(<<"kv_store">>, Args), State),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Value   = get_stored_value(proplists:get_value(<<"value">>, Args), State),
     action_kvs:read_random(Profile, Key, Value, State);  
 
 
@@ -501,11 +507,11 @@ do_action(<<"read_random_value">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"read_random_value">>, {Args}, _Children, State) ->
-    Min     = proplists:get_value(<<"min">>, Args),
-    Max     = proplists:get_value(<<"max">>, Args),
-    Preffix = proplists:get_value(<<"preffix">>, Args),
-    NumberKey  = proplists:get_value(<<"number">>, Args),
-    NameKey    = proplists:get_value(<<"name">>, Args),
+    Min     = get_stored_value(proplists:get_value(<<"min">>, Args), State),
+    Max     = get_stored_value(proplists:get_value(<<"max">>, Args), State),
+    Preffix = get_stored_value(proplists:get_value(<<"preffix">>, Args), State),
+    NumberKey  = get_stored_value(proplists:get_value(<<"number">>, Args), State),
+    NameKey    = get_stored_value(proplists:get_value(<<"name">>, Args), State),
     
     Number  = Min + random:uniform(Max - Min),
     % $TODO this doesn't work for 15B or less. 
@@ -523,9 +529,9 @@ do_action(<<"read_named_kv">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"read_named_kv">>, {Args}, _Children, State) ->
-    Profile = proplists:get_value(<<"kv_store">>, Args),
-    Key     = proplists:get_value(<<"key">>, Args),
-    Variable= proplists:get_value(<<"variable">>, Args),
+    Profile = get_stored_value(proplists:get_value(<<"kv_store">>, Args), State),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Variable= get_stored_value(proplists:get_value(<<"variable">>, Args), State),
     action_kvs:read_name(Profile, Key, Variable, State);
 
 %%%%------------------------------------------------------------------
@@ -535,9 +541,9 @@ do_action(<<"store_to_kv">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"store_to_kv">>, {Args}, _Children, State) ->
-    Profile = proplists:get_value(<<"kv_store">>, Args),
-    Variable= proplists:get_value(<<"variable">>, Args),
-    Key     = proplists:get_value(<<"key">>, Args),
+    Profile = get_stored_value(proplists:get_value(<<"kv_store">>, Args), State),
+    Variable= get_stored_value(proplists:get_value(<<"variable">>, Args), State),
+    Key     = get_stored_value(proplists:get_value(<<"key">>, Args), State),
     action_kvs:read_name(Variable, Profile, Key, State);
 
 %%%%------------------------------------------------------------------
@@ -547,9 +553,9 @@ do_action(<<"read_array_idx">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"read_array_idx">>, {Args}, _Children, State) ->
-    Key         = proplists:get_value(<<"key">>, Args),
-    Idx         = proplists:get_value(<<"idx">>, Args),
-    Variable    = proplists:get_value(<<"variable">>, Args),
+    Key         = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Idx         = get_stored_value(proplists:get_value(<<"idx">>, Args), State),
+    Variable    = get_stored_value(proplists:get_value(<<"variable">>, Args), State),
     NewIdx      = get_stored_value(Idx, State),
     {ok, Array} = dict:find( Key, State#state.keystore),
     case is_binary(NewIdx) of
@@ -580,9 +586,9 @@ do_action(<<"read_doc_set_idx">>, undefined, _Children, State) ->
     State;
 
 do_action(<<"read_doc_set_idx">>, {Args}, _Children, State) ->
-    Key         = proplists:get_value(<<"key">>, Args),
-    Idx         = proplists:get_value(<<"idx">>, Args),
-    Variable    = proplists:get_value(<<"variable">>, Args),
+    Key         = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Idx         = get_stored_value(proplists:get_value(<<"idx">>, Args), State),
+    Variable    = get_stored_value(proplists:get_value(<<"variable">>, Args), State),
     NewIdx      = get_stored_value(Idx, State),
     {ok, {Array}} = dict:find( Key, State#state.keystore),
     case is_binary(NewIdx) of
@@ -612,8 +618,8 @@ do_action(<<"read_doc_set_idx">>, {Args}, _Children, State) ->
 do_action(<<"read_sequential_array_idx">>, undefined, _Children, State) ->
     State;
 do_action(<<"read_sequential_array_idx">>, {Args}, _Children, State) ->
-    Key         = proplists:get_value(<<"key">>, Args),
-    Variable    = proplists:get_value(<<"variable">>, Args),
+    Key         = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Variable    = get_stored_value(proplists:get_value(<<"variable">>, Args), State),
     CurIdxKey   = <<Key/binary,"_CURRENT_IDX">>,
     CurIdx = case dict:find(CurIdxKey, State#state.keystore) of
                 {ok, FoundValue} -> FoundValue;
@@ -637,8 +643,8 @@ do_action(<<"read_sequential_array_idx">>, {Args}, _Children, State) ->
 do_action(<<"read_random_array_idx">>, undefined, _Children, State) ->
     State;
 do_action(<<"read_random_array_idx">>, {Args}, _Children, State) ->
-    Key         = proplists:get_value(<<"key">>, Args),
-    Variable    = proplists:get_value(<<"variable">>, Args),
+    Key         = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Variable    = get_stored_value(proplists:get_value(<<"variable">>, Args), State),
 
     {ok, Array} = dict:find(Key, State#state.keystore),
     case length(Array) of 
@@ -658,8 +664,8 @@ do_action(<<"read_random_array_idx">>, {Args}, _Children, State) ->
 do_action(<<"read_random_doc_set_idx">>, undefined, _Children, State) ->
     State;
 do_action(<<"read_random_doc_set_idx">>, {Args}, _Children, State) ->
-    Key           = proplists:get_value(<<"key">>, Args),
-    Variable      = proplists:get_value(<<"variable">>, Args),
+    Key           = get_stored_value(proplists:get_value(<<"key">>, Args), State),
+    Variable      = get_stored_value(proplists:get_value(<<"variable">>, Args), State),
 
     {ok, {Array}} = dict:find(Key, State#state.keystore),
     case length(Array) of 
@@ -709,6 +715,32 @@ do_action(<<"print_state">>, undefined, undefined, State) ->
     io:format("State of the gunner: SOME USEFUL INFO...~n"),
     State;
 
+do_action(<<"assert">>, undefined, _Children, State) ->
+    io:format("<ASSERT>~n"),
+    throw(assert_action),
+    State;
+
+do_action(<<"assert_equal">>, Args, _Children, State)  ->
+    [A , B]  = Args,
+    ActualA = get_stored_value(A, State),
+    ActualB = get_stored_value(B, State),
+    case ActualA of
+        ActualB ->
+            State;
+        _ ->
+            throw(assert_equal)
+    end;
+
+do_action(<<"assert_not_equal">>, Args, _Children, State) ->
+    [A , B]  = Args,
+    ActualA = get_stored_value(A, State),
+    ActualB = get_stored_value(B, State),
+    case ActualA of
+        ActualB ->
+            throw(assert_not_equal);
+        _ ->
+            State
+    end;
 
 %%%%------------------------------------------------------------------
 %%%% Action: User Defined
@@ -732,16 +764,19 @@ do_action(ActionName, _Args, Children, State) ->
 %%%% get_stored_value
 %%%% This will pull a named value out of the key storage
 %%%%------------------------------------------------------------------
-get_stored_value(Name, State) ->
-    <<Tag:1/binary, _TagData/binary>> = Name,
+get_stored_value(Name, State) when is_binary(Name)->
+    <<Tag:1/binary, TagData/binary>> = Name,
     case Tag of
         <<"$">> ->
-            case dict:is_key(Name, State#state.keystore) of
+            case dict:is_key(TagData, State#state.keystore) of
                 true ->
-                    dict:fetch(Name, State#state.keystore);
+                    dict:fetch(TagData, State#state.keystore);
                 _->
                     Name
             end;
         _->
             Name
-    end.
+    end;
+
+get_stored_value(Name, _State) ->
+    Name.

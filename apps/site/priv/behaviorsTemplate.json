@@ -102,5 +102,14 @@
             "key"       : "<VARIABLE_TO_STORE_KEY>", 
             "value"     : "<VARIABLE_TO_STORE_VALUE>" 
         }
+    },
+    "Node - Assert" :
+    {
+        "action" : "assert"
+    },
+    "Node - Assert Equal" :
+    {
+        "action" : "assert",
+        "args"   : ["<NAME_OF_VAR or VALUE>", "<NAME_OF_VAR or VALUE>"]
     }
 }

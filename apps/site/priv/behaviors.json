@@ -177,6 +177,44 @@
         }
     },
     {
+        "name" : "Assert Test",
+        "tree" :
+        {
+            "action"    : "ordered",
+            "args"      : {"count" : 1 },
+            "children"  : [
+                { 
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "TEST_A", 
+                        "value" : "tom" 
+                    }
+                },
+                { 
+                    "action"    : "set_variable",
+                    "args"      : 
+                    { 
+                        "key"   : "TEST_B", 
+                        "value" : "tom" 
+                    }
+                },
+                { 
+                    "action"    : "assert_equal",
+                    "args"      : ["$TEST_A", "tom"]
+                },
+                { 
+                    "action"    : "assert_equal",
+                    "args"      : ["$TEST_B", "tom"]
+                },
+                { 
+                    "action"    : "assert_equal",
+                    "args"      : ["$TEST_A", "$TEST_B"]
+                }
+            ]
+        }
+    },
+    {
         "name" : "Cookie Test",
         "tree" : {
             "action"    : "ordered",
