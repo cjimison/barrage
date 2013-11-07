@@ -3528,7 +3528,7 @@ Node.prototype._onDuplicate = function() {
 Node.prototype._onInsertCustom = function (keyname) {
     var node = this;
     var type = this.editor.getName().toLowerCase();
-    RequestInfo("general/templates/"+type, function(json) {
+    RequestInfoOnly("general/templates/"+type, function(json) {
         if (!$.isEmptyObject(json))
         {
             node._onInsertBefore('', json[keyname]); 
@@ -4277,7 +4277,7 @@ Node.prototype.buildTemplateMenu = function () {
                         }
                 }
     };
-    RequestInfo("general/templates/"+type, function(json) {
+    RequestInfoOnly("general/templates/"+type, function(json) {
         if (!$.isEmptyObject(json))
         {
             for (name in json)

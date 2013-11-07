@@ -1420,7 +1420,8 @@ pre code {
 
 @media (min-width: 1200px) {
   .container {
-    width: 1170px;
+    /*width: 1170px;*/
+    width: 90%;
   }
   .col-lg-1,
   .col-lg-2,
