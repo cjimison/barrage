@@ -291,19 +291,105 @@ process_action_results(_Result, _Type, _Results, _URL, State) ->
 %% @spec 
 %% @end
 %%--------------------------------------------------------------------
+header_convert([], Results) ->
+    Results;
+
+header_convert(Data, Results) ->
+    [Head | Rest]   = Data,
+    {Key, Value}    = Head,
+    header_convert(Rest, Results ++ [{binary_to_list(Key), 
+                                      binary_to_list(Value)}]).
+
+send_request(<<"get">>, URL, Header, HTTPOps, Ops, Args, undefined, KeyStore) ->
+    LURL            = encode_uri_args(URL, Args, KeyStore),
+    {Time, Result}  = timer:tc(httpc, request, [
+                            get, 
+                            {LURL, Header}, 
+                            HTTPOps, Ops, KeyStore]),
+    {ok, Time, Result};
+
+send_request(<<"post">>, URL, Header, HTTPOps, Ops, Args, undefined, KeyStore) ->
+    Type            = "application/x-www-form-urlencoded",
+    Body            = encode_post_args(Args, KeyStore),
+    {Time, Result}  = timer:tc(httpc, request, [
+                            post, 
+                            {
+                                URL, 
+                                Header, 
+                                Type, 
+                                Body
+                            }, 
+                            HTTPOps, Ops, KeyStore]),
+    {ok, Time, Result};
+
+send_request(<<"post">>, URL, Header, HTTPOps, Ops, _Args, Body, KeyStore) ->
+    Type            = "application/x-www-form-urlencoded",
+    {Time, Result}  = timer:tc(httpc, request, [
+                            post, 
+                            {
+                                URL, 
+                                Header, 
+                                Type, 
+                                Body
+                            }, 
+                            HTTPOps, Ops, KeyStore]),
+    {ok, Time, Result};
+
+send_request(<<"post_json">>, URL, Header, HTTPOps, Ops, Args, undefined, KeyStore) ->
+    Type            = "application/json",
+    %TODO I need to do the token replacement stuff
+    % As a note of refactor I should use this same token replace
+    % system in the get and post args stuff
+    Body            = binary_to_list(jiffy:encode(Args)),
+    ReplacedBody    = replace_tokens_in_text(Body, KeyStore),
+    {Time, Result}  = timer:tc(httpc, request, [
+                            post, 
+                            {
+                                URL, 
+                                Header, 
+                                Type, 
+                                ReplacedBody
+                            }, 
+                            HTTPOps, Ops, KeyStore]),
+    {ok, Time, Result};
+
+send_request(<<"post_json">>, URL, Header, HTTPOps, Ops, _Args, Body, KeyStore) ->
+    Type            = "application/json",
+    {Time, Result}  = timer:tc(httpc, request, [
+                            post, 
+                            {
+                                URL, 
+                                Header, 
+                                Type, 
+                                Body 
+                            }, 
+                            HTTPOps, Ops, KeyStore]),
+    {ok, Time, Result};
+
+send_request(_, _, _, _, _, _, _, _) ->
+    unknown_type.
+
 execute(Action, State) when 
     is_record(State, state) andalso
     is_list(Action) ->
 
     ActionName  = proplists:get_value(<<"name">>, Action),
-   
+  
     Protocol    = get_protocol_type(proplists:get_value(<<"protocol">>, Action), State), 
     Domain      = get_server_domain(proplists:get_value(<<"server">>, Action), State), 
-    Port        = get_port_value(proplists:get_value(<<"port">>, Action), State), 
+    Port        = get_port_value(proplists:get_value(<<"port">>, Action), State),
+
+    Header      = case proplists:get_value(<<"headers">>, Action) of
+                        undefined -> 
+                            [{"P3P", "CP='ALL IND DSP COR ADM CONo CUR CUSo IVAo IVDo PSA PSD TAI TELo OUR SAMo CNT COM INT NAV ONL PHY PRE PUR UNI'"}];
+                        Data ->
+                            [{HeaderPropList}] = Data,
+                            header_convert(HeaderPropList, [])
+                  end,
+
     Page        = binary_to_list(proplists:get_value(<<"url">>, Action)), 
     URL         = lists:concat([Protocol, "://", Domain, ":", Port, Page]),
 
-    Header      = [{"P3P", "CP='ALL IND DSP COR ADM CONo CUR CUSo IVAo IVDo PSA PSD TAI TELo OUR SAMo CNT COM INT NAV ONL PHY PRE PUR UNI'"}],
     HTTPOps     = [],
     Ops         = [],
 
@@ -311,69 +397,18 @@ execute(Action, State) when
     Args        = proplists:get_value(<<"args">>, Action),
     Results     = proplists:get_value(<<"results">>, Action),
     ResultsType = proplists:get_value(<<"results_type">>, Action),
-
-    case proplists:get_value(<<"type">>, Action) of
-        <<"get">> ->
-            LURL            = encode_uri_args( URL, Args, State#state.keystore),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    get, 
-                                    {LURL, Header}, 
-                                    HTTPOps, Ops, State#state.profile]),
+    Type        = proplists:get_value(<<"type">>),
+    Body        = proplists:get_value(<<"body">>),
+    case send_request(Type, URL, Header, HTTPOps, Ops, Args, Body, State#state.keystore) of
+        unknown_type ->
+            State;
+        {ok, Time, Result} ->
             NewState = process_action_results(  Result, 
                                                 ResultsType,
                                                 Results,
                                                 URL,
                                                 State),
-            store_action_results(ActionName, Time, Result, NewState);
-
-        <<"post">> ->
-            Type            = "application/x-www-form-urlencoded",
-            Body            = encode_post_args(Args, State#state.keystore),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    post, 
-                                    {
-                                        URL, 
-                                        Header, 
-                                        Type, 
-                                        Body
-                                    }, 
-                                    HTTPOps, Ops, State#state.profile]),
-            NewState = process_action_results(  Result,
-                                                ResultsType,
-                                                Results,
-                                                URL,
-                                                State),
-            store_action_results(ActionName, Time, Result, NewState);
-
-        <<"post_json">> ->
-            Type            = "application/json",
-            %TODO I need to do the token replacement stuff
-            % As a note of refactor I should use this same token replace
-            % system in the get and post args stuff
-            Body            = binary_to_list(jiffy:encode(Args)),
-            ReplacedBody    = replace_tokens_in_text(Body, State#state.keystore),
-            {Time, Result}  = timer:tc(httpc, request, [
-                                    post, 
-                                    {
-                                        URL, 
-                                        Header, 
-                                        Type, 
-                                        ReplacedBody
-                                    }, 
-                                    HTTPOps, Ops, State#state.profile]),
-            NewState = process_action_results(  Result,
-                                                ResultsType,
-                                                Results,
-                                                URL,
-                                                State),
-            store_action_results(ActionName, Time, Result, NewState);
-
-        <<"post_multipart">> ->
-            State;
-
-        _ ->
-            % Undefined type of post
-            State
+            store_action_results(ActionName, Time, Result, NewState)
     end;
 
 execute(_Action, _State) ->

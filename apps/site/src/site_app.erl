@@ -38,7 +38,9 @@
 %% Application callbacks
 %% ===================================================================
 build_routes() ->
-    build_general_routes() ++ build_commander_routes().
+    build_general_routes() ++ 
+    build_commander_routes() ++ 
+    handler_http_info:routes().
 
 build_commander_routes() ->
     case application:get_env(commander, enabled) of
