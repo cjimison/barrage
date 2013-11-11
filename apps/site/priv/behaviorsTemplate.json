@@ -105,8 +105,8 @@
     },
     "Node - Assert" :
     {
-        "action" : "assert"
-        "args"   : {"msg", "<MESSAGE>"}
+        "action" : "assert",
+        "args"   : {"msg" : "<MESSAGE>"}
     },
     "Node - Assert Equal" :
     {
@@ -117,7 +117,7 @@
             "val_2" : "<NAME_OF_VAR or VALUE>",
             "msg"   : "<MESSAGE>"
         }
-    }
+    },
     "Node - Assert Not Equal" :
     {
         "action" : "assert_not_equal",
