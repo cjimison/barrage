@@ -77,21 +77,18 @@ build_general_routes() ->
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
     {ok, WebPort} = application:get_env(site, web_port),
-    Routes = build_routes() ++ 
-                [{"/[...]", cowboy_static, [
-                    {directory, {priv_dir, site, []}},
-                    {mimetypes, [
-                            {<<".html">>,   [<<"text/html">>]},
-                            {<<".txt">>,    [<<"text/plain">>]},
-                            {<<".css">>,    [<<"text/css">>]},
-                            {<<".png">>,    [<<"image/png">>]},
-                            {<<".js">>,     [<<"application/javascript">>]},
-                            {<<".json">>,   [<<"application/json">>]}
-                    ]}
-                ]}], 
 
+    %Dispatch = cowboy_router:compile([
+    %        {'_', [
+    %                {"/[...]", cowboy_static, {priv_dir, site, "",
+    %                        [{mimetypes, cow_mimetypes, all}]}}
+    %        ]}
+    %]),
+
+    Routes = build_routes() ++ 
+                    [{"/[...]", cowboy_static, {priv_dir, site, "",
+                                [{mimetypes, cow_mimetypes, all}]}}],
     Dispatch = cowboy_router:compile([{'_', Routes } ]),
-    % this is a general so load up the correct end points
     {ok, _} = cowboy:start_http(http, 100, [{port, WebPort}], [
             {env, [{dispatch, Dispatch}]}
     ]),
