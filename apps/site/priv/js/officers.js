@@ -19,7 +19,7 @@ function SetGeneralInfo() {
 		{
 			$('#GeneralCommanders > tbody:last').append('<tr>\
 															<td>'+ commanders[i].name +'</td>\
-															<td>'+ commanders[i].count +'<div class="glyphicon glyphicon-edit"></div></td>\
+															<td>'+ commanders[i].count +'</td>\
 														</tr>');
 		}
 		
