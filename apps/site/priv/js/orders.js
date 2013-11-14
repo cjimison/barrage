@@ -89,35 +89,6 @@ function ReloadJson(type)
     });
 }
 
-
-function RequestInfoOnly(url, callback) {
-    $.ajax({
-        url: ROOTURL+url,
-        async: false,
-        success: function(data) {
-            callback(JSON.parse(data));            
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
-        }
-    });
-}
-
-function PostInfo(url, data, callback) {
-    $.ajax({
-        url: ROOTURL+url,
-        type: 'POST',
-        data: data,
-        async: true,
-        success: function(data) {
-            callback(JSON.parse(data));
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
-        }
-    });
-}
-
 function saveTextAsFile(textToWrite, fileNameToSaveAs)
 {
     var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});

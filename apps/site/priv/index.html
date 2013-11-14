@@ -40,11 +40,10 @@
         <script type="text/javascript" src="lib/jq.stopwatch.js"></script>
         <script type="text/javascript" src="lib/fartscroll.js"></script>
         
-        <script type="text/javascript" src="js/general.js"></script>
-        <script type="text/javascript" src="js/commander.js"></script>
-        <script type="text/javascript" src="js/jtool.js"></script>
-        
-        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" src="js/common.js"></script>
+        <script type="text/javascript" src="js/officers.js"></script>
+        <script type="text/javascript" src="js/orders.js"></script>
+        <script type="text/javascript" src="js/execute.js"></script>
     </head>
     <body>
       <input id="inputfile" type="file" style="display: none;">
@@ -71,71 +70,118 @@
         <!-- OFFICERS PAGE -->
         <div class="tab-pane" id="Officers">
           <div class="container">
-            <div class="row">
-              <div class="col-lg-6">
-                <div id="General" style="line-height:30px">
-                  <div>
-                    <label>General Name:</label>
-                    <span id="GeneralName"></span>
-                    <div id="modify">
-                      <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='$("#General .toggle").toggle();'/>
-                      <input type="button" class="btn btn-default btn-xs toggle" value="Cancel" onclick='SetGeneralInfo()'/>
-                      <input type="button" class="btn btn-primary btn-xs toggle" value="Save" onclick='SaveGeneralChanges()'/>
+            <div id="General" class="row">
+              <div class="col-xs-2"></div>
+              <div class="col-xs-7">
+                <div class="panel panel-warning text-center">
+                  <div class="panel-heading">
+                    <div class="row">
+                      <div class="col-xs-4"></div>
+                      <div class="col-xs-4"><h3>General<br/><small><span id="GenGeneralName"></span></small></h3></div>
+                      <div class="col-xs-2"></div>
+                      <div class="col-xs-2">
+                        <div class="pull-right">
+                          <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='$("#General .toggle").toggle();'/>
+                          <input type="button" class="btn btn-default btn-xs toggle" value="Cancel" onclick='SetGeneralInfo()'/>
+                          <input type="button" class="btn btn-primary btn-xs toggle" value="Save" onclick='PostOfficerDataChangedOnly()'/>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label for="input_TargetServer">Target Server:</label>
-                    <span id="TargetServer" class="toggle"></span>
-                    <input id="input_TargetServer" class="toggle" type="text"/>
-                  </div>
-                  <div>
-                    <label for="input_TargetPort">Target Port:</label>
-                    <span id="TargetPort" class="toggle"></span>
-                    <input id="input_TargetPort" class="toggle" type="text"/>
-                  </div>
-                  <div>
-                    <label for="input_NetworkName">Network Name:</label>
-                    <span id="NetworkName" class="toggle"></span>
-                    <input id="input_NetworkName" class="toggle" type="text"/>
+                  <div class="panel-body">
+                    <div class ="row">
+                      <div class="col-xs-6">
+                        <label for="input_GenTargetServer">Target</label>
+                      </div>
+                      <div class="col-xs-6">
+                        <label for="input_GenNetworkName">Network</label>
+                      </div>
+                    </div>
+                    <div class ="row" style="height:30px">
+                      <div class="col-xs-6">
+                        <span id="GenTargetServer" class="toggle"></span>
+                        <input id="input_GenTargetServer" class="toggle" type="text" style="width:80px"/> 
+                        :
+                        <span id="GenTargetPort" class="toggle"></span>
+                        <input id="input_GenTargetPort" class="toggle" type="text" style="width:45px"/>
+                      </div>
+                      <div class="col-xs-6">
+                        <span id="GenNetworkName" class="toggle"></span>
+                        <input id="input_GenNetworkName" class="toggle" type="text" style="width:100px"/> 
+                      </div>
+                    </div>
+
+                    <!-- Table -->
+                    <table id="GeneralCommanders" class="table table-bordered table-striped">
+                      <thead>
+                        <tr>
+                          <th colspan="2" class="text-center" style="background-color: #237CA8">Commanders</th>
+                        </tr>
+                        <tr>
+                          <th>Commander Name</th>
+                          <th># of Gunners</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- This is filled in by general.js-->
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-                <table class="table" id="GeneralCommanders">
-                  <thead>
-                    <tr>
-                      <th>Commander Name</th><th>Num. of Gunners</th>
-                    </tr>
-                  </thead>
-                  <tbody style="line-height:30px">
-                  </tbody>
-                </table>
               </div>
-              <div class="col-xs-6">
-                <div id="Commander" style="line-height:30px;">
-                  <div>
-                    <label>Commander Name:</label>
-                    <span id="CommanderName"></span>
-                    <div id="modify">
-                      <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='CommanderAction("disconnect")'/>
-                      <input type="button" class="btn btn-primary btn-xs toggle" value="Connect" onclick='CommanderAction("connect")'/>
+            </div>
+            <div id="Commander" class="row">
+              <div class="col-xs-2"></div>
+              <div class="col-xs-7">
+                <div class="panel panel-info text-center">
+                  <div class="panel-heading">
+                    <div class="row">
+                      <div class="col-xs-4"></div>
+                      <div class="col-xs-4"><h3>Commander<br/><small><span id="CommCommanderName"></span></small></h3></div>
+                      <div class="col-xs-2"></div>
+                      <div class="col-xs-2">
+                        <div class="pull-right">
+                          <input type="button" class="btn btn-primary btn-xs toggle showfirst" value="Modify" onclick='OfficerAction("disconnect");'/>
+                          <input type="button" class="btn btn-default btn-xs toggle" value="Cancel" onclick='OfficerAction("connect");'/>
+                          <input type="button" class="btn btn-primary btn-xs toggle" value="Save" onclick='PostOfficerDataChangedOnly();'/>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label for="input_GeneralName">General Name:</label>
-                    <span id="GeneralName" class="toggle"></span>
-                    <input id="input_GeneralName" class="toggle" type="text"/>
-                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_GeneralName");'/>
-                  </div>
-                  <div>
-                    <label for="input_NetworkName">Network Name:</label>
-                    <span id="NetworkName" class="toggle"></span>
-                    <input id="input_NetworkName" class="toggle" type="text"/>
-                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_NetworkName");'/>
-                  </div>
-                  <div>
-                    <label for="input_NumOfGunners">Num. of Gunners:</label>
-                    <span id="NumOfGunners" class="toggle"></span>
-                    <input id="input_NumOfGunners" class="toggle" type="text"/>
-                    <input type="button" class="toggle btn btn-default btn-xs" value="set" onclick='PostCommanderData("input_NumOfGunners");'/>
+                  <div class="panel-body">
+                    <div class ="row">
+                      <div class="col-xs-6">
+                        <label for="input_CommGeneralName">General</label>
+                      </div>
+                      <div class="col-xs-6">
+                        <label for="input_CommNetworkName">Network</label>
+                      </div>
+                    </div>
+                    <div class ="row" style="height:30px">
+                      <div class="col-xs-6">
+                        <span id="CommGeneralName" class="toggle"></span>
+                        <input id="input_CommGeneralName" class="toggle" type="text"/> 
+                      </div>
+                      <div class="col-xs-6">
+                        <span id="CommNetworkName" class="toggle"></span>
+                        <input id="input_CommNetworkName" class="toggle" type="text"/> 
+                      </div>
+                    </div>
+                    <div class ="row">
+                      <div class="col-xs-4"></div>
+                      <div class="col-xs-4">
+                        <label for="input_CommNumOfGunners">Gunners</label>
+                      </div>
+                      <div class="col-xs-4"></div>
+                    </div>
+                    <div class ="row" style="height:30px">
+                      <div class="col-xs-4"></div>
+                      <div class="col-xs-4">
+                        <span id="CommNumOfGunners" class="toggle"></span>
+                        <input id="input_CommNumOfGunners" class="toggle" type="text" style="width:100px"/> 
+                      </div>
+                      <div class="col-xs-4"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -147,8 +193,10 @@
         <!-- ORDERS PAGE -->
         <div class="tab-pane" id="Orders">
           <div class="container">
-            <div id="jsoneditor_behaviors" class="jsonContainer"></div>
-            <div id="jsoneditor_actions" class="jsonContainer"></div>
+            <div class-"row">
+              <div id="jsoneditor_behaviors" class="col-xs-6"></div>
+              <div id="jsoneditor_actions" class="col-xs-6"></div>
+            </div>
           </div>
         </div> <!-- end Orders page (the json tool with actions and behaviors) -->
 

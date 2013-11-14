@@ -2,20 +2,6 @@ var g_websocket = null;
 var gPlotInfo = {};
 var gHideProgressOverlay = true;
 
-var ROOTURL = location.protocol + '//' + location.host + '/';
-var POSTURLS = {
-				'actions'				:	{'url' : 'upload_actions'},
-				'behaviors'				:	{'url' : 'upload_behaviors'},
-				'input_TargetServer'	:	{'url' : 'general/set_target_server', 'key' : 'target_server'},
-				'input_TargetPort'		:	{'url' : 'general/set_target_port', 'key' : 'target_port'},
-				'input_NetworkName'		:	{'url' : 'general/set_network', 'key' : 'network'},
-				'input_GeneralName'		:	{'url' : 'commander/set_general', 'key' : 'general'},
-				'input_NetworkName'		:	{'url' : 'commander/set_network', 'key' : 'network'},
-				'input_NumOfGunners'	:	{'url' : 'commander/set_gunners', 'key' : 'gunners'},
-				'connect'				:	{'url' : 'commander/connect'},
-				'disconnect'			:	{'url' : 'commander/disconnect'}
-			  };
-
 var CONVERTTO = {'milliseconds' : 1/1000};
 
 var DEFAULTPROPERTIES =
@@ -75,34 +61,6 @@ $(document).ready(function() {
 		}
 	});
 });
-
-function RequestInfo(url, callback) {
-	var loadinghtml =  '<div>Requesting Data</div>\
-						<div id="loadTimer">\
-							<span class="hr">00</span>:<span class="min">00</span>:<span class="sec">00</span>\
-						</div>';
-
-	$.ajax({
-		url: ROOTURL+url,
-		async: true,
-		beforeSend: function() {
-			if (!gHideProgressOverlay) {
-				 $.blockUI({ 
-					message: loadinghtml
-				});
-				$('#loadTimer').stopwatch();
-			}
-		},
-		success: function(data) {
-			callback(JSON.parse(data));
-			$.unblockUI();
-			
-		},
-		error: function (xhr, ajaxOptions, thrownError) {
-			console.log('ERROR ' + xhr.status + ' - ' + xhr.responseText + ' - ' + thrownError);
-		}
-	});
-}
 
 function rp_IssueOrder(name) {
 	gHideProgressOverlay = false;			
